@@ -1,0 +1,13 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Exported logbooks hold personal flight records.
+hours-to-go-*.json
+
+.DS_Store
+Thumbs.db
+
+# Accounts and logbooks (SQLite)
+data/

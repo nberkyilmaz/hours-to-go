@@ -1,0 +1,38 @@
+{
+  "name": "hours-to-go",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Log your flight time and see what is left for each Transport Canada licence and rating.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "dev:web": "vite",
+    "dev:api": "tsx watch server/main.ts",
+    "build": "npm run typecheck && vite build",
+    "start": "tsx server/main.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.server.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.1.3",
+    "@fastify/static": "^8.3.0",
+    "fastify": "^5.12.7",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tsx": "^4.23.15"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^22.20.5",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^25.0.1",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5",
+    "vitest": "^2.1.9"
+  }
+}
