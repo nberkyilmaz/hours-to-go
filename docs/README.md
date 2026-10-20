@@ -18,6 +18,6 @@ is, what went wrong along the way, and what is still open.
   Transport Canada licences and ratings, profiles (email and password) with a guest mode,
   phone layout, home-screen install.
 - `npm run typecheck` is clean and `npm test` passes 78 tests in 5 files.
-- The git repository is initialised on branch `main` with **no commits yet**.
+- Published at <https://github.com/nberkyilmaz/hours-to-go> (public, branch `main`).
 - It has never been deployed. There is no domain.
 - Nothing is waiting on the owner. The logbook-photo import was considered and dropped.

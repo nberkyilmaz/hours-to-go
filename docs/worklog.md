@@ -255,5 +255,5 @@ Checked in Edge on desktop and phone; 78 tests pass.
 
 - 78 tests pass (rules 37, logbook model 21, server API 11, app as guest 7, app signed in 2).
 - Typecheck clean on both configs.
-- Repository initialised on `main`, nothing committed.
+- First commit pushed to <https://github.com/nberkyilmaz/hours-to-go> (public).
 - Nothing deployed; SQLite needs a persistent disk before real use; password reset not built.

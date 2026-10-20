@@ -147,4 +147,5 @@ dependency; it is harmless.
 - Look at UI changes in a browser at phone size.
 - `git status` shows no `data/`, `dist/` or exported `hours-to-go-*.json` files (all git-ignored; the
   exports contain personal flight records).
-- Nothing has been committed yet; the first commit will contain the whole project.
+- Commits use this repo's identity, `Berk Yilmaz <91981362+nberkyilmaz@users.noreply.github.com>`,
+  the GitHub address linked to the account, so they count on the profile.

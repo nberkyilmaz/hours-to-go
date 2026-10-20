@@ -15,19 +15,18 @@ These are interpretations the app shows in its notes; the owner's FTU can settle
 
 ## Before real students use it
 
-1. **First commit.** Nothing is committed yet.
-2. **A database that survives deploys.** SQLite is a file; hosts with a wiped disk on each deploy
+1. **A database that survives deploys.** SQLite is a file; hosts with a wiped disk on each deploy
    would lose every profile. Either a persistent disk for `DATABASE_PATH`, or move `Store`
    (`server/db.ts`, the only SQL in the project) to Postgres. The owner prefers free tiers and wants
    monthly and yearly costs kept apart.
-3. **Backups** of that database, and a tested restore.
-4. **Password reset.** Needs an email provider. Until then a forgotten password means a new profile,
+2. **Backups** of that database, and a tested restore.
+3. **Password reset.** Needs an email provider. Until then a forgotten password means a new profile,
    which is why Export sits on the Profile screen.
-5. **HTTPS and a domain.** The cookie is Secure in production. The owner's other project has an
+4. **HTTPS and a domain.** The cookie is Secure in production. The owner's other project has an
    unbought domain; this one has none chosen.
-6. **A privacy note and terms**: what is stored (email, logbook), where, how to delete it (Profile →
+5. **A privacy note and terms**: what is stored (email, logbook), where, how to delete it (Profile →
    Delete my profile already removes everything).
-7. **Rate limits beyond sign-in** if it's opened to the public (sign-ups, merges).
+6. **Rate limits beyond sign-in** if it's opened to the public (sign-ups, merges).
 
 ## Next work, roughly in order of value
 
