@@ -407,6 +407,12 @@ password."
 3. *The checkout came back with CRLF line endings* after pulling the merged redesign, because
    `core.autocrlf` is on. Multi-line scripted edits stopped matching. Converted back to LF; the
    runbook already says to keep LF.
+4. *CI failed every test on its Postgres server.* The test helper drops the tables before each
+   test, and didn't list `password_resets`, whose key on `users` stopped `users` being dropped.
+   PGlite tests start from a fresh in-memory database each time, so they never drop anything and
+   passed. The helper now drops `password_resets` too, and the suite was run locally against
+   `pglite-server` (Postgres's wire protocol, through `pg`) before pushing again. A new table
+   that references `users` has to be added to that list.
 
 **Checked.**
 - Server tests, on PGlite and on a Postgres server in CI: a link that sets a new password and

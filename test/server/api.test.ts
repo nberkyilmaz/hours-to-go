@@ -19,7 +19,7 @@ async function emptied(url: string): Promise<string> {
   const client = new pg.Client({ connectionString: url });
   await client.connect();
   try {
-    await client.query('drop table if exists sessions, entries, profiles, users');
+    await client.query('drop table if exists password_resets, sessions, entries, profiles, users');
   } finally {
     await client.end();
   }
