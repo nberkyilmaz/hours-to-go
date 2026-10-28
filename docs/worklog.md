@@ -1,6 +1,6 @@
 # Worklog
 
-Everything below happened on 2026-10-20, in this order. Each phase says what was asked for,
+Phases 1 to 9 happened on 2026-10-20 and phase 10 on 2026-10-27, in this order. Each phase says what was asked for,
 what was built, what went wrong, and what it changed. Problems are written up in enough detail
 that nobody has to rediscover them.
 
@@ -251,9 +251,71 @@ hours rule from 421.13(4), and nothing sat next to the exam itself. 421.13 asks 
 
 Checked in Edge on desktop and phone; 78 tests pass.
 
+## Phase 10: putting it at nberkyilmaz.com/hours-to-go (2026-10-27)
+
+**Owner request.** Host it under the owner's domain, at `nberkyilmaz.com/hours-to-go`.
+
+**Found.** `nberkyilmaz.com` is registered at Cloudflare, with no website on it yet (only the
+Email Routing records). departure-brief had already planned the domain: the account's user site
+`nberkyilmaz.github.io` carries it, and every project's Pages site appears at a path beneath it.
+That plan even listed `hours-to-go`. But this app has a server, and GitHub Pages serves files.
+Free hosts for the server wipe their disk on deploy (Render's free plan also on every sleep), so
+the SQLite file would have lost every profile.
+
+**Built** (decisions D14, D25, D26 in [decisions.md](decisions.md)):
+
+- **Postgres instead of SQLite.** `Store` talks to a three-call interface: `pg` for Neon in
+  production, PGlite (Postgres in WebAssembly) on a laptop and in tests. `DATABASE_URL` replaces
+  `DATABASE_PATH`, and production refuses to start without it. A merge is one statement now, not
+  one per entry, because each round trip to a hosted database costs milliseconds.
+- **The page builds for a path** (`VITE_BASE`), the manifest's paths are relative so the
+  home-screen app opens at `/hours-to-go/`, and the page calls the API at `VITE_API` with
+  `credentials: 'include'`.
+- **The API allows the page's origin** (`ALLOWED_ORIGINS`, `@fastify/cors` with credentials), has
+  `/api/health` for Render, and `/api/me` renews the session and cookie on every open.
+- **Never-signed-in browsers don't wait for a sleeping server.** They open as a guest at once and
+  make no API call. Opening the sign-up form wakes the server. A signed-in pilot whose server is
+  asleep sees, after 4 seconds, that it can take up to a minute.
+- `Dockerfile` (API only), `render.yaml`, `.github/workflows/pages.yml` (needs the `API_URL`
+  variable), `.github/workflows/ci.yml` (tests on PGlite and on a Postgres service, the page built
+  as published, the image built and started), and [deploy.md](deploy.md) with the owner's steps.
+
+**Problems on the way.**
+
+1. *The API's address decides whether sign-in works.* A cookie from `*.onrender.com` is
+   third-party to a page on `nberkyilmaz.com`, and browsers drop it silently: sign-in "succeeds"
+   and the next request is signed out. So the API goes on `hours-to-go-api.nberkyilmaz.com`, the
+   same site as the page. For the same reason the page at `nberkyilmaz.github.io/hours-to-go/`
+   (before the domain is attached) can't sign in, and CORS refuses it on purpose.
+2. *Safari caps that cookie at 7 days* when the API answers from a different server than the page,
+   which here it always does. Without renewal an iPhone would sign out every week, against D15. Now
+   `/api/me` sets it again on every open.
+3. *A sleeping free server made everyone wait.* The app asked `/api/me` before showing anything, so
+   every portfolio visitor would have watched "Loading your logbook…" for up to a minute. Hence
+   the signed-in flag (D26).
+4. *Git Bash rewrote the base path.* `VITE_BASE=/hours-to-go/` became
+   `/Program Files/Git/hours-to-go/` in `dist/index.html`. Git Bash converts anything that looks
+   like a Unix path. `MSYS_NO_PATHCONV=1` fixes it locally; CI is on Linux.
+5. *Docker Desktop wasn't running*, so the `pg` path was tested through PGlite's socket server
+   (`@electric-sql/pglite-socket`, from a scratch folder) and the image's file set was rebuilt by
+   hand: `npm ci --omit=dev`, `server/` and `src/model/` only, started with
+   `NODE_ENV=production`. CI builds and starts the real image.
+6. *Another session briefly edited this checkout* (it had been asked for a page-only Pages copy).
+   It reverted everything, but its checkout left 20 files with CRLF line endings. Git saw no
+   change, but scripted edits stopped matching. They were turned back to LF.
+
+**Checked** in Edge with two hostnames mapped to this machine, so the page and API were on
+different hosts of one site, as in production: sign up on a phone-sized page, log a flight,
+reload (still signed in, flight there, cookie HttpOnly / Lax / 90 days on the API's host), sign in
+from a desktop context (same flight), sign out and reload (no API call at all), open Profile (one
+`/api/health` wake-up). The waking-server note was checked at phone size in light and dark.
+No console errors, no failed requests.
+
 ## Where things stand
 
-- 78 tests pass (rules 37, logbook model 21, server API 11, app as guest 7, app signed in 2).
+- 83 tests pass (rules 37, logbook model 21, server API 14, app as guest 9, app signed in 2), and
+  the 13 API tests per database also pass against a Postgres server through `pg`.
 - Typecheck clean on both configs.
-- First commit pushed to <https://github.com/nberkyilmaz/hours-to-go> (public).
-- Nothing deployed; SQLite needs a persistent disk before real use; password reset not built.
+- Code ready to publish at <https://nberkyilmaz.com/hours-to-go/>; not deployed. The steps that
+  need the owner's accounts are listed in [roadmap.md](roadmap.md#waiting-on-the-owner).
+- Password reset not built; backups not set up.

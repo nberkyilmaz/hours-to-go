@@ -1,0 +1,152 @@
+# Putting it live
+
+The page goes at **<https://nberkyilmaz.com/hours-to-go/>**, beside the owner's other projects on
+the same domain. Three pieces, each where it fits best, all on free plans:
+
+| Piece | Where | Address | Monthly | Yearly |
+| --- | --- | --- | --- | --- |
+| The page | GitHub Pages | `https://nberkyilmaz.com/hours-to-go/` | free | — |
+| The API | Render, Docker web service | `https://hours-to-go-api.nberkyilmaz.com` | free (sleeps), or $7 to stay awake | — |
+| Accounts and logbooks | Neon Postgres | — | free | — |
+| The domain | Cloudflare | `nberkyilmaz.com` | — | already paid for the portfolio; nothing extra for this project |
+
+## Why it is split this way
+
+- **GitHub Pages serves files only**, so the page can live at a path on the domain but the API
+  can't. The API runs on Render and the page calls it.
+- **The API must be on a `nberkyilmaz.com` subdomain**, not its `onrender.com` address. The session
+  cookie comes from the API. A cookie from `hours-to-go-api.nberkyilmaz.com` belongs to the same
+  site as the page and is kept; one from `onrender.com` is a third-party cookie and browsers drop
+  it, so signing in would appear to work and then forget you.
+- **Neon, not a file on Render's disk.** A Render service's own disk is wiped on every deploy, and
+  on the free plan every time it sleeps. SQLite there would lose every profile. The server refuses
+  to start in production unless `DATABASE_URL` names a database.
+
+---
+
+## Steps, in this order
+
+Steps 1 to 3 are this project's. Step 4 is the domain itself, shared with departure-brief, and is
+done once for both. Nothing here can be done for you: each needs your accounts.
+
+### 1. Neon: the database
+
+1. Sign in at <https://neon.tech> (the free plan does not expire, unlike Render's own Postgres,
+   which is deleted after 30 days).
+2. Create a project named `hours-to-go`, region **AWS US East 2 (Ohio)**, next to the API. If the
+   plan won't take another project, a database named `hours_to_go` in an existing project is
+   just as good.
+3. Copy the connection string (the project's dashboard → **Connect**). It looks like
+   `postgresql://user:password@ep-something.us-east-2.aws.neon.tech/neondb?sslmode=require`.
+   Keep the `?sslmode=require`.
+
+The tables create themselves the first time the server starts. At start, Render's logs show a
+"SECURITY WARNING" about SSL modes from the Postgres driver: it means the database's certificate
+is checked in full, which Neon passes. Nothing to do.
+
+### 2. Render: the API
+
+1. <https://dashboard.render.com> → **New → Blueprint** → this repository. It reads
+   [`render.yaml`](../render.yaml): a free Docker web service named `hours-to-go-api` in Ohio, with
+   a health check on `/api/health`.
+2. It asks for `DATABASE_URL`: paste the Neon string. `ALLOWED_ORIGINS` is already set to
+   `https://nberkyilmaz.com`.
+3. Deploy, then open `https://<the service>.onrender.com/api/health`. It answers `{"ok":true}`
+   once the database answers too, and 503 if it doesn't.
+
+### 3. The API's subdomain
+
+1. Render → the service → **Settings → Custom Domains** → add
+   `hours-to-go-api.nberkyilmaz.com`. Render shows the exact target.
+2. Cloudflare → `nberkyilmaz.com` → **DNS** → add:
+
+   ```
+   CNAME   hours-to-go-api   <the service>.onrender.com
+   ```
+
+   **DNS only (grey cloud).** Proxied, Render can't verify the name or issue its certificate.
+3. Back in Render, **Verify**. Render issues and renews the certificate.
+4. `https://hours-to-go-api.nberkyilmaz.com/api/health` answers `{"ok":true}`.
+
+### 4. The domain on GitHub Pages (once, for every project)
+
+GitHub serves a project's Pages site at a path on the domain when the domain belongs to the
+account's **user site**, the repository named `nberkyilmaz.github.io`:
+
+| Repository | Served at |
+| --- | --- |
+| `nberkyilmaz.github.io` | `https://nberkyilmaz.com/` |
+| `departure-brief` | `https://nberkyilmaz.com/departure-brief/` |
+| `hours-to-go` | `https://nberkyilmaz.com/hours-to-go/` |
+
+The user site is already prepared as a local repository at
+`C:\Users\canada\Desktop\Dev\nberkyilmaz.github.io` (a landing page linking both projects). It is
+not on GitHub yet. Push it from there, then follow **"The domain"** in departure-brief's
+`docs/deploy.md`: Settings → Pages → custom domain `nberkyilmaz.com` on the user site, the four
+A and four AAAA records and the `www` CNAME at Cloudflare, all **DNS only**, verify the domain on
+the account, and tick Enforce HTTPS once the certificate is issued. Don't create a second user site.
+
+In this repository, **nothing changes** for the domain: no `CNAME` file, and the path stays
+`/hours-to-go/` (the Pages workflow takes it from the repository name; renaming the repository
+moves the page).
+
+### 5. This repository's Pages
+
+1. GitHub → `hours-to-go` → **Settings → Pages → Source: GitHub Actions**.
+2. **Settings → Secrets and variables → Actions → Variables → New repository variable**:
+   `API_URL` = `https://hours-to-go-api.nberkyilmaz.com` (no trailing slash). The workflow refuses
+   to publish without it, because a page with no API would tell every pilot the server is down.
+3. **Actions → Pages → Run workflow**. Later pushes to `main` that touch the page publish it
+   by themselves.
+
+### 6. Check it as a pilot would
+
+On a phone, open <https://nberkyilmaz.com/hours-to-go/>, create a profile, log a flight, add it
+to the home screen. On a computer, sign in: the same flight is there.
+
+If the page says **"Can't reach the server"**, it's usually one of these:
+
+- The page isn't on `nberkyilmaz.com` yet (step 4). At `nberkyilmaz.github.io/hours-to-go/` the
+  API refuses it, by design.
+- `API_URL` has a typo or a trailing slash. Fix it and run the Pages workflow again.
+- The API is down: check `/api/health` and the Render logs.
+
+---
+
+## What "free" costs you
+
+- **The API sleeps** after 15 minutes without a request, and the next one waits about a minute
+  while it wakes. Three things soften that:
+  - A browser that has never signed in opens at once, as a guest, without asking the API.
+    Visitors from the portfolio never wait, and don't use up the free hours.
+  - Opening Profile starts the API waking, so it is usually up by the time the pilot has typed
+    an email and password.
+  - A signed-in pilot opening the app waits for their own logbook. After 4 seconds the loading
+    screen says why, so it doesn't look broken.
+
+  **$7/month** (Render Starter) keeps it awake: change the plan, no code changes.
+- **Render's 750 free hours a month** are per workspace, shared with any other free service in
+  it (departure-brief's API, when it's deployed). A sleeping service uses none.
+- **Neon's free plan** has a storage cap (0.5 GB when this was written); a flight is about a
+  kilobyte. The database pauses when idle and wakes in under a second. The free plan's restore
+  window is short, so backups are still open in the [roadmap](roadmap.md).
+- **Safari** keeps a cookie from an API on a different server than the page for only 7 days. The
+  app renews it every time it opens, so only a pilot who goes more than a week without opening it
+  on an iPhone has to sign in again. Other browsers keep it the full 90 days, renewed the same way.
+
+## Running the API's image yourself
+
+```sh
+docker build -t hours-to-go-api .
+docker run --rm -p 8787:8787 -e DATABASE_URL=memory:// hours-to-go-api
+curl http://127.0.0.1:8787/api/health
+```
+
+`memory://` is a throwaway database inside the container. CI builds and starts the image the same
+way on every push, so a Dockerfile that would fail on Render fails there first.
+
+## One process instead
+
+Everything still runs as one process serving the page and the API from one origin, as before (no
+CORS, no `VITE_API`): `npm run build`, then `NODE_ENV=production DATABASE_URL=… npm start`. That suits a
+machine you control. `DATABASE_URL` is then a Postgres URL or a folder on a disk that lasts.

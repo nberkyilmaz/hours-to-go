@@ -1,0 +1,73 @@
+# Typecheck, test and build on every push.
+#
+# The API tests run twice here: on PGlite, as on a laptop, and on a real Postgres server,
+# because production's database goes through `pg` and PGlite does not exercise that path.
+
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: htg
+          POSTGRES_PASSWORD: htg
+          POSTGRES_DB: htg
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U htg"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: npm
+
+      - run: npm ci
+      - run: npm run typecheck
+
+      - run: npm test
+        env:
+          TEST_DATABASE_URL: postgres://htg:htg@localhost:5432/htg
+
+      - name: Build the page as it is published
+        run: npm run build
+        env:
+          VITE_BASE: /hours-to-go/
+          VITE_API: https://hours-to-go-api.nberkyilmaz.com
+
+  # The image Render builds, built and started here, so a Dockerfile that would fail on deploy
+  # fails on push instead. Not pushed anywhere.
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: docker build -t hours-to-go-api .
+
+      - name: Start it and ask whether it is up
+        run: |
+          docker run -d --name api -p 8787:8787 -e DATABASE_URL=memory:// hours-to-go-api
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8787/api/health; then exit 0; fi
+            sleep 1
+          done
+          docker logs api
+          exit 1

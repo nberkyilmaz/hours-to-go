@@ -8,7 +8,9 @@ import {
   hasContent,
   loadGuestLogbook,
   mergeLogbooks,
+  rememberSignedIn,
   saveGuestLogbook,
+  wasSignedIn,
   type Logbook,
 } from './model/store';
 
@@ -49,7 +51,7 @@ const describe = (err: unknown) => (err instanceof ApiError ? err.message : 'Som
  * and the pilot is told. As a guest, changes go to this browser.
  */
 export function useLogbook(): LogbookState {
-  const [mode, setModeState] = useState<Mode>({ kind: 'loading' });
+  const [mode, setModeState] = useState<Mode>(() => (wasSignedIn() ? { kind: 'loading' } : { kind: 'guest', offline: false }));
   const [book, setBookState] = useState<Logbook>(loadGuestLogbook);
   const [guest, setGuest] = useState<Logbook>(loadGuestLogbook);
   const [error, setError] = useState<string | null>(null);
@@ -74,6 +76,8 @@ export function useLogbook(): LogbookState {
   };
 
   const becomeGuest = (offline: boolean) => {
+    // Unreachable is not signed out: the session may still be good once the server answers.
+    if (!offline) rememberSignedIn(false);
     setMode({ kind: 'guest', offline });
     const local = loadGuestLogbook();
     setGuest(local);
@@ -81,12 +85,15 @@ export function useLogbook(): LogbookState {
   };
 
   const enterAccount = (email: string, server: Logbook) => {
+    rememberSignedIn(true);
     setMode({ kind: 'account', email });
     commit(server);
     setGuest(loadGuestLogbook());
   };
 
   useEffect(() => {
+    // Never signed in here: already a guest, and no reason to wake the server.
+    if (modeRef.current.kind !== 'loading') return;
     let live = true;
     (async () => {
       try {

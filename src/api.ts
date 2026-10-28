@@ -11,15 +11,20 @@ export class ApiError extends Error {
   }
 }
 
+// Where the API is. Unset, it is the server this page came from (development, or `npm start`).
+// The published page sets it: GitHub Pages serves files only, so the API runs on its own subdomain.
+const API = import.meta.env.VITE_API ?? '';
+
 async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const init: RequestInit = { method, credentials: 'same-origin' };
+  // `include`, so the session cookie also goes to an API on another subdomain.
+  const init: RequestInit = { method, credentials: 'include' };
   if (body !== undefined) {
     init.headers = { 'content-type': 'application/json' };
     init.body = JSON.stringify(body);
   }
   let res: Response;
   try {
-    res = await fetch(path, init);
+    res = await fetch(API + path, init);
   } catch {
     throw new ApiError('Can’t reach the server. Check your connection and try again.', 0);
   }
@@ -37,6 +42,7 @@ interface UserReply {
 }
 
 export const api = {
+  health: () => call<{ ok: boolean }>('GET', '/api/health'),
   me: () => call<UserReply>('GET', '/api/me'),
   signup: (email: string, password: string) => call<UserReply>('POST', '/api/auth/signup', { email, password }),
   login: (email: string, password: string) => call<UserReply>('POST', '/api/auth/login', { email, password }),

@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
-import { emptyLogbook } from '../../src/model/store';
+import { emptyLogbook, rememberSignedIn } from '../../src/model/store';
 
 const reply = (status: number, body: unknown) => ({ ok: status < 400, status, json: async () => body });
 
@@ -9,6 +9,7 @@ let failSaves = false;
 
 beforeEach(() => {
   localStorage.clear();
+  rememberSignedIn(true);
   failSaves = false;
   vi.stubGlobal(
     'fetch',
@@ -33,7 +34,7 @@ describe('signed in', () => {
     expect(await screen.findByText('Saved to your profile')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Working on'), { target: { value: 'cpl' } });
     await waitFor(() => expect(vi.mocked(fetch)).toHaveBeenCalledWith('/api/profile', expect.objectContaining({ method: 'PUT' })));
-    expect(localStorage.length).toBe(0);
+    expect(localStorage.getItem('hours-to-go/v1')).toBeNull();
   });
 
   it('shows a change at once, and puts the server copy back if the save fails', async () => {

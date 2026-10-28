@@ -1,0 +1,29 @@
+# The API on Render, as a blueprint (New → Blueprint, pick this repository).
+# docs/deploy.md has the steps, in order, and what each free plan costs you in other ways:
+#
+#   - The free web service sleeps after 15 minutes with no requests. The next one waits about
+#     a minute for it to wake; the app says so on its loading screen. $7/month keeps it awake,
+#     with no change to the code.
+#   - Nothing is kept on the service's own disk, which is wiped on every deploy and every
+#     sleep. Accounts and logbooks are in Neon's free Postgres, which does not expire
+#     (Render's own free Postgres is deleted after 30 days).
+
+services:
+  - type: web
+    name: hours-to-go-api
+    runtime: docker
+    plan: free
+    # Nearest to southern Ontario, and the same place as Neon's AWS us-east-2 (Ohio).
+    region: ohio
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      # Neon's connection string. Pasted in the dashboard, never written here.
+      - key: DATABASE_URL
+        sync: false
+
+      # The page is at https://nberkyilmaz.com/hours-to-go/ and calls this API on
+      # hours-to-go-api.nberkyilmaz.com. A browser sends the origin without a path, so the
+      # entry is the domain alone. Comma-separated if there are ever more.
+      - key: ALLOWED_ORIGINS
+        value: https://nberkyilmaz.com

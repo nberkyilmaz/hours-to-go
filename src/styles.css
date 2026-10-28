@@ -209,10 +209,13 @@ button:focus-visible {
 
 .loading {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 12px;
   min-height: 100vh;
+  padding: 0 16px;
+  text-align: center;
   color: var(--muted);
 }
 

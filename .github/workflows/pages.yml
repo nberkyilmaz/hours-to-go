@@ -1,0 +1,79 @@
+# Publish the page to GitHub Pages.
+#
+# Served at https://nberkyilmaz.com/hours-to-go/ once the account's user site
+# (nberkyilmaz.github.io) carries the domain; at https://nberkyilmaz.github.io/hours-to-go/
+# until then. Either way the page lives under /hours-to-go/, so the build needs that path.
+#
+# GitHub Pages serves files only. Profiles go to the API on Render, whose address is the
+# repository variable API_URL (Settings → Secrets and variables → Actions → Variables).
+# It is not a secret: it is in the page for anyone to read.
+
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'index.html'
+      - 'vite.config.ts'
+      - 'tsconfig.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time, and let one in progress finish rather than leave the site half-published.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Without it the page would ask GitHub Pages for /api and tell every pilot the server is down.
+      - name: Check the API address is set
+        if: vars.API_URL == ''
+        run: |
+          echo "::error::Set the repository variable API_URL to the API's address, such as https://hours-to-go-api.nberkyilmaz.com (docs/deploy.md)."
+          exit 1
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build the page
+        run: npm run build
+        env:
+          VITE_BASE: /${{ github.event.repository.name }}/
+          VITE_API: ${{ vars.API_URL }}
+
+      - name: Fail rather than publish an empty site
+        run: test -s dist/index.html && test -s dist/manifest.webmanifest
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

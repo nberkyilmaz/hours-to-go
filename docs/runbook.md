@@ -10,8 +10,8 @@ cd ~/Desktop/hours-to-go
 npm install
 ```
 
-Node must be 22.13 or newer: the server uses Node's built-in SQLite (`node:sqlite`). Every start
-prints `ExperimentalWarning: SQLite is an experimental feature`; that is expected.
+Node must be 22.13 or newer. Nothing else to install: the local database is PGlite (Postgres
+compiled to WebAssembly), which comes with `npm install`.
 
 ## Develop
 
@@ -28,8 +28,10 @@ Without `dev:api` the app still opens, as a guest with a "can't reach the server
 prints. Session cookies aren't marked Secure in development, so signing in works over plain http.
 
 **Local data:**
-- Profiles: `data/hours-to-go.sqlite` (git-ignored). Delete it (with `-wal` and `-shm`) to start
-  over, with the server stopped.
+- Profiles: `data/pglite/` (git-ignored), a PGlite database folder. Delete the folder to start
+  over, with the server stopped. `DATABASE_URL=memory://` gives a throwaway one instead.
+- A browser that has signed in keeps `hours-to-go/signed-in` in localStorage. Without it the app
+  opens as a guest without calling the API at all (decision D26).
 - Guest logbook: the browser's localStorage key `hours-to-go/v1`. Clear site data, or use
   Profile → "Erase this device's logbook".
 
@@ -37,27 +39,46 @@ prints. Session cookies aren't marked Secure in development, so signing in works
 
 ```sh
 npm run typecheck   # both tsconfigs; must be clean
-npm test            # 70 tests: rules, logbook model, server API, app as guest, app signed in
+npm test            # 83 tests: rules, logbook model, server API, app as guest, app signed in
 ```
 
-The server tests run in Node (`// @vitest-environment node` at the top of the file) against an
-in-memory database. The web tests run in jsdom with `fetch` stubbed.
+The server tests run in Node (`// @vitest-environment node` at the top of the file), each on a
+fresh in-memory PGlite (about a second apiece, most of it PGlite starting). The web tests run in
+jsdom with `fetch` stubbed.
+
+To run the API tests against a real Postgres server as well, which is what CI does, set
+`TEST_DATABASE_URL`. **They drop the tables first**, so only ever use a throwaway database:
+
+```sh
+docker run -d --rm --name htg-pg -e POSTGRES_PASSWORD=htg -p 5434:5432 postgres:17
+TEST_DATABASE_URL=postgres://postgres:htg@127.0.0.1:5434/postgres npm test
+```
+
+Without Docker running, PGlite can stand in as a server for the `pg` path:
+`npx @electric-sql/pglite-socket` from a scratch folder (`pglite-server --port 5435
+--max-connections 10`), then `TEST_DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5435/postgres`.
 
 ## Build and run as in production
 
 ```sh
-npm run build                                      # typecheck, then vite build to dist/
-NODE_ENV=production PORT=8787 npm start            # Git Bash syntax
+npm run build                                                  # typecheck, then vite build to dist/
+NODE_ENV=production DATABASE_URL=memory:// PORT=8787 npm start # Git Bash syntax
 ```
 
-In PowerShell: `$env:NODE_ENV='production'; $env:PORT='8787'; npm start`.
+In PowerShell: `$env:NODE_ENV='production'; $env:DATABASE_URL='memory://'; $env:PORT='8787'; npm start`.
 
 | Variable | Default | |
 | --- | --- | --- |
 | `PORT` | 8787 | |
 | `HOST` | 127.0.0.1, or 0.0.0.0 when production | |
-| `DATABASE_PATH` | `data/hours-to-go.sqlite` | must be on a disk that survives redeploys |
+| `DATABASE_URL` | `data/pglite`, but required in production | `postgres://…`, a PGlite folder, or `memory://` |
+| `ALLOWED_ORIGINS` | none | origins allowed to call the API with cookies, comma-separated |
 | `NODE_ENV` | | `production` marks the cookie Secure, so the site must be served over HTTPS |
+
+To build the page as it is published: `VITE_BASE=/hours-to-go/ VITE_API=https://hours-to-go-api.nberkyilmaz.com npm run build`.
+In Git Bash, put `MSYS_NO_PATHCONV=1` in front, or Git Bash rewrites `/hours-to-go/` into
+`/Program Files/Git/hours-to-go/` and every link in `dist/index.html` breaks. CI and Pages run on
+Linux and aren't affected. Putting it live is in [deploy.md](deploy.md).
 
 **Restart the server after every build.** `@fastify/static` registers one route per file in `dist/`
 when it starts, so new hashed asset names 404 until it restarts.
@@ -97,8 +118,27 @@ Run it against a production build on a spare port with a throwaway database:
 
 ```sh
 npm run build
-DATABASE_PATH=/tmp/htg-check.sqlite PORT=8799 node --import tsx server/main.ts
+DATABASE_URL=memory:// PORT=8799 node --import tsx server/main.ts
 ```
+
+**The published arrangement** (page and API on different hosts of one site) can be checked the
+same way. Map two names to this machine in the browser, serve the page under `/hours-to-go/`,
+and point the API's `ALLOWED_ORIGINS` at it:
+
+```js
+chromium.launch({ executablePath: '…/msedge.exe',
+  args: ['--host-resolver-rules=MAP nberkyilmaz.test 127.0.0.1, MAP hours-to-go-api.nberkyilmaz.test 127.0.0.1'] });
+```
+
+```sh
+MSYS_NO_PATHCONV=1 VITE_BASE=/hours-to-go/ VITE_API=http://hours-to-go-api.nberkyilmaz.test:8799 npx vite build
+DATABASE_URL=memory:// ALLOWED_ORIGINS=http://nberkyilmaz.test:8798 PORT=8799 node --import tsx server/main.ts
+# and any static server mapping /hours-to-go/* to dist/ on port 8798
+```
+
+Then sign up at `http://nberkyilmaz.test:8798/hours-to-go/`, log a flight, reload, and sign in
+from a second browser context. Requests from Playwright's own `request` API use Node's resolver,
+not the browser's, so fetch from inside the page instead.
 
 Tips from doing this:
 
@@ -128,10 +168,6 @@ Stop-Process -Id $c.OwningProcess
 Starting the server as `node --import tsx server/main.ts` instead of `npx tsx` leaves one process,
 which stops cleanly.
 
-**Vitest: "Failed to load url sqlite".** Vite drops the `node:` prefix from built-ins it doesn't know.
-`server/db.ts` loads SQLite with `createRequire(import.meta.url)('node:sqlite')` for exactly this
-reason. Don't change it to a plain import.
-
 **Typecheck errors in `vite.config.ts`.** Vitest 2 ships its own Vite 5 types, which clash with Vite 6
 under `exactOptionalPropertyTypes`. The file is deliberately in neither tsconfig.
 
@@ -147,5 +183,7 @@ dependency; it is harmless.
 - Look at UI changes in a browser at phone size.
 - `git status` shows no `data/`, `dist/` or exported `hours-to-go-*.json` files (all git-ignored; the
   exports contain personal flight records).
+- Files keep LF line endings. `core.autocrlf` is on in this Git install, so a checkout writes CRLF;
+  that's harmless for commits but breaks scripted find-and-replace on the files.
 - Commits use this repo's identity, `Berk Yilmaz <91981362+nberkyilmaz@users.noreply.github.com>`,
   the GitHub address linked to the account, so they count on the profile.

@@ -56,6 +56,29 @@ export function clearGuestLogbook(): void {
   }
 }
 
+const SIGNED_IN_KEY = 'hours-to-go/signed-in';
+
+/**
+ * Whether this browser was signed in when last used. The server may be asleep and take a
+ * minute to answer, so a browser that never signed in opens as a guest without asking it.
+ */
+export function wasSignedIn(): boolean {
+  try {
+    return localStorage.getItem(SIGNED_IN_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function rememberSignedIn(signedIn: boolean): void {
+  try {
+    if (signedIn) localStorage.setItem(SIGNED_IN_KEY, '1');
+    else localStorage.removeItem(SIGNED_IN_KEY);
+  } catch {
+    // Storage is blocked; the next visit opens as a guest and the pilot signs in again.
+  }
+}
+
 /** True when a guest logbook holds anything worth keeping. */
 export function hasContent(book: Logbook): boolean {
   const p = book.profile;

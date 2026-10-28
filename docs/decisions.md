@@ -101,18 +101,32 @@ inside a line, so the note says so.
 
 ### D13. One server process, Fastify, same stack as the owner's other project
 Serves `/api` and the built app, so cookies are first-party and there is no CORS. In development
-Vite proxies `/api` to port 8787.
+Vite proxies `/api` to port 8787. This still holds for development and for running it on one
+machine; the published site splits page and API (D25).
 
-### D14. SQLite through `node:sqlite`, entries as rows
-No native build step on Windows; nothing to install. Each entry is its own row so two devices
-editing different flights don't collide; the profile is one row. The cost: the database is a file,
-so the host needs a persistent disk (see the roadmap). The `Store` class is the only code that
-touches SQL, so moving to Postgres is one file.
+### D14. Postgres: Neon in production, PGlite on a laptop and in tests (replaced SQLite)
+Each entry is its own row so two devices editing different flights don't collide; the profile is
+one row (`jsonb`). The first version used SQLite through `node:sqlite`: no native build on
+Windows, nothing to install. But the database was a file, and free hosts wipe their disk on every
+deploy (Render's free plan also on every sleep). A persistent disk only comes with a paid plan.
+
+Now `Store` (still the only code that touches SQL) talks Postgres through a three-call interface:
+`pg` for a server, PGlite for everything local. PGlite is Postgres compiled to WebAssembly, so
+local development still installs nothing, and the tests run the same SQL as production rather than
+a second dialect. Neon because its free plan doesn't expire (Render's free Postgres is deleted
+after 30 days) and the owner's departure-brief uses it. CI runs the API tests on both PGlite and a
+real Postgres server, because only the latter goes through `pg`.
+
+Turned down: Turso (SQLite-compatible, would have kept the SQL as it was) for a second native
+client and a second provider; a paid disk on Render ($7/month plus storage) for the cost; Cloudflare
+D1 because the Workers free plan's CPU limit is far below one scrypt hash.
 
 ### D15. Email and password, sessions in an HttpOnly cookie
 scrypt (N=16384, r=8, p=1, 64-byte key, parameters stored with the hash so they can be raised).
 32-byte random token, only its SHA-256 stored, 90-day cookie (students shouldn't have to sign in on
-their phone every week), SameSite=Lax, Secure in production. Failed sign-ins throttled per IP and
+their phone every week), SameSite=Lax, Secure in production. The 90 days start again each time the
+app opens (`GET /api/me` extends the session and sets the cookie again), which also keeps Safari
+from signing out an iPhone after 7 days (D25). Failed sign-ins throttled per IP and
 email in memory (fine for one process). Turned down: magic links and password reset by email until
 there is an email provider.
 
@@ -127,6 +141,34 @@ Server-first made checkboxes lag on a phone and invited double taps. Now every c
 locally, then the server calls run one at a time in a queue, each built from the state the previous
 one left. On failure the server's copy is reloaded and a banner says the change was not saved. If
 the server is unreachable the banner stays up. A 401 returns the app to guest mode and says so.
+
+### D25. Published as a page on GitHub Pages and an API on its own subdomain
+The owner wanted it at `nberkyilmaz.com/hours-to-go/`, beside departure-brief, on the domain they
+bought for a portfolio. GitHub Pages serves a project at a path on that domain once the account's
+user site carries it, but serves files only. So the page goes there and the API runs on Render's
+free plan at `hours-to-go-api.nberkyilmaz.com`. Steps and costs are in [deploy.md](deploy.md).
+
+- **The API's address must be on `nberkyilmaz.com`.** Its cookie is then same-site with the page
+  and kept. From `onrender.com` it would be a third-party cookie and browsers drop it.
+- **CORS names the page's origin** (`ALLOWED_ORIGINS`), with credentials. SameSite=Lax still
+  works, because a subdomain of the same domain is the same site.
+- **Safari keeps such a cookie only 7 days**, since the API answers from a different server than
+  the page. Renewing it on every open (D15) makes that matter only after a week away.
+
+Turned down: a Cloudflare Worker routing `nberkyilmaz.com/hours-to-go/*` to Render, which would
+keep one origin but needs the apex proxied by Cloudflare, against the DNS-only records GitHub Pages
+needs for its certificate and departure-brief already relies on. And a subdomain of its own for
+the whole app, because the owner asked for the path.
+
+### D26. A browser that has never signed in doesn't wait for the server
+Render's free plan sleeps after 15 minutes and takes about a minute to wake. The app used to ask
+`/api/me` before showing anything, so every visitor would have waited on "Loading your
+logbook…". Now a flag (`hours-to-go/signed-in` in localStorage, set on entering a profile, cleared
+on sign-out or a 401, kept when the server is unreachable) decides: without it the app opens at
+once as a guest and makes no call at all, which also saves the free plan's hours. With it the app
+waits for the profile as before, and after 4 seconds says the server may be waking. Opening the
+sign-up form pings `/api/health` so the server wakes while the pilot types. Cost: a pilot whose
+browser lost the flag but kept the cookie opens as a guest and signs in again.
 
 ## Interface
 

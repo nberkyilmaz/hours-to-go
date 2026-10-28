@@ -1,5 +1,5 @@
-import { useRef, useState, type FormEvent } from 'react';
-import { ApiError } from '../api';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { ApiError, api } from '../api';
 import { today } from '../model/entry';
 import { MEDICAL_LABEL, type Medical, type Profile } from '../model/profile';
 import { hasContent, parseLogbook, type Logbook } from '../model/store';
@@ -88,6 +88,11 @@ function AuthForm({ lb }: { lb: LogbookState }) {
   const [busy, setBusy] = useState(false);
   const local = hasContent(lb.guest);
   const offline = lb.mode.kind === 'guest' && lb.mode.offline;
+
+  // A sleeping server takes up to a minute to wake: start it now, while the pilot is typing.
+  useEffect(() => {
+    api.health().catch(() => {});
+  }, []);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { blankEntry, derive, isFtdOnly, type Entry } from './model/entry';
 import { hasContent } from './model/store';
 import { EntryForm, type FormLayout, type Suggestions } from './ui/EntryForm';
@@ -15,6 +15,23 @@ const TABS: { id: Tab; label: string; Icon: () => JSX.Element }[] = [
   { id: 'log', label: 'Logbook', Icon: BookIcon },
   { id: 'profile', label: 'Profile', Icon: UserIcon },
 ];
+
+/** The server on the free plan sleeps when nobody has used it for a while and takes up to a minute to wake. */
+function Loading() {
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setSlow(true), 4000);
+    return () => clearTimeout(timer);
+  }, []);
+  return (
+    <div className="loading" role="status">
+      <span className="row">
+        <Mark /> Loading your logbook…
+      </span>
+      {slow && <span>If nobody has opened Hours to Go for a while, its server takes up to a minute to wake up.</span>}
+    </div>
+  );
+}
 
 export function App() {
   const lb = useLogbook();
@@ -46,13 +63,7 @@ export function App() {
   const editEntry = (entry: Entry) =>
     setDraft({ entry, isNew: false, layout: entry.forward ? 'forward' : isFtdOnly(entry) ? 'ftd' : 'flight' });
 
-  if (lb.mode.kind === 'loading') {
-    return (
-      <div className="loading" role="status">
-        <Mark /> Loading your logbook…
-      </div>
-    );
-  }
+  if (lb.mode.kind === 'loading') return <Loading />;
 
   const { mode, book } = lb;
   const strandedCount = mode.kind === 'account' && hasContent(lb.guest) ? lb.guest.entries.length : 0;

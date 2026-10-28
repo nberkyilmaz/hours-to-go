@@ -4,15 +4,21 @@
 
 ```
 hours-to-go/
+├── .github/workflows/
+│   ├── ci.yml                  typecheck, tests (PGlite and a Postgres server), page build, API image
+│   └── pages.yml               publishes the page to GitHub Pages under /hours-to-go/
+├── Dockerfile                  the API image Render runs (no page in it)
+├── render.yaml                 Render blueprint: free web service, health check, env vars
 ├── index.html                  page shell, manifest and icon links, iOS home-screen meta tags
 ├── public/
 │   ├── icon.svg                the app mark (source of truth for the PNGs)
 │   ├── icon-192.png, icon-512.png, apple-touch-icon.png
-│   └── manifest.webmanifest    name, colours, icons for "add to home screen"
+│   └── manifest.webmanifest    name, colours, icons for "add to home screen"; paths relative to it
 ├── src/                        the web app (also imported by the server: model and rules)
 │   ├── main.tsx                mounts <App/>
 │   ├── App.tsx                 tabs, banners, which entry form is open, suggestions for the form
-│   ├── api.ts                  fetch wrapper; ApiError(status 0 = unreachable)
+│   ├── api.ts                  fetch wrapper; VITE_API prefix; ApiError(status 0 = unreachable)
+│   ├── vite-env.d.ts           types for import.meta.env
 │   ├── useLogbook.ts           where the logbook lives (guest or profile), the save queue, sign in/out
 │   ├── styles.css              all styles; tokens on :root, dark mode, phone rules at max-width 720px
 │   ├── model/
@@ -29,16 +35,16 @@ hours-to-go/
 │       ├── Profile.tsx         sign up / in, licences held, medical, export / import, delete
 │       └── icons.tsx
 ├── server/
-│   ├── main.ts                 reads env, creates the data folder, starts Fastify
-│   ├── app.ts                  routes, session hook, static files, SPA fallback
+│   ├── main.ts                 reads env, picks the database, starts Fastify
+│   ├── app.ts                  routes, CORS, session hook, health check, static files, SPA fallback
 │   ├── auth.ts                 scrypt hashing, session tokens, sign-in throttle
-│   └── db.ts                   Store: every SQL statement in the project
+│   └── db.ts                   Store: every SQL statement in the project; pg or PGlite
 ├── test/
 │   ├── web/                    jsdom: fixtures, entry, rules, app as guest, app signed in
-│   └── server/                 node: the API through fastify.inject with an in-memory database
+│   └── server/                 node: the API through fastify.inject, on PGlite and (TEST_DATABASE_URL) Postgres
 ├── tsconfig.json               browser code: src, test/web (no Node types)
 ├── tsconfig.server.json        server, test/server, src/model, src/rules (Node types)
-└── vite.config.ts              React plugin, /api proxy to :8787, Vitest settings
+└── vite.config.ts              React plugin, base path (VITE_BASE), /api proxy to :8787, Vitest settings
 ```
 
 ## Data model
@@ -145,7 +151,8 @@ All JSON. Errors are `{ "error": "message for the pilot" }`. The session cookie 
 | `POST /api/auth/signup` | `{ email, password }` | 400 bad email or password under 8 characters, 409 email taken; sets the cookie |
 | `POST /api/auth/login` | `{ email, password }` | 401 wrong, 429 after 10 failures in 15 minutes per IP and email |
 | `POST /api/auth/logout` | | deletes the session row, clears the cookie, 204 |
-| `GET /api/me` | | `{ user: { email } }` or 401 |
+| `GET /api/me` | | `{ user: { email } }` or 401; extends the session to 90 days from now and sets the cookie again |
+| `GET /api/health` | | `{ ok: true }`, or 503 when the database doesn't answer; Render's health check |
 | `DELETE /api/account` | `{ password }` | deletes the user; entries, profile and sessions cascade; 204 |
 | `GET /api/logbook` | | `{ version: 2, entries, profile }` |
 | `PUT /api/entries/:id` | an entry | parsed and validated with the same code as the browser; id must match |
@@ -154,24 +161,42 @@ All JSON. Errors are `{ "error": "message for the pilot" }`. The session cookie 
 | `POST /api/logbook/merge` | a logbook | adds what is missing, never overwrites; returns the result |
 
 Any other `/api/*` is 404. Any other GET serves `index.html` (when `dist/` exists), so client-side
-tabs survive a reload.
+tabs survive a reload. The published API has no `dist/`: GitHub Pages serves the page.
+
+With `ALLOWED_ORIGINS` set, `@fastify/cors` lets those origins call every route with credentials
+(GET, POST, PUT, DELETE; preflights cached 2 hours). The published page is
+`https://nberkyilmaz.com` calling `https://hours-to-go-api.nberkyilmaz.com`: different origins,
+same site, so the SameSite=Lax cookie is sent.
 
 ## Database (`server/db.ts`)
 
+Postgres. `Store.open(where)` takes a `postgres://` URL (Neon in production, through a `pg` pool
+of 5 with an `error` listener, because a hosted database drops idle connections) or anything else
+for PGlite: a folder (`data/pglite` by default) or `memory://` (the tests). Both sit behind a small
+interface (`query`, `transaction`, `close`), so the SQL is the same everywhere.
+
 ```sql
-users    (id text pk, email text unique, password_hash text, created_at text)
-sessions (token_hash text pk, user_id → users on delete cascade, expires_at integer)
-entries  (user_id → users on delete cascade, id text, data text /* JSON */, pk (user_id, id))
-profiles (user_id pk → users on delete cascade, data text /* JSON */)
+users    (id text pk, email text unique, password_hash text, created_at timestamptz)
+sessions (token_hash text pk, user_id → users on delete cascade, expires_at bigint /* ms */)
+entries  (user_id → users on delete cascade, id text, data jsonb, pk (user_id, id))
+profiles (user_id pk → users on delete cascade, data jsonb)
 ```
 
-WAL mode, foreign keys on. Entry and profile JSON is passed through the same parsers as files, so
-old formats are converted when read. Expired sessions are swept whenever a new one is created.
+The tables are created with `create table if not exists` when the store opens; there are no
+migrations yet, so a change to an existing table needs one. Entry and profile JSON is passed
+through the same parsers as files, so old formats are converted when read. A merge inserts the
+whole incoming logbook in one statement (`jsonb_array_elements`), inside one transaction. Expired
+sessions are swept whenever a new one is created.
 
 ## Client state (`src/useLogbook.ts`)
 
-- On load: `GET /api/me`. 200 means profile mode (load `/api/logbook`); 401 means guest; anything
-  else means guest with an "offline" banner.
+- On load, only if this browser was signed in last time (`wasSignedIn()`, localStorage
+  `hours-to-go/signed-in`): `GET /api/me`. 200 means profile mode (load `/api/logbook`); 401 means
+  guest; anything else means guest with an "offline" banner. Without the flag the app starts as a
+  guest at once and calls nothing (D26). Entering a profile sets the flag; signing out, deleting
+  the profile or a 401 clears it.
+- `src/api.ts` prefixes every path with `VITE_API` (empty: the page's own server) and sends
+  `credentials: 'include'`, so the cookie also goes to the API's subdomain.
 - `book` is what the screens show. `guest` is what is saved in this browser; while signed in, any
   guest entries trigger the "add them to your profile" banner.
 - Every change goes through `change(apply, save)`: apply locally at once, then (signed in) queue the
@@ -194,6 +219,7 @@ old formats are converted when read. Expired sessions are swept whenever a new o
 
 ## Phone and home screen
 
-The manifest and icons let the app be added to a home screen (standalone display). There is no
-service worker, so it needs a connection to load; a signed-out device keeps working from
-localStorage once loaded.
+The manifest and icons let the app be added to a home screen (standalone display). The
+manifest's `start_url`, `scope` and icon paths are relative to the manifest, so the installed app
+opens at `/hours-to-go/` when published and at `/` locally. There is no service worker, so it needs
+a connection to load; a signed-out device keeps working from localStorage once loaded.

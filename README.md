@@ -9,7 +9,8 @@ the same boxes, one line per aircraft type if you want totals by type. For every
 rating the app shows each requirement, how much you have, how much is left, what is unlocked
 (writing the exam, booking the flight test), and the paragraph of the standard it comes from.
 
-It runs in a browser on a computer or a phone, and can be added to a phone's home screen.
+It runs in a browser on a computer or a phone, and can be added to a phone's home screen. It is
+published at <https://nberkyilmaz.com/hours-to-go/>; [docs/deploy.md](docs/deploy.md) says how.
 Without an account the logbook is saved in that browser only. With a free profile (email and
 password) it is saved on the server and is the same on every device. Anything logged before
 signing up moves into the new profile.
@@ -81,7 +82,8 @@ Read them before changing anything.
 
 ## Running it
 
-Needs Node 22.13 or newer (it uses Node's built-in SQLite).
+Needs Node 22.13 or newer. There is nothing else to install: on a laptop the database is
+[PGlite](https://pglite.dev), Postgres compiled to WebAssembly, kept in `data/pglite`.
 
 ```sh
 npm install
@@ -92,22 +94,29 @@ npm run dev:web     # app on http://localhost:5173, /api is proxied to the API
 To try it on your phone on the same Wi-Fi, run `npm run dev:web -- --host` and open the
 "Network" address it prints.
 
-Production is one process serving the API and the built app:
+The published site is in two parts: the page on GitHub Pages and the API on Render, with
+accounts and logbooks in Neon Postgres ([docs/deploy.md](docs/deploy.md)). On a machine you
+control, one process can serve both:
 
 ```sh
 npm run build
-NODE_ENV=production PORT=8787 npm start
+NODE_ENV=production DATABASE_URL=postgres://… PORT=8787 npm start
 ```
 
 | Variable | Default | |
 | --- | --- | --- |
 | `PORT` | 8787 | |
 | `HOST` | 127.0.0.1, or 0.0.0.0 in production | |
-| `DATABASE_PATH` | `data/hours-to-go.sqlite` | Accounts and logbooks. Back this file up. |
+| `DATABASE_URL` | `data/pglite`, except in production | A `postgres://` URL, or a folder for PGlite, or `memory://` for a throwaway one. Production refuses to start without it, so a host's wiped disk can never take the profiles with it. |
+| `ALLOWED_ORIGINS` | none | Pages on another origin allowed to call the API with the pilot's cookie, comma-separated: `https://nberkyilmaz.com` in production. |
 | `NODE_ENV` | | `production` marks the session cookie Secure, so serve over HTTPS. |
 
-On a host whose disk is wiped on every deploy, `DATABASE_PATH` must point at a persistent disk,
-or the profiles are lost.
+And for building the page (`npm run build`):
+
+| Variable | Default | |
+| --- | --- | --- |
+| `VITE_BASE` | `/` | The path the page is served from: `/hours-to-go/` when published. |
+| `VITE_API` | the page's own server | Where the API is: `https://hours-to-go-api.nberkyilmaz.com` when published. |
 
 ## Tests
 
@@ -115,6 +124,10 @@ or the profiles are lost.
 npm test            # requirement rules, logbook data, server API, and the app in jsdom
 npm run typecheck
 ```
+
+The API tests run on PGlite. With `TEST_DATABASE_URL` set to a Postgres server they run there
+too, on tables they drop first, so never point it at a database you want to keep. CI does this
+on every push.
 
 ## How it is put together
 
@@ -125,7 +138,8 @@ npm run typecheck
 - `src/model/store.ts`, `profile.ts`: the profile, file parsing, and merging a device's log into a profile.
 - `src/useLogbook.ts`: where the logbook lives. Signed in, changes show at once and are saved in order;
   a failed save puts the server's copy back and says so. As a guest, changes go to localStorage.
-- `server/`: Fastify API, scrypt password hashes, HttpOnly session cookies (90 days), SQLite.
+- `server/`: Fastify API, scrypt password hashes, HttpOnly session cookies (90 days from the last
+  visit), Postgres (Neon in production, PGlite on a laptop and in tests).
 
 ## Not done yet
 

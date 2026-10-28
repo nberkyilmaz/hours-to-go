@@ -1,6 +1,7 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
+import { rememberSignedIn } from '../../src/model/store';
 
 // No server in these tests: every call answers "not signed in", so the app runs as a guest.
 beforeEach(() => {
@@ -124,5 +125,30 @@ describe('the app as a guest', () => {
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: 'Mark PPL as held' }));
     expect(await screen.findByText(/only on this device/)).toBeTruthy();
+  });
+});
+
+describe('opening the app', () => {
+  it('opens at once on a browser that has never signed in, without waking the server', () => {
+    vi.mocked(fetch).mockImplementation(() => new Promise(() => {}));
+    render(<App />);
+    expect(screen.getByText('Saved on this device only')).toBeTruthy();
+    expect(vi.mocked(fetch)).not.toHaveBeenCalled();
+  });
+
+  it('says why when the server is slow to answer', async () => {
+    rememberSignedIn(true);
+    vi.useFakeTimers();
+    try {
+      // A server that is still waking up: the first call does not come back.
+      vi.mocked(fetch).mockImplementation(() => new Promise(() => {}));
+      render(<App />);
+      expect(screen.getByRole('status').textContent).toContain('Loading your logbook');
+      expect(screen.queryByText(/takes up to a minute/)).toBeNull();
+      await act(() => vi.advanceTimersByTimeAsync(4000));
+      expect(screen.getByText(/takes up to a minute to wake up/)).toBeTruthy();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
