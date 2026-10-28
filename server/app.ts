@@ -6,8 +6,9 @@ import fastifyStatic from '@fastify/static';
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify';
 import { validateEntry } from '../src/model/entry';
 import { parseEntry, parseLogbook, parseProfile } from '../src/model/store';
-import { Throttle, hashPassword, hashToken, newSessionToken, verifyPassword } from './auth';
+import { Throttle, hashPassword, hashToken, newToken, verifyPassword } from './auth';
 import { Store, type User } from './db';
+import { resetMail, type SendMail } from './mail';
 
 export interface AppOptions {
   /** A `postgres://` URL, or for PGlite a folder or `memory://`. See `Store.open`. */
@@ -23,11 +24,25 @@ export interface AppOptions {
   /** The built web app to serve alongside the API, if there is one. */
   staticDir?: string;
   logger?: boolean;
+  /**
+   * Sends the password-reset email, and the page's address the link in it points at, such as
+   * `https://nberkyilmaz.com/hours-to-go/`. Taken from configuration, never from the request,
+   * so nobody can have the email point somewhere else. Without both, resetting is unavailable.
+   */
+  sendMail?: SendMail | undefined;
+  appUrl?: string | undefined;
 }
 
 const COOKIE = 'htg_session';
 const SESSION_DAYS = 90;
+const RESET_MINUTES = 60;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function passwordProblem(password: string): string | null {
+  if (password.length < 8) return 'Use a password of at least 8 characters.';
+  if (password.length > 200) return 'That password is too long.';
+  return null;
+}
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -42,6 +57,10 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   const app = Fastify({ logger: opts.logger ?? false, bodyLimit: 5 * 1024 * 1024, trustProxy: true });
   const store = await Store.open(opts.database, (err) => app.log.error(err, 'database connection dropped'));
   const throttle = new Throttle(10, 15 * 60_000);
+  // Reset emails: a few to any one address, so nobody can flood someone's inbox, and a few more
+  // from any one address on the internet.
+  const resetsPerEmail = new Throttle(3, 60 * 60_000);
+  const resetsPerIp = new Throttle(10, 60 * 60_000);
   app.addHook('onClose', async () => store.close());
 
   await app.register(cookie);
@@ -71,7 +90,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     });
 
   const startSession = async (reply: FastifyReply, user: User) => {
-    const { token, hash } = newSessionToken();
+    const { token, hash } = newToken();
     await store.createSession(user.id, hash, Date.now() + SESSION_DAYS * 86_400_000);
     setSessionCookie(reply, token);
   };
@@ -87,8 +106,8 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     const email = String(body.email ?? '').trim().toLowerCase();
     const password = String(body.password ?? '');
     if (!EMAIL.test(email) || email.length > 254) return reply.code(400).send({ error: 'Enter a valid email address.' });
-    if (password.length < 8) return reply.code(400).send({ error: 'Use a password of at least 8 characters.' });
-    if (password.length > 200) return reply.code(400).send({ error: 'That password is too long.' });
+    const problem = passwordProblem(password);
+    if (problem) return reply.code(400).send({ error: problem });
     const user = await store.createUser(email, await hashPassword(password));
     if (!user) return reply.code(409).send({ error: 'An account with that email already exists. Sign in instead.' });
     await startSession(reply, user);
@@ -110,6 +129,49 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     throttle.clear(key);
     await startSession(reply, found);
     return { user: { email: found.email } };
+  });
+
+  // The same answer whether or not the email has a profile, and as fast either way: the link is
+  // made and sent after replying. Sign-up already says when an email is taken, so this hides
+  // little today, but it costs nothing.
+  app.post('/api/auth/forgot', async (req, reply) => {
+    const { sendMail, appUrl } = opts;
+    if (!sendMail || !appUrl) return reply.code(503).send({ error: 'Resetting a password by email isn’t available yet.' });
+    const email = String(bodyOf(req).email ?? '').trim().toLowerCase();
+    if (!EMAIL.test(email) || email.length > 254) return reply.code(400).send({ error: 'Enter a valid email address.' });
+    if (resetsPerEmail.blocked(email) || resetsPerIp.blocked(req.ip)) {
+      return reply.code(429).send({ error: 'Too many reset emails asked for. Try again in an hour.' });
+    }
+    resetsPerEmail.fail(email);
+    resetsPerIp.fail(req.ip);
+    void (async () => {
+      const user = await store.findUserByEmail(email);
+      if (!user) return;
+      const { token, hash } = newToken();
+      await store.createPasswordReset(user.id, hash, Date.now() + RESET_MINUTES * 60_000);
+      // In the fragment, which browsers never send to a server, so the token stays out of logs.
+      const link = new URL(appUrl);
+      link.hash = `reset=${token}`;
+      await sendMail(resetMail(user.email, link.toString(), RESET_MINUTES));
+    })().catch((err: unknown) => app.log.error(err, 'password reset email not sent'));
+    return reply.code(204).send();
+  });
+
+  app.post('/api/auth/reset', async (req, reply) => {
+    const body = bodyOf(req);
+    const token = String(body.token ?? '');
+    const password = String(body.password ?? '');
+    const problem = passwordProblem(password);
+    if (problem) return reply.code(400).send({ error: problem });
+    const key = `reset|${req.ip}`;
+    if (throttle.blocked(key)) return reply.code(429).send({ error: 'Too many attempts. Try again in 15 minutes.' });
+    const user = await store.resetPassword(hashToken(token), await hashPassword(password), Date.now());
+    if (!user) {
+      throttle.fail(key);
+      return reply.code(400).send({ error: 'This link has expired or has already been used. Ask for a new one.' });
+    }
+    await startSession(reply, user);
+    return { user: { email: user.email } };
   });
 
   app.post('/api/auth/logout', async (req, reply) => {

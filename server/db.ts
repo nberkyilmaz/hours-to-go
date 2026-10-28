@@ -48,6 +48,13 @@ const SCHEMA = [
     user_id text primary key references users(id) on delete cascade,
     data jsonb not null
   )`,
+  // A new table, so `if not exists` is all it needs, on a laptop and on Neon alike.
+  `create table if not exists password_resets (
+    token_hash text primary key,
+    user_id text not null references users(id) on delete cascade,
+    expires_at bigint not null
+  )`,
+  'create index if not exists password_resets_user on password_resets(user_id)',
 ];
 
 /**
@@ -181,6 +188,35 @@ export class Store {
 
   async deleteSession(tokenHash: string): Promise<void> {
     await this.db.query('delete from sessions where token_hash = $1', [tokenHash]);
+  }
+
+  async createPasswordReset(userId: string, tokenHash: string, expiresAt: number): Promise<void> {
+    await this.db.query('delete from password_resets where expires_at < $1', [Date.now()]);
+    await this.db.query('insert into password_resets (token_hash, user_id, expires_at) values ($1, $2, $3)', [
+      tokenHash,
+      userId,
+      expiresAt,
+    ]);
+  }
+
+  /**
+   * Spends a reset link on a new password. The link is deleted as it is read, so it works once;
+   * the profile's other links go too, and so does every session, so a device signed in by
+   * whoever knew the old password is signed out. Null when the link is unknown or expired.
+   */
+  resetPassword(tokenHash: string, passwordHash: string, now: number): Promise<User | null> {
+    return this.db.transaction(async (q) => {
+      const [spent] = await q<{ user_id: string }>(
+        'delete from password_resets where token_hash = $1 and expires_at > $2 returning user_id',
+        [tokenHash, now],
+      );
+      if (!spent) return null;
+      await q('update users set password_hash = $2 where id = $1', [spent.user_id, passwordHash]);
+      await q('delete from password_resets where user_id = $1', [spent.user_id]);
+      await q('delete from sessions where user_id = $1', [spent.user_id]);
+      const [user] = await q<User>('select id, email from users where id = $1', [spent.user_id]);
+      return user ? { id: user.id, email: user.email } : null;
+    });
   }
 
   getLogbook(userId: string): Promise<Logbook> {

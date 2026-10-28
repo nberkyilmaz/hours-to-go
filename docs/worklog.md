@@ -1,6 +1,6 @@
 # Worklog
 
-Phases 1 to 9 happened on 2026-10-20, phase 10 on 2026-10-27 and phase 11 on 2026-10-28, in this order. Each phase says what was asked for,
+Phases 1 to 9 happened on 2026-10-20, phase 10 on 2026-10-27 and phases 11 and 12 on 2026-10-28, in this order. Each phase says what was asked for,
 what was built, what went wrong, and what it changed. Problems are written up in enough detail
 that nobody has to rediscover them.
 
@@ -383,10 +383,50 @@ throwaway database:
 - The signed-in Profile, and the sky loading screen with a server that doesn't answer.
 - No console errors.
 
+## Phase 12: a forgotten password (2026-10-28)
+
+**Owner request.** "If people forget their password we can send their email a link to reset
+password."
+
+**Built** (D28):
+- "Forgot your password?" on the Sign in tab, on the Profile tab and on the welcome screen. It
+  answers the same whether or not the email has a profile.
+- The emailed link, `https://nberkyilmaz.com/hours-to-go/#reset=…`, opens "Choose a new
+  password". Saving signs in, signs out every other device, and spends the link.
+- `POST /api/auth/forgot` and `POST /api/auth/reset`; a new `password_resets` table (a new
+  table, so no migration); Resend over HTTP in `server/mail.ts`, and printing in development.
+- `RESEND_API_KEY`, `MAIL_FROM` and `APP_URL` in `render.yaml`; the key is pasted in Render.
+
+**Problems on the way.**
+1. *A link pasted into a tab already showing the app did nothing.* Only the fragment changed, so
+   the page didn't load again and the token was never read. The app now listens for `hashchange`
+   too. Found by the browser run, which opened the spent link in the same tab.
+2. *Two things were called "New password".* The reset card was labelled by its own heading, which
+   matched the field's label, so tests couldn't tell them apart. The heading only repeated the
+   page title, so it went, and the card is labelled by the title.
+3. *The checkout came back with CRLF line endings* after pulling the merged redesign, because
+   `core.autocrlf` is on. Multi-line scripted edits stopped matching. Converted back to LF; the
+   runbook already says to keep LF.
+
+**Checked.**
+- Server tests, on PGlite and on a Postgres server in CI: a link that sets a new password and
+  signs in; the same reply for an unknown email, with nothing sent; one use only, other sessions
+  ended; expiry after an hour; short passwords and made-up links refused; three emails an hour
+  per address; 503 without a mailer.
+- Web tests: asking for a link from the welcome's Sign in tab, opening a link and being signed
+  in, and an expired link.
+- In Edge at phone size against the dev servers:
+  - Sign up, sign out, ask for a link, and read the email the API printed.
+  - Open the link in a fresh browser: the token left the address bar, and the new password
+    signed in.
+  - The spent link was refused, the old password gave 401 and the new one 200.
+  - The reset screen in light and dark mode, and on a desktop.
+
 ## Where things stand
 
-- 88 tests pass (rules 37, logbook model 21, server API 14, first visit and guest 14, signed in 2),
-  and the 13 API tests per database also pass against a Postgres server through `pg`.
+- 98 tests pass (rules 37, logbook model 21, server API 21, first visit, guest and password
+  reset 17, signed in 2), and the 19 API tests per database also pass against a Postgres server
+  through `pg` in CI.
 - Typecheck clean on both configs.
 - Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.
-- Password reset not built; backups not set up.
+- Password reset built; it sends email once `RESEND_API_KEY` is set in Render. Backups not set up.

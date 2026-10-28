@@ -27,3 +27,13 @@ services:
       # entry is the domain alone. Comma-separated if there are ever more.
       - key: ALLOWED_ORIGINS
         value: https://nberkyilmaz.com
+
+      # Password-reset emails go through Resend. The key is pasted in the dashboard, never written
+      # here; MAIL_FROM must be on a domain verified in Resend. APP_URL is where the emailed link
+      # points: the published page, never taken from a request.
+      - key: RESEND_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        value: Hours to Go <no-reply@nberkyilmaz.com>
+      - key: APP_URL
+        value: https://nberkyilmaz.com/hours-to-go/

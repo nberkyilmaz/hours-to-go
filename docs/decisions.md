@@ -127,8 +127,33 @@ scrypt (N=16384, r=8, p=1, 64-byte key, parameters stored with the hash so they 
 their phone every week), SameSite=Lax, Secure in production. The 90 days start again each time the
 app opens (`GET /api/me` extends the session and sets the cookie again), which also keeps Safari
 from signing out an iPhone after 7 days (D25). Failed sign-ins throttled per IP and
-email in memory (fine for one process). Turned down: magic links and password reset by email until
-there is an email provider.
+email in memory (fine for one process). Turned down: magic links (sign in by email alone). A
+forgotten password is reset by an emailed link (D28).
+
+### D28. A forgotten password is reset by an emailed link
+Asked for by the owner. "Forgot your password?" on the Sign in tab takes an email; if it belongs to
+a profile, the API emails a link that opens the page on "Choose a new password". Saving one signs
+in with it.
+- **The token**: 32 random bytes in the link, only its SHA-256 in `password_resets`, like a
+  session. It works once and for an hour. Using it deletes it and the profile's other links, and
+  ends every session, so a device signed in by whoever knew the old password is signed out.
+- **The link** is `APP_URL#reset=<token>`. `APP_URL` comes from configuration, never from the
+  request's Host header, so nobody can have the email point at their own site. The token is in
+  the fragment, which browsers never send to a server, so it stays out of GitHub's and Render's
+  logs. The page reads it, then takes it out of the address bar and the history.
+- **The same answer either way**: 204 whether or not the email has a profile. The link is made
+  and sent after replying, so the reply isn't slower for real profiles. Sign-up already says
+  when an email is taken (409), so this hides little today, but it costs nothing.
+- **Limits**: 3 emails an hour to one address (nobody can flood someone's inbox with them), 10 an
+  hour from one IP, and failed resets share the sign-in throttle. All in memory, like D15's.
+- **Resend sends it**, through its HTTP API (no SDK). nberkyilmaz.com already had Resend's DNS
+  records. Its free plan sends 3,000 emails a month, 100 a day. `RESEND_API_KEY` is set in
+  Render; without it (or `APP_URL`) the API answers 503 "isn't available yet" instead of
+  pretending to send. On a laptop the email is printed in the API's terminal.
+- The reset screen wakes the server as it opens, since whoever opened the link is about to use it.
+
+Turned down: security questions (weak, and one more thing to forget); a code typed into the app
+instead of a link (more steps, and the link already signs in on the device it is opened on).
 
 ### D16. Guest mode stays, and merging never deletes
 A student can try the app without signing up. The guest log lives in localStorage under

@@ -6,6 +6,7 @@ import { BookIcon, CloudCheckIcon, Mark, ProgressIcon, UserIcon } from './ui/ico
 import { LogbookView } from './ui/Logbook';
 import { ProfileView } from './ui/Profile';
 import { ProgressView } from './ui/Progress';
+import { ResetPassword } from './ui/ResetPassword';
 import { Welcome } from './ui/Welcome';
 import { useLogbook } from './useLogbook';
 
@@ -16,6 +17,11 @@ const TABS: { id: Tab; label: string; Icon: () => JSX.Element }[] = [
   { id: 'log', label: 'Logbook', Icon: BookIcon },
   { id: 'profile', label: 'Profile', Icon: UserIcon },
 ];
+
+/** The token from an emailed password-reset link, which opens the page at `#reset=…`. */
+function resetTokenInUrl(): string | null {
+  return /^#reset=([\w-]+)$/.exec(window.location.hash)?.[1] ?? null;
+}
 
 /** A new screen starts at its top, not wherever the last one was scrolled to. */
 function toTop() {
@@ -44,7 +50,23 @@ export function App() {
   const [draft, setDraft] = useState<{ entry: Entry; isNew: boolean; layout: FormLayout } | null>(null);
   const [hideGuestNudge, setHideGuestNudge] = useState(false);
   const [hideStranded, setHideStranded] = useState(false);
+  const [resetToken, setResetToken] = useState(resetTokenInUrl);
   const entries = lb.book.entries;
+
+  // Out of the address bar and the history once read, so the link isn't bookmarked or shared.
+  useEffect(() => {
+    if (resetToken) window.history.replaceState(null, '', window.location.pathname + window.location.search);
+  }, [resetToken]);
+  // A link pasted into a tab that already has the app open changes only the fragment, so the
+  // page doesn't load again.
+  useEffect(() => {
+    const onHash = () => {
+      const token = resetTokenInUrl();
+      if (token) setResetToken(token);
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
 
   const suggestions = useMemo((): Suggestions => {
     const uniq = (xs: string[]) => [...new Set(xs.map((x) => x.trim()).filter(Boolean))].sort();
@@ -71,8 +93,9 @@ export function App() {
   // A first visit, with nothing logged yet: recommend a profile before anything else.
   const welcoming = lb.mode.kind === 'guest' && !lb.mode.offline && !lb.welcomed && !hasContent(lb.guest);
   // The welcome's buttons are low on a phone, so the app it gives way to would open scrolled.
-  useEffect(toTop, [welcoming, tab]);
+  useEffect(toTop, [welcoming, tab, resetToken]);
 
+  if (resetToken) return <ResetPassword token={resetToken} lb={lb} onDone={() => setResetToken(null)} />;
   if (lb.mode.kind === 'loading') return <Loading />;
   if (welcoming) return <Welcome lb={lb} />;
 

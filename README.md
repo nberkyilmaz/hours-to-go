@@ -110,6 +110,9 @@ NODE_ENV=production DATABASE_URL=postgres://… PORT=8787 npm start
 | `DATABASE_URL` | `data/pglite`, except in production | A `postgres://` URL, or a folder for PGlite, or `memory://` for a throwaway one. Production refuses to start without it, so a host's wiped disk can never take the profiles with it. |
 | `ALLOWED_ORIGINS` | none | Pages on another origin allowed to call the API with the pilot's cookie, comma-separated: `https://nberkyilmaz.com` in production. |
 | `NODE_ENV` | | `production` marks the session cookie Secure, so serve over HTTPS. |
+| `RESEND_API_KEY` | none | Sends the password-reset email through Resend. Without it, in production, resetting answers "isn't available yet"; in development the email is printed in this terminal. |
+| `MAIL_FROM` | `Hours to Go <no-reply@nberkyilmaz.com>` | The reset email's sender, on a domain verified in Resend. |
+| `APP_URL` | `http://localhost:5173/`, except in production | The page the emailed link opens: `https://nberkyilmaz.com/hours-to-go/` when published. |
 
 And for building the page (`npm run build`):
 
