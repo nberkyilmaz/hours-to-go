@@ -9,5 +9,9 @@ hours-to-go-*.json
 .DS_Store
 Thumbs.db
 
-# Accounts and logbooks (SQLite)
+# Accounts and logbooks (PGlite, on a laptop)
 data/
+
+# Database passwords (`neon deploy` writes DATABASE_URL here)
+.env
+.env.*

@@ -50,7 +50,7 @@ To run the API tests against a real Postgres server as well, which is what CI do
 `TEST_DATABASE_URL`. **They drop the tables first**, so only ever use a throwaway database:
 
 ```sh
-docker run -d --rm --name htg-pg -e POSTGRES_PASSWORD=htg -p 5434:5432 postgres:17
+docker run -d --rm --name htg-pg -e POSTGRES_PASSWORD=htg -p 5434:5432 postgres:18
 TEST_DATABASE_URL=postgres://postgres:htg@127.0.0.1:5434/postgres npm test
 ```
 
