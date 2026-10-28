@@ -167,8 +167,10 @@ logbook…". Now a flag (`hours-to-go/signed-in` in localStorage, set on enterin
 on sign-out or a 401, kept when the server is unreachable) decides: without it the app opens at
 once as a guest and makes no call at all, which also saves the free plan's hours. With it the app
 waits for the profile as before, and after 4 seconds says the server may be waking. Opening the
-sign-up form pings `/api/health` so the server wakes while the pilot types. Cost: a pilot whose
-browser lost the flag but kept the cookie opens as a guest and signs in again.
+sign-up form pings `/api/health` so the server wakes while the pilot types: on the first focus in
+the form, not on sight, since the welcome screen shows the form to every new visitor (D27). A
+sign-up still waiting after 4 seconds says the server is waking. Cost: a pilot whose browser lost
+the flag but kept the cookie opens as a guest and signs in again.
 
 ## Interface
 
@@ -185,9 +187,57 @@ to tell the IFR page they held a licence, and clicking it would have marked the 
 See D10 and D11. Questions only appear when they apply (PIC time present, night dual present, PPL
 held) and must be answered before saving, with a message next to the question.
 
-### D21. Plain CSS with light and dark tokens
+### D21. Plain CSS with light and dark tokens, and a look of its own: "glass cockpit"
 No UI library. Colour tokens on `:root`, dark values under `prefers-color-scheme: dark`. 44 px touch
 targets, 16 px inputs.
+
+Hours to Go is its own product, headed for the App Store and Google Play as well as the web, so it
+has its own identity rather than the portfolio's. The owner chose "glass cockpit" from three
+directions (the others: a native-phone look with the system font, and black-and-yellow taxiway
+signs):
+- A graphite panel (#111827) for the bar, the welcome and the loading screen, with a 2 px cyan
+  line along its edge.
+- White and light grey pages; graphite pages in dark mode.
+- Cyan, the colour a glass cockpit gives the values the pilot sets (heading bug, selected
+  altitude), as the app's colour: #0e7490 on light (white text on it), #22d3ee on the panel and
+  in dark mode (dark text on it). Green and amber were out, being met and needs attention.
+- Two typefaces. B612, the typeface Airbus commissioned for its cockpit displays (self-hosted
+  from `@fontsource/b612`, regular and bold), for the name, headings, buttons, tabs and big
+  figures: its figures are even width, so columns line up. The phone's own font (San Francisco,
+  Roboto, Segoe UI) for everything a pilot reads, because B612's flat-sided parentheses look like
+  square brackets at small sizes, and "421.26(4)(a)" must not read as "421.26[4][a]".
+- 10 px cards, 8 px buttons and inputs: squarer than a consumer app, like instrument bezels.
+- Uppercase, letter-spaced labels for the name and the welcome's kicker, like panel legends.
+- The mark and home-screen icons: the progress ring closing in cyan on graphite.
+
+Solid cyan is kept for the main action on a screen and for progress. Notices are white with a cyan
+edge, not a coloured fill. Green, amber and red still mean only met, needs attention, and wrong.
+On a phone the tabs stay a bottom bar on the page's own colours (D18). Each new screen and tab
+opens at its top.
+
+Also turned down on the way, all on 2026-10-28:
+- **Magenta** (the GPS course line) as the app's colour. It read as pink and the owner didn't
+  want pink.
+- **Barlow** as the font. Departure Brief had already taken it for its own identity, and each
+  app is to have its own font.
+
+Turned down: matching nberkyilmaz.com (sky-and-sunset masthead, warm paper, Plus Jakarta Sans).
+It was built on 2026-10-28 from tokens the departure-brief session passed on, and the owner
+rejected it the same day: the apps are separate products from the portfolio.
+
+### D27. A first visit recommends a profile
+The owner asked that opening the app recommend creating a profile. A browser that has never been
+here (no `hours-to-go/welcomed` flag, nothing in its guest log) opens on a welcome screen: what
+the app does in two lines, the sign-up form with a "Sign in" tab, and "Continue without a profile"
+under it. Signing in or going on sets the flag. So does having signed in before the screen
+existed (the D26 flag), so returning pilots never see it. A guest who has logged something goes
+straight to it; from there the "only on this device" banner and the masthead's "Create profile"
+button keep recommending a profile. The welcome calls nothing until the pilot starts on the form
+(D26), so a portfolio visitor who only looks doesn't wake the server. Blocked storage counts as
+welcomed: a welcome on every visit would be worse than none.
+
+Turned down: a dismissible banner over Progress (easy to miss on a phone, and the existing banner
+already does that once there is something to lose), and requiring a profile (guest mode stays, D16).
 
 ## Process
 

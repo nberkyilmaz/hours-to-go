@@ -1,6 +1,6 @@
 # Worklog
 
-Phases 1 to 9 happened on 2026-10-20 and phase 10 on 2026-10-27, in this order. Each phase says what was asked for,
+Phases 1 to 9 happened on 2026-10-20, phase 10 on 2026-10-27 and phase 11 on 2026-10-28, in this order. Each phase says what was asked for,
 what was built, what went wrong, and what it changed. Problems are written up in enough detail
 that nobody has to rediscover them.
 
@@ -311,11 +311,82 @@ from a desktop context (same flight), sign out and reload (no API call at all), 
 `/api/health` wake-up). The waking-server note was checked at phone size in light and dark.
 No console errors, no failed requests.
 
+## Phase 11: live, and a welcome that recommends a profile (2026-10-28)
+
+**Going live.** The owner did the steps in [deploy.md](deploy.md), one at a time:
+- Neon project `hours-to-go` in AWS US East 2 (Ohio), running Postgres 18. The app was run from
+  the laptop against it before Render existed: sign up, save a flight, restart, sign in, flight
+  there, delete the profile, database empty again.
+- The Render blueprint, `hours-to-go-api.nberkyilmaz.com` with a CNAME at Cloudflare, the user
+  site `nberkyilmaz.github.io` pushed with the domain on it, the four A and four AAAA records and
+  `www`, and this repository's Pages with `API_URL`. The departure-brief session set `API_URL` and
+  turned Pages on, with the owner's go-ahead.
+
+Problems on the way:
+1. *The Neon connection string was pasted into the chat.* The database was still empty. The
+   password was reset in Neon before Render, and only the new string went into Render.
+2. *`pg` prints a "SECURITY WARNING" about SSL modes* for Neon's `sslmode=require`. It means the
+   certificate is checked in full, which Neon passes. Noted in deploy.md so it doesn't look like a
+   fault.
+3. *CI tested against Postgres 17; Neon runs 18.* CI's service image is now `postgres:18`.
+4. *GitHub's DNS check kept its first result* ("improperly configured", from before the records
+   existed). It cleared once GitHub checked again; re-saving the custom domain forces that.
+5. *Signing in failed on `http://nberkyilmaz.com/hours-to-go/`* before the certificate was issued.
+   That is by design: CORS allows only `https://nberkyilmaz.com`. A guest log made on the http
+   page is invisible to the https one, since they are different origins.
+6. *Enforce HTTPS is per project site.* The user site had it; `hours-to-go` didn't, and the tick in
+   the UI didn't save. Set through the API (`PUT /repos/nberkyilmaz/hours-to-go/pages`,
+   `https_enforced=true`); http started redirecting within minutes.
+
+**Owner request.** A better UX and UI, and recommend creating a profile when the app opens.
+
+The first version also matched the new nberkyilmaz.com ("sky and sunset"), from design tokens
+the departure-brief session passed on. The owner turned that down: the apps are separate products
+from the portfolio and will go to the App Store and Google Play, so each needs its own theme and
+font. Of three directions offered (glass cockpit, native phone app, taxiway sign), the owner chose
+glass cockpit. Two details changed after that. Its magenta read as pink, which the owner didn't
+want, so the colour is cyan, the cockpit's other set-value colour. And its first font, Barlow,
+turned out to be Departure Brief's already, so the headings are in B612, Airbus's cockpit-display
+typeface, as the departure-brief session suggested.
+
+**Built** (D21 rewritten, D26 amended, D27 new):
+- **A welcome screen on a first visit**: what the app does, the sign-up form with a Sign in tab,
+  "Continue without a profile". It wakes the server only once the pilot starts on the form.
+- **Its own look, "glass cockpit"**: a graphite bar with a cyan line along it, white pages,
+  cyan for the main action and progress, B612 for the name, headings, buttons and big figures,
+  the phone's own font for reading, squarer corners. The mark and home-screen icons are the
+  progress ring in cyan on graphite.
+- **A guest's "Create profile" button in the masthead**, beside "Saved on this device only" on
+  wider screens.
+- **An empty logbook that says where to start**, instead of eight totals of 0.0. A flight with no
+  aircraft says so instead of showing a dash.
+- **A slow sign-up says why** after 4 seconds (the server waking), like the loading screen does.
+- **Adjustments after looking at it.**
+  - The app colour was everywhere: the guest notice was a filled box holding a coloured button
+    under another in the header. Notices are now white with a coloured edge.
+  - Small sizes (citations, hints, column labels) went up a pixel, none below 13 px.
+  - B612's parentheses are flat-sided and read as brackets at citation size ("421.26[4][a]"),
+    found by rendering both side by side. So B612 sets only the display layer and the phone's
+    font sets everything read.
+  - The welcome's buttons sit low on a phone, and the app opened at the same scroll position,
+    cut off at the top. Each new screen and tab now opens at its top.
+- **A broken block in `styles.css` repaired.** A run of form rules had been pasted into the middle
+  of `.sheet-foot .line-total` inside the phone rules. Browsers recovered, so nothing looked
+  wrong, but the rules were duplicated and the intended one was lost.
+
+**Checked** in Edge at 390×844 (light and dark) and 1280×800, against the dev server and a
+throwaway database:
+- The welcome screen.
+- Going on without a profile: the empty logbook, logging a flight, Progress, Profile.
+- Signing up from the welcome: no API call until the email field got focus, then `/api/health`,
+  `/api/auth/signup`, `/api/logbook`; the masthead then said "Saved to your profile".
+- The signed-in Profile, and the sky loading screen with a server that doesn't answer.
+- No console errors.
+
 ## Where things stand
 
-- 83 tests pass (rules 37, logbook model 21, server API 14, app as guest 9, app signed in 2), and
-  the 13 API tests per database also pass against a Postgres server through `pg`.
+- 88 tests pass (rules 37, logbook model 21, server API 14, first visit and guest 14, signed in 2),
+  and the 13 API tests per database also pass against a Postgres server through `pg`.
 - Typecheck clean on both configs.
-- Code ready to publish at <https://nberkyilmaz.com/hours-to-go/>; not deployed. The steps that
-  need the owner's accounts are listed in [roadmap.md](roadmap.md#waiting-on-the-owner).
+- Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.
 - Password reset not built; backups not set up.

@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
-import { rememberSignedIn } from '../../src/model/store';
+import { emptyLogbook, rememberSignedIn, rememberWelcomed, saveGuestLogbook } from '../../src/model/store';
 
 // No server in these tests: every call answers "not signed in", so the app runs as a guest.
 beforeEach(() => {
@@ -22,6 +22,9 @@ function type(label: string | RegExp, value: string) {
 }
 
 describe('the app as a guest', () => {
+  // Past the welcome screen, as a guest who chose to go on without a profile.
+  beforeEach(() => rememberWelcomed());
+
   it('takes paper logbook totals and shows what is left for IFR Group 3', async () => {
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: /Add my hours/ }));
@@ -129,11 +132,58 @@ describe('the app as a guest', () => {
 });
 
 describe('opening the app', () => {
-  it('opens at once on a browser that has never signed in, without waking the server', () => {
+  it('recommends a profile on a first visit, at once and without waking the server', () => {
     vi.mocked(fetch).mockImplementation(() => new Promise(() => {}));
     render(<App />);
-    expect(screen.getByText('Saved on this device only')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Create your free profile' })).toBeTruthy();
+    expect(screen.getByLabelText('Email')).toBeTruthy();
     expect(vi.mocked(fetch)).not.toHaveBeenCalled();
+  });
+
+  it('wakes the server once the pilot starts on the form', () => {
+    render(<App />);
+    fireEvent.focusIn(screen.getByLabelText('Email'));
+    fireEvent.focusIn(screen.getByLabelText('Password'));
+    expect(vi.mocked(fetch).mock.calls.map(([url]) => url)).toEqual(['/api/health']);
+  });
+
+  it('goes on without a profile, and does not ask again', async () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Continue without a profile' }));
+    expect(await screen.findByLabelText('Working on')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Create profile' })).toBeTruthy();
+
+    cleanup();
+    render(<App />);
+    expect(screen.getByLabelText('Working on')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Create your free profile' })).toBeNull();
+  });
+
+  it('opens the logbook in the new profile after signing up from the welcome', async () => {
+    vi.mocked(fetch).mockImplementation(async (url) => {
+      if (url === '/api/auth/signup') return { ok: true, status: 200, json: async () => ({ user: { email: 'student@example.com' } }) } as Response;
+      if (url === '/api/logbook') return { ok: true, status: 200, json: async () => emptyLogbook() } as Response;
+      return { ok: true, status: 200, json: async () => ({ ok: true }) } as Response;
+    });
+    render(<App />);
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'student@example.com' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'correct horse' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create profile' }));
+    expect(await screen.findByText('Saved to your profile')).toBeTruthy();
+  });
+
+  it('switches the welcome to signing in', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('tab', { name: 'Sign in' }));
+    expect(screen.getByRole('heading', { name: 'Welcome back' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeTruthy();
+  });
+
+  it('goes straight to the logbook a guest already has on this device', () => {
+    saveGuestLogbook({ ...emptyLogbook(), profile: { ...emptyLogbook().profile, medical: 'cat3' } });
+    render(<App />);
+    expect(screen.getByLabelText('Working on')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Create your free profile' })).toBeNull();
   });
 
   it('says why when the server is slow to answer', async () => {

@@ -16,11 +16,12 @@ hours-to-go/
 │   └── manifest.webmanifest    name, colours, icons for "add to home screen"; paths relative to it
 ├── src/                        the web app (also imported by the server: model and rules)
 │   ├── main.tsx                mounts <App/>
-│   ├── App.tsx                 tabs, banners, which entry form is open, suggestions for the form
+│   ├── App.tsx                 welcome or app, masthead and tabs, banners, which entry form is open
 │   ├── api.ts                  fetch wrapper; VITE_API prefix; ApiError(status 0 = unreachable)
 │   ├── vite-env.d.ts           types for import.meta.env
 │   ├── useLogbook.ts           where the logbook lives (guest or profile), the save queue, sign in/out
-│   ├── styles.css              all styles; tokens on :root, dark mode, phone rules at max-width 720px
+│   ├── styles.css              all styles; tokens on :root (the glass-cockpit look, D21), dark mode,
+│   │                           phone rules at max-width 720px
 │   ├── model/
 │   │   ├── entry.ts            a logbook line: columns, Breakdown, derive(), validation, after-PPL part
 │   │   ├── profile.ts          goals held, medical, milestones, training start dates, focus
@@ -30,9 +31,10 @@ hours-to-go/
 │   │   └── evaluate.ts         turns a logbook + profile into progress per goal
 │   └── ui/
 │       ├── Progress.tsx        goal detail, gates, requirement rows, milestone tick-offs, goal cards
-│       ├── Logbook.tsx         totals tiles, column totals, by-type table, entry list/cards
+│       ├── Welcome.tsx         a first visit: what the app is, the sign-up form, go on without (D27)
+│       ├── Logbook.tsx         empty state, totals tiles, column totals, by-type table, entry list/cards
 │       ├── EntryForm.tsx       the flight / FTD / paper-totals form and its questions
-│       ├── Profile.tsx         sign up / in, licences held, medical, export / import, delete
+│       ├── Profile.tsx         AuthForm (also on the welcome), licences held, medical, export / import, delete
 │       └── icons.tsx
 ├── server/
 │   ├── main.ts                 reads env, picks the database, starts Fastify
@@ -195,6 +197,10 @@ sessions are swept whenever a new one is created.
   guest; anything else means guest with an "offline" banner. Without the flag the app starts as a
   guest at once and calls nothing (D26). Entering a profile sets the flag; signing out, deleting
   the profile or a 401 clears it.
+- `welcomed` (localStorage `hours-to-go/welcomed`, or the signed-in flag): until it is set, a
+  guest with nothing logged sees the welcome screen instead of the tabs (D27). Entering a profile
+  or "Continue without a profile" sets it. `AuthForm` pings `/api/health` on the first focus
+  inside it.
 - `src/api.ts` prefixes every path with `VITE_API` (empty: the page's own server) and sends
   `credentials: 'include'`, so the cookie also goes to the API's subdomain.
 - `book` is what the screens show. `guest` is what is saved in this browser; while signed in, any
@@ -205,12 +211,19 @@ sessions are swept whenever a new one is created.
 
 ## Screens
 
+- **Welcome** (first visit only, D27): graphite header with what the app does; a card with "Create your
+  free profile" (or "Welcome back" on the Sign in tab), the form, and "Continue without a
+  profile"; three points on what the app does; the "not an official record" line.
+- **Masthead**: the graphite bar with name, tabs (a bottom bar on a phone), and either "Saved to
+  your profile" or, for a guest, "Saved on this device only" (not on a phone) and a cyan
+  "Create profile".
 - **Progress**: "Working on" picker; the goal's name, citation link, "Mark … as held" or held date;
   "You hold: …"; least flying left and requirements met; unlock cards ("You can write it", "Passed");
   the training-window box for CPL and Class 4; every requirement with a bar, figures, notes, credits
   and hints; milestones are ticked from the status circle and take a date and mark; under each written
   exam, a "Can you write the … yet?" checklist with the photo-ID reminder. Below, a card per goal.
-- **Logbook**: Log a flight, Log FTD session, Add totals from your paper logbook; totals tiles;
+- **Logbook**: empty, one card saying where to start (paper totals first, then a flight or FTD
+  session). Otherwise Log a flight, Log FTD session, Add paper logbook totals; totals tiles;
   "Every column, laid out like your paper logbook"; "By aircraft type"; the entry list. Entries open
   the form in the layout they were made with.
 - **Profile**: create profile / sign in (or signed-in status, sign out, delete with password);
