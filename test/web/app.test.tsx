@@ -6,6 +6,7 @@ import { emptyLogbook, rememberSignedIn, rememberWelcomed, saveGuestLogbook } fr
 // No server in these tests: every call answers "not signed in", so the app runs as a guest.
 beforeEach(() => {
   localStorage.clear();
+  window.history.replaceState(null, '', '/');
   vi.stubGlobal(
     'fetch',
     vi.fn(async () => ({ ok: false, status: 401, json: async () => ({ error: 'Sign in to continue.' }) })),
@@ -200,5 +201,62 @@ describe('opening the app', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('a forgotten password', () => {
+  const answer = (status: number, body: unknown) => ({ ok: status < 400, status, json: async () => body }) as Response;
+
+  it('asks for a reset link from the sign-in form, without saying whether the profile exists', async () => {
+    vi.mocked(fetch).mockImplementation(async (url) => (url === '/api/auth/forgot' ? answer(204, null) : answer(401, {})));
+    render(<App />);
+    fireEvent.click(screen.getByRole('tab', { name: 'Sign in' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Forgot your password?' }));
+    expect(screen.getByRole('heading', { name: 'Forgot your password?' })).toBeTruthy();
+    expect(screen.queryByLabelText('Password')).toBeNull();
+
+    type('Email', 'student@example.com');
+    fireEvent.click(screen.getByRole('button', { name: 'Send reset link' }));
+    expect(await screen.findByText(/If there’s a profile for student@example\.com, a link/)).toBeTruthy();
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith(
+      '/api/auth/forgot',
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ email: 'student@example.com' }) }),
+    );
+  });
+
+  it('opens the emailed link on a new password, and signs in with it', async () => {
+    window.history.replaceState(null, '', '/#reset=tok-123');
+    vi.mocked(fetch).mockImplementation(async (url) => {
+      if (url === '/api/auth/reset') return answer(200, { user: { email: 'student@example.com' } });
+      if (url === '/api/logbook') return answer(200, emptyLogbook());
+      return answer(200, { ok: true });
+    });
+    render(<App />);
+    expect(screen.getByRole('heading', { name: 'Choose a new password' })).toBeTruthy();
+    // The token is out of the address bar as soon as it has been read.
+    await waitFor(() => expect(window.location.hash).toBe(''));
+
+    type('New password', 'a new long password');
+    fireEvent.click(screen.getByRole('button', { name: 'Save new password' }));
+    expect(await screen.findByText('Saved to your profile')).toBeTruthy();
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith(
+      '/api/auth/reset',
+      expect.objectContaining({ body: JSON.stringify({ token: 'tok-123', password: 'a new long password' }) }),
+    );
+  });
+
+  it('says when the link has expired, and goes back to the app', async () => {
+    window.history.replaceState(null, '', '/#reset=old');
+    vi.mocked(fetch).mockImplementation(async (url) =>
+      url === '/api/auth/reset'
+        ? answer(400, { error: 'This link has expired or has already been used. Ask for a new one.' })
+        : answer(401, {}),
+    );
+    render(<App />);
+    type('New password', 'a new long password');
+    fireEvent.click(screen.getByRole('button', { name: 'Save new password' }));
+    expect(await screen.findByText(/This link has expired/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Back to Hours to Go' }));
+    expect(screen.getByRole('heading', { name: 'Create your free profile' })).toBeTruthy();
   });
 });

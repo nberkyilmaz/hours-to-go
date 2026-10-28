@@ -34,12 +34,16 @@ hours-to-go/
 │       ├── Welcome.tsx         a first visit: what the app is, the sign-up form, go on without (D27)
 │       ├── Logbook.tsx         empty state, totals tiles, column totals, by-type table, entry list/cards
 │       ├── EntryForm.tsx       the flight / FTD / paper-totals form and its questions
-│       ├── Profile.tsx         AuthForm (also on the welcome), licences held, medical, export / import, delete
+│       ├── Profile.tsx         AuthForm: sign up, sign in, forgot password (also on the welcome);
+│       │                           licences held, medical, export / import, delete
+│       ├── ResetPassword.tsx   where an emailed reset link opens: choose a new password (D28)
+│       ├── useSlow.ts          true once a request has taken 4 s, to say the server is waking
 │       └── icons.tsx
 ├── server/
 │   ├── main.ts                 reads env, picks the database, starts Fastify
 │   ├── app.ts                  routes, CORS, session hook, health check, static files, SPA fallback
-│   ├── auth.ts                 scrypt hashing, session tokens, sign-in throttle
+│   ├── auth.ts                 scrypt hashing, random tokens (sessions, reset links), throttles
+│   ├── mail.ts                 Resend over HTTP, printing on a laptop, the reset email (D28)
 │   └── db.ts                   Store: every SQL statement in the project; pg or PGlite
 ├── test/
 │   ├── web/                    jsdom: fixtures, entry, rules, app as guest, app signed in
@@ -153,6 +157,8 @@ All JSON. Errors are `{ "error": "message for the pilot" }`. The session cookie 
 | `POST /api/auth/signup` | `{ email, password }` | 400 bad email or password under 8 characters, 409 email taken; sets the cookie |
 | `POST /api/auth/login` | `{ email, password }` | 401 wrong, 429 after 10 failures in 15 minutes per IP and email |
 | `POST /api/auth/logout` | | deletes the session row, clears the cookie, 204 |
+| `POST /api/auth/forgot` | `{ email }` | 204 whether or not the email has a profile; the link is made and emailed after replying. 429 after 3 an hour to one email or 10 from one IP; 503 without `RESEND_API_KEY` and `APP_URL` |
+| `POST /api/auth/reset` | `{ token, password }` | 400 short password, or a link that is unknown, used or over an hour old; otherwise sets the password, ends every session and sets the cookie for a new one |
 | `GET /api/me` | | `{ user: { email } }` or 401; extends the session to 90 days from now and sets the cookie again |
 | `GET /api/health` | | `{ ok: true }`, or 503 when the database doesn't answer; Render's health check |
 | `DELETE /api/account` | `{ password }` | deletes the user; entries, profile and sessions cascade; 204 |
@@ -180,6 +186,7 @@ interface (`query`, `transaction`, `close`), so the SQL is the same everywhere.
 ```sql
 users    (id text pk, email text unique, password_hash text, created_at timestamptz)
 sessions (token_hash text pk, user_id → users on delete cascade, expires_at bigint /* ms */)
+password_resets (token_hash text pk, user_id → users on delete cascade, expires_at bigint /* ms */)
 entries  (user_id → users on delete cascade, id text, data jsonb, pk (user_id, id))
 profiles (user_id pk → users on delete cascade, data jsonb)
 ```
@@ -188,7 +195,9 @@ The tables are created with `create table if not exists` when the store opens; t
 migrations yet, so a change to an existing table needs one. Entry and profile JSON is passed
 through the same parsers as files, so old formats are converted when read. A merge inserts the
 whole incoming logbook in one statement (`jsonb_array_elements`), inside one transaction. Expired
-sessions are swept whenever a new one is created.
+sessions are swept whenever a new one is created, and expired reset links whenever a new one is.
+A reset runs in one transaction: delete the link (`returning user_id`, so it can be spent once),
+set the password, delete the profile's other links and every session.
 
 ## Client state (`src/useLogbook.ts`)
 
@@ -197,6 +206,9 @@ sessions are swept whenever a new one is created.
   guest; anything else means guest with an "offline" banner. Without the flag the app starts as a
   guest at once and calls nothing (D26). Entering a profile sets the flag; signing out, deleting
   the profile or a 401 clears it.
+- A page opened at `#reset=<token>` shows `ResetPassword` before anything else, and takes the
+  token out of the address bar. A `hashchange` does the same, for a link pasted into a tab that
+  already has the app open. `resetPassword` signs in like `signIn`.
 - `welcomed` (localStorage `hours-to-go/welcomed`, or the signed-in flag): until it is set, a
   guest with nothing logged sees the welcome screen instead of the tabs (D27). Entering a profile
   or "Continue without a profile" sets it. `AuthForm` pings `/api/health` on the first focus

@@ -25,6 +25,10 @@ npm run dev:web     # app on http://localhost:5173, /api proxied to 8787
 Without `dev:api` the app still opens: a new browser on the welcome screen, a browser that was
 signed in as a guest with a "can't reach the server" banner.
 
+**Password-reset emails** aren't sent in development: `dev:api` prints them in its terminal,
+link and all (`http://localhost:5173/#reset=…`). Open the link in the browser to try the reset
+screen.
+
 **On a phone on the same Wi-Fi:** run `npm run dev:web -- --host` and open the "Network" address it
 prints. Session cookies aren't marked Secure in development, so signing in works over plain http.
 
@@ -42,7 +46,7 @@ prints. Session cookies aren't marked Secure in development, so signing in works
 
 ```sh
 npm run typecheck   # both tsconfigs; must be clean
-npm test            # 88 tests: rules, logbook model, server API, first visit and guest, signed in
+npm test            # 98 tests: rules, logbook model, server API, first visit and guest, signed in
 ```
 
 The server tests run in Node (`// @vitest-environment node` at the top of the file), each on a

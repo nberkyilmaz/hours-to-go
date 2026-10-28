@@ -8,6 +8,7 @@ the same domain. Three pieces, each where it fits best, all on free plans:
 | The page | GitHub Pages | `https://nberkyilmaz.com/hours-to-go/` | free | — |
 | The API | Render, Docker web service | `https://hours-to-go-api.nberkyilmaz.com` | free (sleeps), or $7 to stay awake | — |
 | Accounts and logbooks | Neon Postgres | — | free | — |
+| Password-reset emails | Resend | from `no-reply@nberkyilmaz.com` | free (3,000 a month, 100 a day) | — |
 | The domain | Cloudflare | `nberkyilmaz.com` | — | already paid for the portfolio; nothing extra for this project |
 
 ## Why it is split this way
@@ -26,8 +27,8 @@ the same domain. Three pieces, each where it fits best, all on free plans:
 
 ## Steps, in this order
 
-Steps 1 to 3 are this project's. Step 4 is the domain itself, shared with departure-brief, and is
-done once for both. Nothing here can be done for you: each needs your accounts.
+Step 4 is the domain itself, shared with departure-brief, and is done once for both; the rest are
+this project's. Nothing here can be done for you: each needs your accounts.
 
 ### 1. Neon: the database
 
@@ -102,7 +103,23 @@ moves the page).
 3. **Actions → Pages → Run workflow**. Later pushes to `main` that touch the page publish it
    by themselves.
 
-### 6. Check it as a pilot would
+### 6. Resend: the password-reset email
+
+nberkyilmaz.com already has Resend's DNS records at Cloudflare (`resend._domainkey`, `send`).
+
+1. Sign in at <https://resend.com> → **Domains**: `nberkyilmaz.com` must say **Verified**. If it
+   isn't there, add it, and let Resend add its records at Cloudflare.
+2. **API Keys → Create API Key**: name `hours-to-go`, permission **Sending access**, domain
+   `nberkyilmaz.com`. Copy it; Resend shows it once.
+3. Render → `hours-to-go-api` → **Environment**: add `RESEND_API_KEY` with that key and save.
+   `MAIL_FROM` and `APP_URL` come from `render.yaml`. The service redeploys.
+4. On the page: Profile → Sign in → **Forgot your password?** with your own email. The email
+   arrives from `no-reply@nberkyilmaz.com` within a minute; check spam the first time.
+
+Until the key is set, asking for a link says resetting "isn't available yet", and Render's log
+says "Password reset emails are off".
+
+### 7. Check it as a pilot would
 
 On a phone, open <https://nberkyilmaz.com/hours-to-go/>, create a profile, log a flight, add it
 to the home screen. On a computer, sign in: the same flight is there.

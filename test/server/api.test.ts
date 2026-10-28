@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import pg from 'pg';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildApp } from '../../server/app';
+import type { Mail } from '../../server/mail';
 import { blankEntry } from '../../src/model/entry';
 
 // Every test runs on PGlite. Production's database goes through `pg` instead, so when
@@ -18,7 +19,7 @@ async function emptied(url: string): Promise<string> {
   const client = new pg.Client({ connectionString: url });
   await client.connect();
   try {
-    await client.query('drop table if exists sessions, entries, profiles, users');
+    await client.query('drop table if exists password_resets, sessions, entries, profiles, users');
   } finally {
     await client.end();
   }
@@ -26,6 +27,9 @@ async function emptied(url: string): Promise<string> {
 }
 
 let app: FastifyInstance;
+/** Emails the app sent, instead of sending them. */
+let sent: Mail[] = [];
+const APP_URL = 'https://nberkyilmaz.test/hours-to-go/';
 
 async function signUp(email = 'student@example.com', password = 'correct horse') {
   const res = await app.inject({ method: 'POST', url: '/api/auth/signup', payload: { email, password } });
@@ -38,7 +42,15 @@ const DAY = 86_400_000;
 
 describe.each(DATABASES)('on $name', ({ url }) => {
   beforeEach(async () => {
-    app = await buildApp({ database: await emptied(url), secureCookies: false });
+    sent = [];
+    app = await buildApp({
+      database: await emptied(url),
+      secureCookies: false,
+      appUrl: APP_URL,
+      sendMail: async (mail) => {
+        sent.push(mail);
+      },
+    });
   });
 
   afterEach(async () => {
@@ -188,6 +200,92 @@ describe.each(DATABASES)('on $name', ({ url }) => {
       expect(res.statusCode).toBe(200);
       expect(res.json()).toEqual({ ok: true });
     });
+  });
+
+  describe('a forgotten password', () => {
+    const forgot = (email: string) => app.inject({ method: 'POST', url: '/api/auth/forgot', payload: { email } });
+    const reset = (token: string, password: string) =>
+      app.inject({ method: 'POST', url: '/api/auth/reset', payload: { token, password } });
+    const login = (password: string) =>
+      app.inject({ method: 'POST', url: '/api/auth/login', payload: { email: 'student@example.com', password } });
+    /** The token from the emailed link, which carries it after `#reset=`. */
+    const tokenFrom = (mail: Mail) => {
+      const link = /https:\/\/\S+#reset=([\w-]+)/.exec(mail.text);
+      expect(link?.[0].startsWith(APP_URL)).toBe(true);
+      return link![1]!;
+    };
+
+    it('emails a link, which sets a new password and signs in', async () => {
+      await signUp();
+      expect((await forgot(' Student@Example.com')).statusCode).toBe(204);
+      await vi.waitFor(() => expect(sent).toHaveLength(1));
+      expect(sent[0]!.to).toBe('student@example.com');
+      expect(sent[0]!.html).toContain(`href="${APP_URL}#reset=`);
+
+      const res = await reset(tokenFrom(sent[0]!), 'a new long password');
+      expect(res.statusCode).toBe(200);
+      expect(res.json()).toEqual({ user: { email: 'student@example.com' } });
+      const cookies = { htg_session: res.cookies.find((c) => c.name === 'htg_session')!.value };
+      expect((await app.inject({ method: 'GET', url: '/api/me', cookies })).statusCode).toBe(200);
+      expect((await login('correct horse')).statusCode).toBe(401);
+      expect((await login('a new long password')).statusCode).toBe(200);
+    });
+
+    it('answers the same for an email with no profile, and sends nothing', async () => {
+      await signUp();
+      expect((await forgot('nobody@example.com')).statusCode).toBe(204);
+      expect((await forgot('student@example.com')).statusCode).toBe(204);
+      await vi.waitFor(() => expect(sent).toHaveLength(1));
+      expect(sent[0]!.to).toBe('student@example.com');
+    });
+
+    it('works once, and signs out every other device', async () => {
+      const { cookies: before } = await signUp();
+      await forgot('student@example.com');
+      await vi.waitFor(() => expect(sent).toHaveLength(1));
+      const token = tokenFrom(sent[0]!);
+      expect((await reset(token, 'a new long password')).statusCode).toBe(200);
+      expect((await app.inject({ method: 'GET', url: '/api/me', cookies: before })).statusCode).toBe(401);
+      const again = await reset(token, 'another long password');
+      expect(again.statusCode).toBe(400);
+      expect(again.json().error).toMatch(/expired or has already been used/);
+    });
+
+    it('stops working after an hour, when a new link can be asked for', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      await signUp();
+      await forgot('student@example.com');
+      await vi.waitFor(() => expect(sent).toHaveLength(1));
+      vi.setSystemTime(Date.now() + 61 * 60_000);
+      expect((await reset(tokenFrom(sent[0]!), 'a new long password')).statusCode).toBe(400);
+      await forgot('student@example.com');
+      await vi.waitFor(() => expect(sent).toHaveLength(2));
+      expect((await reset(tokenFrom(sent[1]!), 'a new long password')).statusCode).toBe(200);
+    });
+
+    it('refuses a short new password and a made-up link', async () => {
+      expect((await reset('made-up', 'short')).statusCode).toBe(400);
+      expect((await reset('made-up', 'long enough password')).statusCode).toBe(400);
+    });
+
+    it('sends at most three emails an hour to one address', async () => {
+      await signUp();
+      for (let i = 0; i < 3; i++) expect((await forgot('student@example.com')).statusCode).toBe(204);
+      expect((await forgot('student@example.com')).statusCode).toBe(429);
+      await vi.waitFor(() => expect(sent).toHaveLength(3));
+    });
+  });
+});
+
+describe('a server that can’t send email', () => {
+  it('says resetting is unavailable rather than pretending to send', async () => {
+    const api = await buildApp({ database: 'memory://', secureCookies: false });
+    try {
+      const res = await api.inject({ method: 'POST', url: '/api/auth/forgot', payload: { email: 'student@example.com' } });
+      expect(res.statusCode).toBe(503);
+    } finally {
+      await api.close();
+    }
   });
 });
 

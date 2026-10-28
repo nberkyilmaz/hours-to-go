@@ -32,17 +32,19 @@ export function Welcome({ lb }: { lb: LogbookState }) {
 
       <main className="welcome-main">
         <section className="card welcome-card" aria-labelledby="welcome-title">
-          {tab === 'signup' ? (
+          {tab === 'signup' && (
             <>
               <h2 id="welcome-title">Create your free profile</h2>
               <p className="muted">Your logbook is saved to your profile, so it’s safe, and it’s the same on your phone and your computer.</p>
             </>
-          ) : (
+          )}
+          {tab === 'signin' && (
             <>
               <h2 id="welcome-title">Welcome back</h2>
               <p className="muted">Sign in to open your logbook.</p>
             </>
           )}
+          {tab === 'forgot' && <h2 id="welcome-title">Forgot your password?</h2>}
           <AuthForm lb={lb} tab={tab} onTabChange={setTab} />
           <div className="welcome-skip">
             <button type="button" className="btn quiet" onClick={lb.skipWelcome}>

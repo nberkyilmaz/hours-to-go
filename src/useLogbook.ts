@@ -44,6 +44,8 @@ export interface LogbookState {
   /** These throw an ApiError so the form can show the message next to the fields. */
   signUp: (email: string, password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
+  /** Sets a new password with the token from an emailed link, and signs in with it. */
+  resetPassword: (token: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   deleteAccount: (password: string) => Promise<void>;
 }
@@ -223,6 +225,11 @@ export function useLogbook(): LogbookState {
     enterAccount(user.email, await api.logbook());
   };
 
+  const resetPassword = async (token: string, password: string) => {
+    const { user } = await api.resetPassword(token, password);
+    enterAccount(user.email, await api.logbook());
+  };
+
   const signOut = async () => {
     await api.logout();
     becomeGuest(false);
@@ -250,6 +257,7 @@ export function useLogbook(): LogbookState {
     eraseGuest,
     signUp,
     signIn,
+    resetPassword,
     signOut,
     deleteAccount,
   };

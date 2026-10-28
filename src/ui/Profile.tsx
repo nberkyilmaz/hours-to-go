@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { ApiError, api } from '../api';
 import { today } from '../model/entry';
 import { MEDICAL_LABEL, type Medical, type Profile } from '../model/profile';
 import { hasContent, parseLogbook, type Logbook } from '../model/store';
 import { GOALS, STANDARD_421_URL } from '../rules/goals';
 import type { LogbookState } from '../useLogbook';
+import { useSlow } from './useSlow';
 
 export function ProfileView({ lb }: { lb: LogbookState }) {
   const { book, mode } = lb;
@@ -90,7 +91,7 @@ export function ProfileView({ lb }: { lb: LogbookState }) {
   );
 }
 
-export type AuthTab = 'signup' | 'signin';
+export type AuthTab = 'signup' | 'signin' | 'forgot';
 
 interface AuthFormProps {
   lb: LogbookState;
@@ -99,18 +100,30 @@ interface AuthFormProps {
   onTabChange?: (tab: AuthTab) => void;
 }
 
-/** Create a profile or sign in. On the Profile tab, and on the welcome screen a new browser opens to. */
+const SUBMIT: Record<AuthTab, string> = { signup: 'Create profile', signin: 'Sign in', forgot: 'Send reset link' };
+
+/**
+ * Create a profile, sign in, or ask for a password-reset link. On the Profile tab, and on the
+ * welcome screen a new browser opens to.
+ */
 export function AuthForm({ lb, tab: givenTab, onTabChange }: AuthFormProps) {
   const [ownTab, setOwnTab] = useState<AuthTab>('signup');
   const tab = givenTab ?? ownTab;
-  const setTab = onTabChange ?? setOwnTab;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [slow, setSlow] = useState(false);
+  /** Where a reset link was asked for, once it has been. */
+  const [sentTo, setSentTo] = useState<string | null>(null);
+  const slow = useSlow(busy);
   const local = hasContent(lb.guest);
   const offline = lb.mode.kind === 'guest' && lb.mode.offline;
+
+  const setTab = (next: AuthTab) => {
+    setError(null);
+    setSentTo(null);
+    (onTabChange ?? setOwnTab)(next);
+  };
 
   // A sleeping server takes up to a minute to wake: start it as soon as the pilot starts on the
   // form, so it is up by the time they have typed. Not on sight: a visitor who only looks
@@ -122,21 +135,17 @@ export function AuthForm({ lb, tab: givenTab, onTabChange }: AuthFormProps) {
     api.health().catch(() => {});
   };
 
-  useEffect(() => {
-    if (!busy) {
-      setSlow(false);
-      return;
-    }
-    const timer = setTimeout(() => setSlow(true), 4000);
-    return () => clearTimeout(timer);
-  }, [busy]);
-
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setBusy(true);
     try {
-      await (tab === 'signup' ? lb.signUp(email, password) : lb.signIn(email, password));
+      if (tab === 'forgot') {
+        await api.forgotPassword(email);
+        setSentTo(email.trim());
+      } else {
+        await (tab === 'signup' ? lb.signUp(email, password) : lb.signIn(email, password));
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong. Try again.');
     } finally {
@@ -147,48 +156,75 @@ export function AuthForm({ lb, tab: givenTab, onTabChange }: AuthFormProps) {
   return (
     <>
       {offline && <p className="warn-text">Can’t reach the server right now, so signing in won’t work until the connection is back.</p>}
-      <div className="segmented" role="tablist" aria-label="Profile">
-        <button type="button" role="tab" aria-selected={tab === 'signup'} className={tab === 'signup' ? 'is-on' : ''} onClick={() => setTab('signup')}>
-          Create profile
-        </button>
-        <button type="button" role="tab" aria-selected={tab === 'signin'} className={tab === 'signin' ? 'is-on' : ''} onClick={() => setTab('signin')}>
-          Sign in
-        </button>
-      </div>
-      <form className="auth" onSubmit={submit} onFocus={wake}>
-        <div className="field">
-          <label htmlFor="auth-email">Email</label>
-          <input id="auth-email" type="email" autoComplete="email" inputMode="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+      {tab !== 'forgot' && (
+        <div className="segmented" role="tablist" aria-label="Profile">
+          <button type="button" role="tab" aria-selected={tab === 'signup'} className={tab === 'signup' ? 'is-on' : ''} onClick={() => setTab('signup')}>
+            Create profile
+          </button>
+          <button type="button" role="tab" aria-selected={tab === 'signin'} className={tab === 'signin' ? 'is-on' : ''} onClick={() => setTab('signin')}>
+            Sign in
+          </button>
         </div>
-        <div className="field">
-          <label htmlFor="auth-password">Password</label>
-          <input
-            id="auth-password"
-            type="password"
-            autoComplete={tab === 'signup' ? 'new-password' : 'current-password'}
-            minLength={tab === 'signup' ? 8 : undefined}
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          {tab === 'signup' && <p className="hint">At least 8 characters.</p>}
+      )}
+      {sentTo ? (
+        <div className="auth">
+          <p className="banner ok" role="status">
+            If there’s a profile for {sentTo}, a link to choose a new password is on its way. It works for an hour. If it hasn’t
+            arrived in a few minutes, check your spam folder.
+          </p>
+          <button type="button" className="link" onClick={() => setTab('signin')}>
+            Back to sign in
+          </button>
         </div>
-        {error && (
-          <p className="field-error" role="alert">
-            {error}
-          </p>
-        )}
-        {tab === 'signup' && local && <p className="hint">Everything you’ve logged on this device moves into your new profile.</p>}
-        {tab === 'signin' && local && <p className="hint">After you sign in you can add what’s on this device to your profile.</p>}
-        <button type="submit" className="btn primary" disabled={busy}>
-          {busy ? 'One moment…' : tab === 'signup' ? 'Create profile' : 'Sign in'}
-        </button>
-        {slow && (
-          <p className="hint" role="status">
-            The server is waking up. If nobody has used Hours to Go for a while, this takes up to a minute.
-          </p>
-        )}
-      </form>
+      ) : (
+        <form className="auth" onSubmit={submit} onFocus={wake}>
+          {tab === 'forgot' && <p className="hint">Enter the email for your profile, and we’ll send you a link to choose a new password.</p>}
+          <div className="field">
+            <label htmlFor="auth-email">Email</label>
+            <input id="auth-email" type="email" autoComplete="email" inputMode="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          </div>
+          {tab !== 'forgot' && (
+            <div className="field">
+              <label htmlFor="auth-password">Password</label>
+              <input
+                id="auth-password"
+                type="password"
+                autoComplete={tab === 'signup' ? 'new-password' : 'current-password'}
+                minLength={tab === 'signup' ? 8 : undefined}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              {tab === 'signup' && <p className="hint">At least 8 characters.</p>}
+            </div>
+          )}
+          {error && (
+            <p className="field-error" role="alert">
+              {error}
+            </p>
+          )}
+          {tab === 'signup' && local && <p className="hint">Everything you’ve logged on this device moves into your new profile.</p>}
+          {tab === 'signin' && local && <p className="hint">After you sign in you can add what’s on this device to your profile.</p>}
+          <button type="submit" className="btn primary" disabled={busy}>
+            {busy ? 'One moment…' : SUBMIT[tab]}
+          </button>
+          {slow && (
+            <p className="hint" role="status">
+              The server is waking up. If nobody has used Hours to Go for a while, this takes up to a minute.
+            </p>
+          )}
+          {tab === 'signin' && (
+            <button type="button" className="link" onClick={() => setTab('forgot')}>
+              Forgot your password?
+            </button>
+          )}
+          {tab === 'forgot' && (
+            <button type="button" className="link" onClick={() => setTab('signin')}>
+              Back to sign in
+            </button>
+          )}
+        </form>
+      )}
     </>
   );
 }

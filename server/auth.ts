@@ -26,8 +26,8 @@ export async function verifyPassword(password: string, stored: string): Promise<
   return timingSafeEqual(actual, expected);
 }
 
-/** A session token for the cookie, and the hash that is all the database ever sees. */
-export function newSessionToken(): { token: string; hash: string } {
+/** A random token, for the session cookie or an emailed link, and the hash that is all the database ever sees. */
+export function newToken(): { token: string; hash: string } {
   const token = randomBytes(32).toString('base64url');
   return { token, hash: hashToken(token) };
 }

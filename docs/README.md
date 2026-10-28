@@ -19,7 +19,9 @@ is, what went wrong along the way, and what is still open.
   Transport Canada licences and ratings, profiles (email and password) with a guest mode,
   phone layout, home-screen install. A first visit opens on a welcome that recommends a free
   profile, and the app has its own "glass cockpit" look (graphite and cyan, B612 headings).
-- `npm run typecheck` is clean and `npm test` passes 88 tests in 5 files.
+- A forgotten password is reset by an emailed link (Resend), once `RESEND_API_KEY` is set in
+  Render.
+- `npm run typecheck` is clean and `npm test` passes 98 tests in 5 files.
 - Source at <https://github.com/nberkyilmaz/hours-to-go> (public, branch `main`).
 - Live at <https://nberkyilmaz.com/hours-to-go/> (page on GitHub Pages, API on Render at
   `hours-to-go-api.nberkyilmaz.com`, Postgres on Neon). What's left over from going live is at the

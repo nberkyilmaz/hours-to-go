@@ -28,8 +28,8 @@ These are interpretations the app shows in its notes; the owner's FTU can settle
 2. **Backups** of that database, and a tested restore. Neon's free plan keeps only a short restore
    window. A scheduled `pg_dump` needs somewhere private to put it: these are personal records,
    so not a public repository's artifacts.
-3. **Password reset.** Needs an email provider. Until then a forgotten password means a new profile,
-   which is why Export sits on the Profile screen.
+3. ~~Password reset.~~ Done: an emailed link through Resend (D28). Works once
+   `RESEND_API_KEY` is set in Render ([deploy.md](deploy.md), step 6).
 4. ~~HTTPS and a domain.~~ Done: `nberkyilmaz.com/hours-to-go/` and
    `hours-to-go-api.nberkyilmaz.com`, certificates from GitHub and Render, HTTPS enforced.
 5. **A privacy note and terms**: what is stored (email, logbook), where (Neon, AWS US East 2, Ohio,
@@ -66,8 +66,8 @@ These are interpretations the app shows in its notes; the owner's FTU can settle
 - Co-pilot cross-country isn't a column, so the ATPL's co-pilot alternative isn't counted.
 - Age, medical expiry, written-exam validity windows and flight-test 12-month windows aren't checked.
   The exam checklist asks for the right medical category but not its expiry date.
-- The sign-in throttle is in memory, so it resets on restart and doesn't work across several
-  servers. On Render's free plan it also resets every time the service sleeps.
+- The sign-in and reset-email throttles are in memory, so they reset on restart and don't work
+  across several servers. On Render's free plan they also reset every time the service sleeps.
 - No service worker: the home-screen app needs a connection to open.
 - On the free plan the API sleeps. A signed-in pilot opening the app can wait up to a minute (D26).
 - Safari keeps the session cookie only 7 days (D25). The app renews it on every open, so this
