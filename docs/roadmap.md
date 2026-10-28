@@ -2,16 +2,15 @@
 
 ## Waiting on the owner
 
-**Putting it live at <https://nberkyilmaz.com/hours-to-go/>.** The code, the Render blueprint and
-the Pages workflow are ready; what is left needs the owner's accounts. In order, from
-[deploy.md](deploy.md):
+**Live at <https://nberkyilmaz.com/hours-to-go/> since 2026-10-28.** Left over from going live:
 
-1. A Neon database, and its connection string.
-2. The Render service from `render.yaml`, with that string as `DATABASE_URL`.
-3. `hours-to-go-api.nberkyilmaz.com`: custom domain in Render, CNAME at Cloudflare (DNS only).
-4. The domain on the user site `nberkyilmaz.github.io`: shared with departure-brief, prepared
-   locally at `C:\Users\canada\Desktop\Dev\nberkyilmaz.github.io`, not on GitHub yet.
-5. In this repository: Pages source "GitHub Actions", the `API_URL` variable, run the workflow.
+1. **Deploy only after the tests pass.** Render deploys every push to `main` at once, even one
+   whose CI fails. Render → hours-to-go-api → Settings → Build & Deploy → Auto-Deploy → "After CI
+   checks pass" (and `autoDeployTrigger: checksPass` in `render.yaml`, so a re-sync keeps it).
+2. **Verify `nberkyilmaz.com` on the GitHub account** (Settings → Pages → Add a domain, a TXT
+   record at Cloudflare), so no other account can claim it or a subdomain.
+3. **The landing page's screenshot of Hours to Go** (`assets/hours-to-go.webp` in the user site)
+   shows the look before 2026-10-28; the departure-brief session offered to retake it.
 
 The logbook-photo import was dropped by the owner (decision D24); pilots type their totals in.
 
@@ -31,9 +30,8 @@ These are interpretations the app shows in its notes; the owner's FTU can settle
    so not a public repository's artifacts.
 3. **Password reset.** Needs an email provider. Until then a forgotten password means a new profile,
    which is why Export sits on the Profile screen.
-4. ~~HTTPS and a domain.~~ Done in code: `nberkyilmaz.com/hours-to-go/` and
-   `hours-to-go-api.nberkyilmaz.com`, certificates from GitHub and Render. Live once the owner's
-   steps above are done.
+4. ~~HTTPS and a domain.~~ Done: `nberkyilmaz.com/hours-to-go/` and
+   `hours-to-go-api.nberkyilmaz.com`, certificates from GitHub and Render, HTTPS enforced.
 5. **A privacy note and terms**: what is stored (email, logbook), where (Neon, AWS US East 2, Ohio,
    so in the United States), how to delete it (Profile → Delete my profile already removes everything).
 6. **Rate limits beyond sign-in** if it's opened to the public (sign-ups, merges).

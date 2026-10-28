@@ -79,6 +79,29 @@ export function rememberSignedIn(signedIn: boolean): void {
   }
 }
 
+const WELCOMED_KEY = 'hours-to-go/welcomed';
+
+/**
+ * Whether this browser has been past the welcome screen, by signing in or by choosing to
+ * go on without a profile. Blocked storage reads as yes: a welcome that came back on every
+ * visit would be worse than none.
+ */
+export function wasWelcomed(): boolean {
+  try {
+    return localStorage.getItem(WELCOMED_KEY) === '1';
+  } catch {
+    return true;
+  }
+}
+
+export function rememberWelcomed(): void {
+  try {
+    localStorage.setItem(WELCOMED_KEY, '1');
+  } catch {
+    // Nothing to do: wasWelcomed() already answers yes when storage is blocked.
+  }
+}
+
 /** True when a guest logbook holds anything worth keeping. */
 export function hasContent(book: Logbook): boolean {
   const p = book.profile;

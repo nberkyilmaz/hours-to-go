@@ -12,7 +12,7 @@ import {
   type Entry,
 } from '../model/entry';
 import type { FormLayout } from './EntryForm';
-import { PlusIcon } from './icons';
+import { BookIcon, PlusIcon } from './icons';
 
 interface Props {
   entries: readonly Entry[];
@@ -90,6 +90,33 @@ export function LogbookView({ entries, onNew, onEdit, onDelete }: Props) {
     ['Landings day / night', `${sums.dayLandings} / ${sums.nightLandings}`],
   ];
 
+  // Nothing logged yet: one card that says where to start, instead of eight totals of 0.0.
+  if (sorted.length === 0) {
+    return (
+      <section className="card empty-state" aria-labelledby="empty-title">
+        <span className="empty-icon">
+          <BookIcon />
+        </span>
+        <h2 id="empty-title">No flights logged yet</h2>
+        <p className="muted">
+          Already flying? Start with the totals from your paper logbook, so your progress counts from where you are. Then log each flight as
+          you fly it.
+        </p>
+        <div className="empty-actions">
+          <button type="button" className="btn primary" onClick={() => onNew('forward')}>
+            <PlusIcon /> Add paper logbook totals
+          </button>
+          <button type="button" className="btn" onClick={() => onNew('flight')}>
+            Log a flight
+          </button>
+          <button type="button" className="btn" onClick={() => onNew('ftd')}>
+            Log FTD session
+          </button>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <div className="stack">
       <div className="log-actions">
@@ -100,7 +127,7 @@ export function LogbookView({ entries, onNew, onEdit, onDelete }: Props) {
           Log FTD session
         </button>
         <button type="button" className="btn" onClick={() => onNew('forward')}>
-          Add totals from your paper logbook
+          Add paper logbook totals
         </button>
       </div>
 
@@ -113,114 +140,107 @@ export function LogbookView({ entries, onNew, onEdit, onDelete }: Props) {
         ))}
       </dl>
 
-      {entries.length > 0 && (
-        <>
-          <details className="card fold">
-            <summary>Every column, laid out like your paper logbook</summary>
-            <div className="paper-totals">
-              {LOG_GROUPS.map((g) => (
-                <div key={g.title} className="paper-group">
-                  <h4>{g.title}</h4>
-                  <dl>
-                    {g.columns.map((c) => (
-                      <div key={c}>
-                        <dt>{COLUMN_LABEL[c]}</dt>
-                        <dd>{show(c, sums[c])}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                </div>
-              ))}
-              <div className="paper-group grand">
-                <h4>Grand total</h4>
-                <p>{formatHours(sums.total)}</p>
-              </div>
+      <details className="card fold">
+        <summary>Every column, laid out like your paper logbook</summary>
+        <div className="paper-totals">
+          {LOG_GROUPS.map((g) => (
+            <div key={g.title} className="paper-group">
+              <h4>{g.title}</h4>
+              <dl>
+                {g.columns.map((c) => (
+                  <div key={c}>
+                    <dt>{COLUMN_LABEL[c]}</dt>
+                    <dd>{show(c, sums[c])}</dd>
+                  </div>
+                ))}
+              </dl>
             </div>
-          </details>
-
-          <details className="card fold">
-            <summary>By aircraft type</summary>
-            <div className="table-scroll">
-              <table className="type-table">
-                <thead>
-                  <tr>
-                    <th scope="col">Type</th>
-                    <th scope="col">Dual</th>
-                    <th scope="col">PIC</th>
-                    <th scope="col">Co-pilot</th>
-                    <th scope="col">Total</th>
-                    <th scope="col">FTD</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {byType.map((t) => (
-                    <tr key={t.label}>
-                      <th scope="row">{t.label}</th>
-                      <td>{h(t.sums.dual)}</td>
-                      <td>{h(t.sums.pic)}</td>
-                      <td>{h(t.sums.copilot)}</td>
-                      <td>{h(t.sums.total)}</td>
-                      <td>{h(t.sums.ftd)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </details>
-        </>
-      )}
-
-      {sorted.length === 0 ? (
-        <p className="empty">No entries yet. Add the totals from your paper logbook first, then log flights as you fly them.</p>
-      ) : (
-        <div className="card log" style={gridStyle}>
-          <div className="log-row log-head" aria-hidden="true">
-            <span>Date</span>
-            <span>Aircraft</span>
-            <span>From → To</span>
-            {listColumns.map((c) => (
-              <span key={c.key} className="num">
-                {c.label}
-              </span>
-            ))}
-            <span className="num">Total</span>
-            <span />
+          ))}
+          <div className="paper-group grand">
+            <h4>Grand total</h4>
+            <p>{formatHours(sums.total)}</p>
           </div>
-          <ul aria-label="Logbook entries">
-            {sorted.map((e) => {
-              const d = derive(e);
-              return (
-                <li key={e.id} className="log-row">
-                  <span className="c-date">{e.date}</span>
-                  <span className="c-aircraft">
-                    {[e.aircraft, e.registration].filter(Boolean).join(' · ') || (e.forward ? 'All types' : '—')}
-                    {e.forward && <span className="badge">Brought forward</span>}
-                    {e.solo && <span className="badge">Solo</span>}
-                    {d.multi > 0 && <span className="badge">ME</span>}
-                  </span>
-                  <span className="c-route">{e.from || e.to ? `${e.from || '—'} → ${e.to || '—'}` : ''}</span>
-                  <span className="c-figures">
-                    {listColumns.map((c) => (
-                      <span key={c.key} className="num" data-label={c.label}>
-                        {c.value(e, d)}
-                      </span>
-                    ))}
-                  </span>
-                  <span className="num c-total">{d.total ? formatHours(d.total) : `${formatHours(e.ftd)} FTD`}</span>
-                  <span className="c-actions">
-                    <button type="button" className="link" onClick={() => onEdit(e)} aria-label={`Edit the ${e.date} entry`}>
-                      Edit
-                    </button>
-                    <button type="button" className="link danger" onClick={() => onDelete(e)} aria-label={`Delete the ${e.date} entry`}>
-                      Delete
-                    </button>
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
         </div>
-      )}
+      </details>
+
+      <details className="card fold">
+        <summary>By aircraft type</summary>
+        <div className="table-scroll">
+          <table className="type-table">
+            <thead>
+              <tr>
+                <th scope="col">Type</th>
+                <th scope="col">Dual</th>
+                <th scope="col">PIC</th>
+                <th scope="col">Co-pilot</th>
+                <th scope="col">Total</th>
+                <th scope="col">FTD</th>
+              </tr>
+            </thead>
+            <tbody>
+              {byType.map((t) => (
+                <tr key={t.label}>
+                  <th scope="row">{t.label}</th>
+                  <td>{h(t.sums.dual)}</td>
+                  <td>{h(t.sums.pic)}</td>
+                  <td>{h(t.sums.copilot)}</td>
+                  <td>{h(t.sums.total)}</td>
+                  <td>{h(t.sums.ftd)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </details>
+
+      <div className="card log" style={gridStyle}>
+        <div className="log-row log-head" aria-hidden="true">
+          <span>Date</span>
+          <span>Aircraft</span>
+          <span>From → To</span>
+          {listColumns.map((c) => (
+            <span key={c.key} className="num">
+              {c.label}
+            </span>
+          ))}
+          <span className="num">Total</span>
+          <span />
+        </div>
+        <ul aria-label="Logbook entries">
+          {sorted.map((e) => {
+            const d = derive(e);
+            return (
+              <li key={e.id} className="log-row">
+                <span className="c-date">{e.date}</span>
+                <span className="c-aircraft">
+                  {[e.aircraft, e.registration].filter(Boolean).join(' · ') ||
+                    (e.forward ? 'All types' : <span className="muted">Aircraft not entered</span>)}
+                  {e.forward && <span className="badge">Brought forward</span>}
+                  {e.solo && <span className="badge">Solo</span>}
+                  {d.multi > 0 && <span className="badge">ME</span>}
+                </span>
+                <span className="c-route">{e.from || e.to ? `${e.from || '—'} → ${e.to || '—'}` : ''}</span>
+                <span className="c-figures">
+                  {listColumns.map((c) => (
+                    <span key={c.key} className="num" data-label={c.label}>
+                      {c.value(e, d)}
+                    </span>
+                  ))}
+                </span>
+                <span className="num c-total">{d.total ? formatHours(d.total) : `${formatHours(e.ftd)} FTD`}</span>
+                <span className="c-actions">
+                  <button type="button" className="link" onClick={() => onEdit(e)} aria-label={`Edit the ${e.date} entry`}>
+                    Edit
+                  </button>
+                  <button type="button" className="link danger" onClick={() => onDelete(e)} aria-label={`Delete the ${e.date} entry`}>
+                    Delete
+                  </button>
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </div>
   );
 }

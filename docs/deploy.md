@@ -79,12 +79,15 @@ account's **user site**, the repository named `nberkyilmaz.github.io`:
 | `departure-brief` | `https://nberkyilmaz.com/departure-brief/` |
 | `hours-to-go` | `https://nberkyilmaz.com/hours-to-go/` |
 
-The user site is already prepared as a local repository at
-`C:\Users\canada\Desktop\Dev\nberkyilmaz.github.io` (a landing page linking both projects). It is
-not on GitHub yet. Push it from there, then follow **"The domain"** in departure-brief's
-`docs/deploy.md`: Settings → Pages → custom domain `nberkyilmaz.com` on the user site, the four
-A and four AAAA records and the `www` CNAME at Cloudflare, all **DNS only**, verify the domain on
-the account, and tick Enforce HTTPS once the certificate is issued. Don't create a second user site.
+Done on 2026-10-28. The user site is <https://github.com/nberkyilmaz/nberkyilmaz.github.io> (the
+landing page linking both projects), with custom domain `nberkyilmaz.com`, the four A and four
+AAAA records and the `www` CNAME at Cloudflare, all **DNS only**, and Enforce HTTPS ticked.
+Details are under **"The domain"** in departure-brief's `docs/deploy.md`. Still to do: verify the
+domain on the account. Don't create a second user site.
+
+**Enforce HTTPS is per project site.** Ticking it on the user site doesn't cover
+`/hours-to-go/`: tick it in this repository's Settings → Pages too. If the tick doesn't stick,
+`gh api -X PUT repos/nberkyilmaz/hours-to-go/pages -F https_enforced=true` sets it.
 
 In this repository, **nothing changes** for the domain: no `CNAME` file, and the path stays
 `/hours-to-go/` (the Pages workflow takes it from the repository name; renaming the repository

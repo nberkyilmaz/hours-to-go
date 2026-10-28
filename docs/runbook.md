@@ -22,7 +22,8 @@ npm run dev:api     # API on http://127.0.0.1:8787, restarts on server changes
 npm run dev:web     # app on http://localhost:5173, /api proxied to 8787
 ```
 
-Without `dev:api` the app still opens, as a guest with a "can't reach the server" banner.
+Without `dev:api` the app still opens: a new browser on the welcome screen, a browser that was
+signed in as a guest with a "can't reach the server" banner.
 
 **On a phone on the same Wi-Fi:** run `npm run dev:web -- --host` and open the "Network" address it
 prints. Session cookies aren't marked Secure in development, so signing in works over plain http.
@@ -32,6 +33,8 @@ prints. Session cookies aren't marked Secure in development, so signing in works
   over, with the server stopped. `DATABASE_URL=memory://` gives a throwaway one instead.
 - A browser that has signed in keeps `hours-to-go/signed-in` in localStorage. Without it the app
   opens as a guest without calling the API at all (decision D26).
+- A browser that has been past the welcome screen keeps `hours-to-go/welcomed` (D27). Remove it,
+  with an empty guest log, to see the welcome again.
 - Guest logbook: the browser's localStorage key `hours-to-go/v1`. Clear site data, or use
   Profile → "Erase this device's logbook".
 
@@ -39,7 +42,7 @@ prints. Session cookies aren't marked Secure in development, so signing in works
 
 ```sh
 npm run typecheck   # both tsconfigs; must be clean
-npm test            # 83 tests: rules, logbook model, server API, app as guest, app signed in
+npm test            # 88 tests: rules, logbook model, server API, first visit and guest, signed in
 ```
 
 The server tests run in Node (`// @vitest-environment node` at the top of the file), each on a
@@ -106,6 +109,7 @@ const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, 
 const p = await phone.newPage();
 p.on('pageerror', (e) => console.error(e));
 await p.goto(base);
+await p.getByRole('button', { name: 'Continue without a profile' }).click(); // a new browser: welcome first
 await p.getByRole('button', { name: 'Logbook', exact: true }).click();
 await p.getByRole('button', { name: 'Log a flight' }).click();
 const save = await p.getByRole('button', { name: 'Save', exact: true }).boundingBox();
@@ -113,6 +117,13 @@ console.log('Save button bottom:', save.y + save.height, 'of 844');   // must be
 await p.screenshot({ path: `${out}/phone-form.png` });
 await browser.close();
 ```
+
+Two things that make a script lie:
+- `getByText('Saved to your profile')` matches regardless of case and inside longer text, so it
+  finds "…saved to your profile, so it's safe…" on the welcome screen at once. Pass
+  `{ exact: true }`.
+- The tabs fade their colours over 0.15 s. A screenshot taken straight after a click shows the old
+  tab still lit; wait a moment first.
 
 Run it against a production build on a spare port with a throwaway database:
 

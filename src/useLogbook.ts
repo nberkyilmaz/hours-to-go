@@ -9,8 +9,10 @@ import {
   loadGuestLogbook,
   mergeLogbooks,
   rememberSignedIn,
+  rememberWelcomed,
   saveGuestLogbook,
   wasSignedIn,
+  wasWelcomed,
   type Logbook,
 } from './model/store';
 
@@ -29,6 +31,9 @@ export interface LogbookState {
   dismissError: () => void;
   /** False when the browser will not let a guest logbook be saved. */
   storageOk: boolean;
+  /** False until this browser has signed in or chosen to go on without a profile. */
+  welcomed: boolean;
+  skipWelcome: () => void;
   /** Each change shows at once and resolves true once saved, or null when saving failed (the error is in `error`). */
   saveEntry: (entry: Entry) => Promise<true | null>;
   removeEntry: (id: string) => Promise<true | null>;
@@ -56,6 +61,8 @@ export function useLogbook(): LogbookState {
   const [guest, setGuest] = useState<Logbook>(loadGuestLogbook);
   const [error, setError] = useState<string | null>(null);
   const [storageOk, setStorageOk] = useState(true);
+  // A browser that signed in before the welcome screen existed has been here already.
+  const [welcomed, setWelcomed] = useState(() => wasWelcomed() || wasSignedIn());
   const modeRef = useRef<Mode>(mode);
   const bookRef = useRef<Logbook>(book);
   // Writes go out one at a time and each reads the state the previous one left.
@@ -84,8 +91,14 @@ export function useLogbook(): LogbookState {
     commit(local);
   };
 
+  const skipWelcome = () => {
+    rememberWelcomed();
+    setWelcomed(true);
+  };
+
   const enterAccount = (email: string, server: Logbook) => {
     rememberSignedIn(true);
+    skipWelcome();
     setMode({ kind: 'account', email });
     commit(server);
     setGuest(loadGuestLogbook());
@@ -227,6 +240,8 @@ export function useLogbook(): LogbookState {
     error,
     dismissError: () => setError(null),
     storageOk,
+    welcomed,
+    skipWelcome,
     saveEntry,
     removeEntry,
     updateProfile,

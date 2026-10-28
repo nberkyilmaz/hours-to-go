@@ -12,7 +12,17 @@ export function ProfileView({ lb }: { lb: LogbookState }) {
     <div className="stack">
       <section className="card pad" aria-labelledby="account-title">
         <h2 id="account-title">Your profile</h2>
-        {mode.kind === 'account' ? <SignedIn lb={lb} email={mode.email} /> : <AuthForm lb={lb} />}
+        {mode.kind === 'account' ? (
+          <SignedIn lb={lb} email={mode.email} />
+        ) : (
+          <>
+            <p className="muted">
+              Right now your logbook is saved in this browser only. Create a free profile to keep it safe and to use it on your phone and
+              your computer.
+            </p>
+            <AuthForm lb={lb} />
+          </>
+        )}
       </section>
 
       <section className="card pad" aria-labelledby="held-title">
@@ -80,19 +90,46 @@ export function ProfileView({ lb }: { lb: LogbookState }) {
   );
 }
 
-function AuthForm({ lb }: { lb: LogbookState }) {
-  const [tab, setTab] = useState<'signup' | 'signin'>('signup');
+export type AuthTab = 'signup' | 'signin';
+
+interface AuthFormProps {
+  lb: LogbookState;
+  /** Given by a screen whose heading changes with the choice; otherwise the form keeps it. */
+  tab?: AuthTab;
+  onTabChange?: (tab: AuthTab) => void;
+}
+
+/** Create a profile or sign in. On the Profile tab, and on the welcome screen a new browser opens to. */
+export function AuthForm({ lb, tab: givenTab, onTabChange }: AuthFormProps) {
+  const [ownTab, setOwnTab] = useState<AuthTab>('signup');
+  const tab = givenTab ?? ownTab;
+  const setTab = onTabChange ?? setOwnTab;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [slow, setSlow] = useState(false);
   const local = hasContent(lb.guest);
   const offline = lb.mode.kind === 'guest' && lb.mode.offline;
 
-  // A sleeping server takes up to a minute to wake: start it now, while the pilot is typing.
-  useEffect(() => {
+  // A sleeping server takes up to a minute to wake: start it as soon as the pilot starts on the
+  // form, so it is up by the time they have typed. Not on sight: a visitor who only looks
+  // shouldn't wake it.
+  const woken = useRef(false);
+  const wake = () => {
+    if (woken.current) return;
+    woken.current = true;
     api.health().catch(() => {});
-  }, []);
+  };
+
+  useEffect(() => {
+    if (!busy) {
+      setSlow(false);
+      return;
+    }
+    const timer = setTimeout(() => setSlow(true), 4000);
+    return () => clearTimeout(timer);
+  }, [busy]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -109,10 +146,6 @@ function AuthForm({ lb }: { lb: LogbookState }) {
 
   return (
     <>
-      <p className="muted">
-        Right now your logbook is saved in this browser only. Create a free profile to keep it safe and to use it on your phone and your
-        computer.
-      </p>
       {offline && <p className="warn-text">Can’t reach the server right now, so signing in won’t work until the connection is back.</p>}
       <div className="segmented" role="tablist" aria-label="Profile">
         <button type="button" role="tab" aria-selected={tab === 'signup'} className={tab === 'signup' ? 'is-on' : ''} onClick={() => setTab('signup')}>
@@ -122,7 +155,7 @@ function AuthForm({ lb }: { lb: LogbookState }) {
           Sign in
         </button>
       </div>
-      <form className="auth" onSubmit={submit}>
+      <form className="auth" onSubmit={submit} onFocus={wake}>
         <div className="field">
           <label htmlFor="auth-email">Email</label>
           <input id="auth-email" type="email" autoComplete="email" inputMode="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -150,6 +183,11 @@ function AuthForm({ lb }: { lb: LogbookState }) {
         <button type="submit" className="btn primary" disabled={busy}>
           {busy ? 'One moment…' : tab === 'signup' ? 'Create profile' : 'Sign in'}
         </button>
+        {slow && (
+          <p className="hint" role="status">
+            The server is waking up. If nobody has used Hours to Go for a while, this takes up to a minute.
+          </p>
+        )}
       </form>
     </>
   );

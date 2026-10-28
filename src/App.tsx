@@ -2,10 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { blankEntry, derive, isFtdOnly, type Entry } from './model/entry';
 import { hasContent } from './model/store';
 import { EntryForm, type FormLayout, type Suggestions } from './ui/EntryForm';
-import { BookIcon, Mark, ProgressIcon, UserIcon } from './ui/icons';
+import { BookIcon, CloudCheckIcon, Mark, ProgressIcon, UserIcon } from './ui/icons';
 import { LogbookView } from './ui/Logbook';
 import { ProfileView } from './ui/Profile';
 import { ProgressView } from './ui/Progress';
+import { Welcome } from './ui/Welcome';
 import { useLogbook } from './useLogbook';
 
 type Tab = 'progress' | 'log' | 'profile';
@@ -16,6 +17,11 @@ const TABS: { id: Tab; label: string; Icon: () => JSX.Element }[] = [
   { id: 'profile', label: 'Profile', Icon: UserIcon },
 ];
 
+/** A new screen starts at its top, not wherever the last one was scrolled to. */
+function toTop() {
+  if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
+}
+
 /** The server on the free plan sleeps when nobody has used it for a while and takes up to a minute to wake. */
 function Loading() {
   const [slow, setSlow] = useState(false);
@@ -25,9 +31,8 @@ function Loading() {
   }, []);
   return (
     <div className="loading" role="status">
-      <span className="row">
-        <Mark /> Loading your logbook…
-      </span>
+      <Mark size={44} />
+      <span className="loading-title">Loading your logbook…</span>
       {slow && <span>If nobody has opened Hours to Go for a while, its server takes up to a minute to wake up.</span>}
     </div>
   );
@@ -63,7 +68,13 @@ export function App() {
   const editEntry = (entry: Entry) =>
     setDraft({ entry, isNew: false, layout: entry.forward ? 'forward' : isFtdOnly(entry) ? 'ftd' : 'flight' });
 
+  // A first visit, with nothing logged yet: recommend a profile before anything else.
+  const welcoming = lb.mode.kind === 'guest' && !lb.mode.offline && !lb.welcomed && !hasContent(lb.guest);
+  // The welcome's buttons are low on a phone, so the app it gives way to would open scrolled.
+  useEffect(toTop, [welcoming, tab]);
+
   if (lb.mode.kind === 'loading') return <Loading />;
+  if (welcoming) return <Welcome lb={lb} />;
 
   const { mode, book } = lb;
   const strandedCount = mode.kind === 'account' && hasContent(lb.guest) ? lb.guest.entries.length : 0;
@@ -83,9 +94,18 @@ export function App() {
             </button>
           ))}
         </nav>
-        <button type="button" className={`save-state${mode.kind === 'account' ? ' is-synced' : ''}`} onClick={() => setTab('profile')}>
-          {mode.kind === 'account' ? 'Saved to your profile' : 'Saved on this device only'}
-        </button>
+        {mode.kind === 'account' ? (
+          <button type="button" className="save-state" onClick={() => setTab('profile')}>
+            <CloudCheckIcon /> Saved to your profile
+          </button>
+        ) : (
+          <div className="topbar-end">
+            <span className="save-state is-local">Saved on this device only</span>
+            <button type="button" className="btn primary small" onClick={() => setTab('profile')}>
+              Create profile
+            </button>
+          </div>
+        )}
       </header>
 
       <main className="main">

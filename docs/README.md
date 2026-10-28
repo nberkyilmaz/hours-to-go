@@ -13,14 +13,15 @@ is, what went wrong along the way, and what is still open.
 | [deploy.md](deploy.md) | Putting it live at nberkyilmaz.com/hours-to-go: GitHub Pages, Render, Neon, the domain, step by step, and what each free plan costs in other ways. |
 | [roadmap.md](roadmap.md) | Open decisions waiting on the owner, next work, known limits, and what must happen before real students use it. |
 
-## State at the last update (2026-10-27)
+## State at the last update (2026-10-28)
 
 - Everything in the root README works: logbook with paper-log columns, progress for nine
   Transport Canada licences and ratings, profiles (email and password) with a guest mode,
-  phone layout, home-screen install.
-- `npm run typecheck` is clean and `npm test` passes 83 tests in 5 files.
+  phone layout, home-screen install. A first visit opens on a welcome that recommends a free
+  profile, and the app has its own "glass cockpit" look (graphite and cyan, B612 headings).
+- `npm run typecheck` is clean and `npm test` passes 88 tests in 5 files.
 - Source at <https://github.com/nberkyilmaz/hours-to-go> (public, branch `main`).
-- Ready to go live at <https://nberkyilmaz.com/hours-to-go/> (page on GitHub Pages, API on
-  Render at `hours-to-go-api.nberkyilmaz.com`, Postgres on Neon), but not deployed yet. The steps
-  waiting on the owner's accounts are at the top of [roadmap.md](roadmap.md).
+- Live at <https://nberkyilmaz.com/hours-to-go/> (page on GitHub Pages, API on Render at
+  `hours-to-go-api.nberkyilmaz.com`, Postgres on Neon). What's left over from going live is at the
+  top of [roadmap.md](roadmap.md).
 - The logbook-photo import was considered and dropped.
