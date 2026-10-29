@@ -11,19 +11,24 @@ is, what went wrong along the way, and what is still open.
 | [transport-canada-rules.md](transport-canada-rules.md) | The Standard 421 requirements as read from the source, paragraph by paragraph, and every place the text needed interpreting. |
 | [runbook.md](runbook.md) | Running, testing, building, checking the UI in a real browser, and the problems you will hit on this Windows machine. |
 | [deploy.md](deploy.md) | Putting it live at nberkyilmaz.com/hours-to-go: GitHub Pages, Render, Neon, the domain, step by step, and what each free plan costs in other ways. |
-| [roadmap.md](roadmap.md) | Open decisions waiting on the owner, next work, known limits, and what must happen before real students use it. |
+| [roadmap.md](roadmap.md) | The plan to going public, step by step; what waits until it has users; questions for the flight school; known limits. |
 
-## State at the last update (2026-10-28)
+## State at the last update (2026-10-29)
 
 - Everything in the root README works: logbook with paper-log columns, progress for nine
   Transport Canada licences and ratings, profiles (email and password) with a guest mode,
   phone layout, home-screen install. A first visit opens on a welcome that recommends a free
   profile, and the app has its own "glass cockpit" look (graphite and cyan, B612 headings).
-- A forgotten password is reset by an emailed link (Resend), once `RESEND_API_KEY` is set in
-  Render.
-- `npm run typecheck` is clean and `npm test` passes 98 tests in 5 files.
+- A forgotten password is reset by an emailed link (Resend).
+- A privacy and terms page at `/hours-to-go/privacy/`, and "Send feedback" on the Profile tab,
+  emailed to the owner once `FEEDBACK_TO` is set in Render.
+- Nightly backups in the private repository `hours-to-go-backups`, once it has its `DATABASE_URL`
+  secret ([deploy.md](deploy.md), step 8).
+- `npm run typecheck` is clean and `npm test` passes 108 tests in 5 files.
 - Source at <https://github.com/nberkyilmaz/hours-to-go> (public, branch `main`).
 - Live at <https://nberkyilmaz.com/hours-to-go/> (page on GitHub Pages, API on Render at
-  `hours-to-go-api.nberkyilmaz.com`, Postgres on Neon). What's left over from going live is at the
-  top of [roadmap.md](roadmap.md).
+  `hours-to-go-api.nberkyilmaz.com`, Postgres on Neon).
+- The plan to going public, agreed with the owner on 2026-10-29, is [roadmap.md](roadmap.md): the
+  rest of the gaps, then every feature on the list, then a small test, then advertising. Nothing
+  that costs money until it has users (D32).
 - The logbook-photo import was considered and dropped.

@@ -103,7 +103,7 @@ moves the page).
 3. **Actions → Pages → Run workflow**. Later pushes to `main` that touch the page publish it
    by themselves.
 
-### 6. Resend: the password-reset email
+### 6. Resend: the reset and feedback emails
 
 nberkyilmaz.com already has Resend's DNS records at Cloudflare (`resend._domainkey`, `send`).
 
@@ -119,6 +119,12 @@ nberkyilmaz.com already has Resend's DNS records at Cloudflare (`resend._domaink
 Until the key is set, asking for a link says resetting "isn't available yet", and Render's log
 says "Password reset emails are off".
 
+5. **Feedback**: Render → `hours-to-go-api` → **Environment**: add `FEEDBACK_TO` with the address
+   where you want pilots' messages, and save. It isn't in `render.yaml`, so your address isn't
+   published. Then Profile → **Send feedback** on the page: the message arrives from
+   `no-reply@nberkyilmaz.com`, and **Reply** answers the pilot. Until it is set, sending says
+   feedback "isn't available yet", and Render's log says "Feedback is off".
+
 ### 7. Check it as a pilot would
 
 On a phone, open <https://nberkyilmaz.com/hours-to-go/>, create a profile, log a flight, add it
@@ -130,6 +136,24 @@ If the page says **"Can't reach the server"**, it's usually one of these:
   API refuses it, by design.
 - `API_URL` has a typo or a trailing slash. Fix it and run the Pages workflow again.
 - The API is down: check `/api/health` and the Render logs.
+
+### 8. Backups: a private repository
+
+Every night a workflow copies the database, restores the copy into an empty Postgres to prove it
+works, and keeps it for 90 days (D29). It lives in the private repository
+`nberkyilmaz/hours-to-go-backups`, never this public one, because the copies hold every pilot's
+records.
+
+1. Neon → the project → **Connect**. Turn **Connection pooling** off, show the password, and copy
+   the string. Its host has no `-pooler`; `pg_dump` needs the direct connection.
+2. In `hours-to-go-backups`: **Settings → Secrets and variables → Actions → New repository
+   secret**, name `DATABASE_URL`, paste it.
+3. **Actions → Backup → Run workflow**, or re-run the check on its open pull request. It should go
+   green in a couple of minutes, and its summary says how many profiles and logbook lines came back.
+
+A failed night emails you. To restore, follow that repository's README: download a copy, restore it
+into a new Neon branch, check it, then point Render's `DATABASE_URL` at it. If the Neon password is
+ever reset, update this secret too.
 
 ---
 
@@ -149,7 +173,8 @@ If the page says **"Can't reach the server"**, it's usually one of these:
   it (departure-brief's API, when it's deployed). A sleeping service uses none.
 - **Neon's free plan** has a storage cap (0.5 GB when this was written); a flight is about a
   kilobyte. The database pauses when idle and wakes in under a second. The free plan's restore
-  window is short, so backups are still open in the [roadmap](roadmap.md).
+  window is short, so a private repository keeps nightly copies for 90 days (step 8), on GitHub's
+  free minutes.
 - **Safari** keeps a cookie from an API on a different server than the page for only 7 days. The
   app renews it every time it opens, so only a pilot who goes more than a week without opening it
   on an iPhone has to sign in again. Other browsers keep it the full 90 days, renewed the same way.

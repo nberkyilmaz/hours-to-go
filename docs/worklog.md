@@ -428,11 +428,63 @@ password."
   - The spent link was refused, the old password gave 401 and the new one 200.
   - The reset screen in light and dark mode, and on a desktop.
 
+## Phase 13: the road to going public, and the first fixes (2026-10-29)
+
+**Owner request.** "Can you look from a user's side and try to find things that could improve
+this?" A run through the live page as a new pilot at phone size found no errors. It turned up gaps
+around the app more than in it: no backups, no privacy page, no way to reach anyone, a minute's
+wait on a sleeping server, no change of email or password, no error alerts and no link previews.
+It also turned up features pilots would want. The owner agreed to all of it, asked to start with
+backups, a privacy page and a way to reach them, and to leave out anything that costs money until
+there are users (D32). The whole plan is in [roadmap.md](roadmap.md).
+
+**Built:**
+- **Backups** (D29): a workflow and README for the private repository
+  `nberkyilmaz/hours-to-go-backups`, which copies, test-restores and keeps the database every night.
+- **A privacy and terms page** (D30), at `/hours-to-go/privacy/`. It is a second Vite input, also
+  published by the Pages workflow (which now fails if the page is missing), and is linked from the
+  welcome, the sign-up form and Profile.
+- **"Send feedback"** on the Profile tab (D31), `POST /api/feedback`, and `FEEDBACK_TO` in
+  `render.yaml` (typed in the dashboard). Waking the sleeping server on a form's first focus moved
+  into `useWake()` beside `useSlow()`, for the sign-in form and this one.
+
+**Problems on the way:**
+1. *Creating the private repository from here was refused* by the session's permission check,
+   because it publishes to GitHub. That step was left to the owner to approve.
+2. *Docker Desktop wasn't running*, so the copy and restore couldn't be tried on this machine. The
+   workflow runs on its own pull request instead, against the real database, once the secret is set.
+3. *Git Bash rewrites paths in environment variables.* `VITE_BASE=/hours-to-go/` became
+   `C:/Program Files/Git/hours-to-go/`, and the first local build linked its assets there.
+   `MSYS_NO_PATHCONV=1` stops that. But it also passes a `/c/Users/…` argument through
+   unchanged, so `--outDir /c/Users/…` built into a new folder, `C:\c\Users\…`. With it, give
+   Windows paths (`C:/Users/…`). Added to the runbook. The stray `C:\c` folder holds only that
+   build output; the safety check stopped its removal, so it was left for the owner to delete.
+4. *Port 8787 was taken by departure-brief's dev server*, from the owner's other project. The check
+   ran this API on 8797 instead, with a build of the page pointed at it.
+
+**Checked:**
+- **Server tests**, per database:
+  - a guest's message with a reply address, its HTML escaped;
+  - no address given;
+  - signed in, the profile's address wins;
+  - an empty or too-long message, and a bad address, refused;
+  - 5 an hour;
+  - 503 without a mailer, and 502 when sending fails.
+- **Web tests**: a guest sends and gets "Thanks"; a failed send keeps the message; the privacy
+  links point at `/privacy/`; signed in, it asks for no address.
+- **In Edge**, against a build published under `/hours-to-go/` and the API on 8797:
+  - the consent line and the welcome's link;
+  - the privacy page at phone size in light and dark, and on a desktop (B612 headings, no
+    sideways scroll), and back to the app;
+  - a guest's message and a signed-in one, both printed by the API with the right Reply-To.
+
 ## Where things stand
 
-- 98 tests pass (rules 37, logbook model 21, server API 21, first visit, guest and password
-  reset 17, signed in 2), and the 19 API tests per database also pass against a Postgres server
+- 108 tests pass (rules 37, logbook model 21, server API 27, first visit, guest, password reset
+  and feedback 20, signed in 3), and the API tests per database also run against a Postgres server
   through `pg` in CI.
 - Typecheck clean on both configs.
 - Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.
-- Password reset built; it sends email once `RESEND_API_KEY` is set in Render. Backups not set up.
+- Password reset live. Feedback sends once `FEEDBACK_TO` is set in Render. Backups run once the
+  private repository exists and has its `DATABASE_URL` secret.
+- What comes next, in order, is the plan in [roadmap.md](roadmap.md).

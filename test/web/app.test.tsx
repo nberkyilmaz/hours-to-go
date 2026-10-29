@@ -260,3 +260,50 @@ describe('a forgotten password', () => {
     expect(screen.getByRole('heading', { name: 'Create your free profile' })).toBeTruthy();
   });
 });
+
+describe('reaching the developer', () => {
+  const answer = (status: number, body: unknown) => ({ ok: status < 400, status, json: async () => body }) as Response;
+  beforeEach(() => rememberWelcomed());
+
+  it('sends a guest’s message, with an address to reply to if they give one', async () => {
+    vi.mocked(fetch).mockImplementation(async (url) => (url === '/api/feedback' ? answer(204, null) : answer(401, {})));
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: /^Profile/ }));
+    type('Message', 'The night rating needs a currency check');
+    type('Your email, if you’d like a reply', 'pilot@example.com');
+    fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
+    expect(await screen.findByText('Thanks, your message was sent. Any reply will go to pilot@example.com.')).toBeTruthy();
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith(
+      '/api/feedback',
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ message: 'The night rating needs a currency check', email: 'pilot@example.com' }) }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send another message' }));
+    expect((screen.getByLabelText('Message') as HTMLTextAreaElement).value).toBe('');
+  });
+
+  it('says why a message wasn’t sent, and keeps it', async () => {
+    vi.mocked(fetch).mockImplementation(async (url) =>
+      url === '/api/feedback' ? answer(502, { error: 'Your message couldn’t be sent. Try again in a few minutes.' }) : answer(401, {}),
+    );
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: /^Profile/ }));
+    type('Message', 'Hello');
+    fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
+    expect(await screen.findByText(/couldn’t be sent/)).toBeTruthy();
+    expect((screen.getByLabelText('Message') as HTMLTextAreaElement).value).toBe('Hello');
+  });
+
+  it('links the privacy and terms page from the welcome, the sign-up form and Profile', async () => {
+    localStorage.clear();
+    render(<App />);
+    const links = screen.getAllByRole('link', { name: /privacy and terms/i });
+    expect(links).toHaveLength(2);
+    for (const link of links) expect(link.getAttribute('href')).toBe('/privacy/');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue without a profile' }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Profile/ }));
+    expect(screen.getAllByRole('link', { name: /privacy and terms/i }).map((a) => a.getAttribute('href'))).toEqual(['/privacy/', '/privacy/']);
+  });
+});
+

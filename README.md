@@ -113,6 +113,7 @@ NODE_ENV=production DATABASE_URL=postgres://… PORT=8787 npm start
 | `RESEND_API_KEY` | none | Sends the password-reset email through Resend. Without it, in production, resetting answers "isn't available yet"; in development the email is printed in this terminal. |
 | `MAIL_FROM` | `Hours to Go <no-reply@nberkyilmaz.com>` | The reset email's sender, on a domain verified in Resend. |
 | `APP_URL` | `http://localhost:5173/`, except in production | The page the emailed link opens: `https://nberkyilmaz.com/hours-to-go/` when published. |
+| `FEEDBACK_TO` | `owner@localhost`, except in production | Where "Send feedback" emails go: the owner's own address, typed in Render's dashboard. Without it, in production, sending feedback answers "isn't available yet". |
 
 And for building the page (`npm run build`):
 

@@ -6,16 +6,18 @@
 hours-to-go/
 ├── .github/workflows/
 │   ├── ci.yml                  typecheck, tests (PGlite and a Postgres server), page build, API image
-│   └── pages.yml               publishes the page to GitHub Pages under /hours-to-go/
+│   └── pages.yml               publishes the page (and privacy/) to GitHub Pages under /hours-to-go/
 ├── Dockerfile                  the API image Render runs (no page in it)
 ├── render.yaml                 Render blueprint: free web service, health check, env vars
 ├── index.html                  page shell, manifest and icon links, iOS home-screen meta tags
+├── privacy/index.html          the privacy and terms page, plain HTML, a second Vite input (D30)
 ├── public/
 │   ├── icon.svg                the app mark (source of truth for the PNGs)
 │   ├── icon-192.png, icon-512.png, apple-touch-icon.png
 │   └── manifest.webmanifest    name, colours, icons for "add to home screen"; paths relative to it
 ├── src/                        the web app (also imported by the server: model and rules)
 │   ├── main.tsx                mounts <App/>
+│   ├── privacy.ts              the privacy page's only script: the app's fonts and styles
 │   ├── App.tsx                 welcome or app, masthead and tabs, banners, which entry form is open
 │   ├── api.ts                  fetch wrapper; VITE_API prefix; ApiError(status 0 = unreachable)
 │   ├── vite-env.d.ts           types for import.meta.env
@@ -37,20 +39,24 @@ hours-to-go/
 │       ├── Profile.tsx         AuthForm: sign up, sign in, forgot password (also on the welcome);
 │       │                           licences held, medical, export / import, delete
 │       ├── ResetPassword.tsx   where an emailed reset link opens: choose a new password (D28)
-│       ├── useSlow.ts          true once a request has taken 4 s, to say the server is waking
+│       ├── Feedback.tsx        "Send feedback" on the Profile tab (D31)
+│       ├── links.ts            the privacy page's address, under the build's base path
+│       ├── useSlow.ts          useSlow: true once a request has taken 4 s, to say the server is
+│       │                           waking; useWake: wake it on a form's first focus
 │       └── icons.tsx
 ├── server/
 │   ├── main.ts                 reads env, picks the database, starts Fastify
 │   ├── app.ts                  routes, CORS, session hook, health check, static files, SPA fallback
 │   ├── auth.ts                 scrypt hashing, random tokens (sessions, reset links), throttles
-│   ├── mail.ts                 Resend over HTTP, printing on a laptop, the reset email (D28)
+│   ├── mail.ts                 Resend over HTTP, printing on a laptop, the reset and feedback emails
 │   └── db.ts                   Store: every SQL statement in the project; pg or PGlite
 ├── test/
 │   ├── web/                    jsdom: fixtures, entry, rules, app as guest, app signed in
 │   └── server/                 node: the API through fastify.inject, on PGlite and (TEST_DATABASE_URL) Postgres
 ├── tsconfig.json               browser code: src, test/web (no Node types)
 ├── tsconfig.server.json        server, test/server, src/model, src/rules (Node types)
-└── vite.config.ts              React plugin, base path (VITE_BASE), /api proxy to :8787, Vitest settings
+└── vite.config.ts              React plugin, base path (VITE_BASE), two pages (the app, privacy/),
+                                /api proxy to :8787, Vitest settings
 ```
 
 ## Data model
@@ -161,6 +167,7 @@ All JSON. Errors are `{ "error": "message for the pilot" }`. The session cookie 
 | `POST /api/auth/reset` | `{ token, password }` | 400 short password, or a link that is unknown, used or over an hour old; otherwise sets the password, ends every session and sets the cookie for a new one |
 | `GET /api/me` | | `{ user: { email } }` or 401; extends the session to 90 days from now and sets the cookie again |
 | `GET /api/health` | | `{ ok: true }`, or 503 when the database doesn't answer; Render's health check |
+| `POST /api/feedback` | `{ message, email }` | emails `FEEDBACK_TO`, Reply-To the profile's address (signed in) or `email` (optional); 400 empty, over 4,000 characters or a bad address; 429 after 5 an hour from one IP or 30 a day in all; 502 if sending fails; 503 without `RESEND_API_KEY` and `FEEDBACK_TO`; 204 |
 | `DELETE /api/account` | `{ password }` | deletes the user; entries, profile and sessions cascade; 204 |
 | `GET /api/logbook` | | `{ version: 2, entries, profile }` |
 | `PUT /api/entries/:id` | an entry | parsed and validated with the same code as the browser; id must match |

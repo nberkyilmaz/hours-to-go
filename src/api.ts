@@ -50,6 +50,7 @@ export const api = {
   forgotPassword: (email: string) => call<void>('POST', '/api/auth/forgot', { email }),
   resetPassword: (token: string, password: string) => call<UserReply>('POST', '/api/auth/reset', { token, password }),
   deleteAccount: (password: string) => call<void>('DELETE', '/api/account', { password }),
+  sendFeedback: (message: string, email: string) => call<void>('POST', '/api/feedback', { message, email }),
   logbook: () => call<Logbook>('GET', '/api/logbook'),
   putEntry: (entry: Entry) => call<Entry>('PUT', `/api/entries/${encodeURIComponent(entry.id)}`, entry),
   deleteEntry: (id: string) => call<void>('DELETE', `/api/entries/${encodeURIComponent(id)}`),

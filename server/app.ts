@@ -8,7 +8,7 @@ import { validateEntry } from '../src/model/entry';
 import { parseEntry, parseLogbook, parseProfile } from '../src/model/store';
 import { Throttle, hashPassword, hashToken, newToken, verifyPassword } from './auth';
 import { Store, type User } from './db';
-import { resetMail, type SendMail } from './mail';
+import { feedbackMail, resetMail, type SendMail } from './mail';
 
 export interface AppOptions {
   /** A `postgres://` URL, or for PGlite a folder or `memory://`. See `Store.open`. */
@@ -31,11 +31,14 @@ export interface AppOptions {
    */
   sendMail?: SendMail | undefined;
   appUrl?: string | undefined;
+  /** The owner's address, where "Send feedback" goes. Without it (or `sendMail`), feedback is unavailable. */
+  feedbackTo?: string | undefined;
 }
 
 const COOKIE = 'htg_session';
 const SESSION_DAYS = 90;
 const RESET_MINUTES = 60;
+const FEEDBACK_MAX = 4000;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function passwordProblem(password: string): string | null {
@@ -61,6 +64,10 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   // from any one address on the internet.
   const resetsPerEmail = new Throttle(3, 60 * 60_000);
   const resetsPerIp = new Throttle(10, 60 * 60_000);
+  // Feedback: a few messages an hour from one address, and a cap a day in all, so nobody can use
+  // up Resend's 100 emails a day that reset links need too.
+  const feedbackPerIp = new Throttle(5, 60 * 60_000);
+  const feedbackPerDay = new Throttle(30, 24 * 60 * 60_000);
   app.addHook('onClose', async () => store.close());
 
   await app.register(cookie);
@@ -228,6 +235,37 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     if (!incoming) return reply.code(400).send({ error: 'That is not a Hours to Go logbook.' });
     incoming.entries = incoming.entries.filter((e) => Object.keys(validateEntry(e)).length === 0);
     return store.merge(req.user!.id, incoming);
+  });
+
+  // --- Feedback --------------------------------------------------------------
+
+  // Emailed to the owner, with the pilot's address to reply to when there is one, and kept nowhere
+  // else. Signed in, it's the profile's address; otherwise the pilot may type one. Sent before
+  // replying, so a message that didn't go says so.
+  app.post('/api/feedback', async (req, reply) => {
+    const { sendMail, feedbackTo } = opts;
+    if (!sendMail || !feedbackTo) return reply.code(503).send({ error: 'Sending feedback isn’t available yet.' });
+    const body = bodyOf(req);
+    const message = String(body.message ?? '').trim();
+    if (!message) return reply.code(400).send({ error: 'Write a message first.' });
+    if (message.length > FEEDBACK_MAX) return reply.code(400).send({ error: 'That message is too long. Keep it under 4,000 characters.' });
+    const from = req.user?.email ?? (String(body.email ?? '').trim().toLowerCase() || null);
+    if (from !== null && (!EMAIL.test(from) || from.length > 254)) {
+      return reply.code(400).send({ error: 'Enter a valid email address, or leave it empty.' });
+    }
+    if (feedbackPerIp.blocked(req.ip) || feedbackPerDay.blocked('all')) {
+      return reply.code(429).send({ error: 'Too many messages sent. Try again later.' });
+    }
+    feedbackPerIp.fail(req.ip);
+    feedbackPerDay.fail('all');
+    const browser = String(req.headers['user-agent'] ?? '').slice(0, 300);
+    try {
+      await sendMail(feedbackMail(feedbackTo, { message, from, signedIn: req.user !== null, browser }));
+    } catch (err) {
+      app.log.error(err, 'feedback email not sent');
+      return reply.code(502).send({ error: 'Your message couldn’t be sent. Try again in a few minutes.' });
+    }
+    return reply.code(204).send();
   });
 
   // For the host: up only when the database answers too.

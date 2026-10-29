@@ -30,6 +30,7 @@ let app: FastifyInstance;
 /** Emails the app sent, instead of sending them. */
 let sent: Mail[] = [];
 const APP_URL = 'https://nberkyilmaz.test/hours-to-go/';
+const OWNER = 'owner@example.test';
 
 async function signUp(email = 'student@example.com', password = 'correct horse') {
   const res = await app.inject({ method: 'POST', url: '/api/auth/signup', payload: { email, password } });
@@ -47,6 +48,7 @@ describe.each(DATABASES)('on $name', ({ url }) => {
       database: await emptied(url),
       secureCookies: false,
       appUrl: APP_URL,
+      feedbackTo: OWNER,
       sendMail: async (mail) => {
         sent.push(mail);
       },
@@ -275,14 +277,81 @@ describe.each(DATABASES)('on $name', ({ url }) => {
       await vi.waitFor(() => expect(sent).toHaveLength(3));
     });
   });
+
+  describe('feedback', () => {
+    const feedback = (payload: object, cookies: Record<string, string> = {}) =>
+      app.inject({ method: 'POST', url: '/api/feedback', payload, cookies, headers: { 'user-agent': 'TestBrowser/1.0' } });
+
+    it('emails the owner, with a guest’s address to reply to', async () => {
+      const res = await feedback({ message: '  The <b>night</b> rating & IFR\nSecond line ', email: ' Pilot@Example.com' });
+      expect(res.statusCode).toBe(204);
+      expect(sent).toHaveLength(1);
+      const mail = sent[0]!;
+      expect(mail.to).toBe(OWNER);
+      expect(mail.replyTo).toBe('pilot@example.com');
+      expect(mail.subject).toBe('Feedback: The <b>night</b> rating & IFR');
+      expect(mail.text).toContain('The <b>night</b> rating & IFR\nSecond line\n');
+      expect(mail.text).toContain('pilot@example.com (not signed in)');
+      expect(mail.text).toContain('TestBrowser/1.0');
+      // The pilot's words are text in the HTML, never markup.
+      expect(mail.html).toContain('The &lt;b&gt;night&lt;/b&gt; rating &amp; IFR');
+      expect(mail.html).not.toContain('<b>');
+    });
+
+    it('sends without an address, and then has no one to reply to', async () => {
+      expect((await feedback({ message: 'Hello', email: '' })).statusCode).toBe(204);
+      expect(sent[0]!.replyTo).toBeUndefined();
+      expect(sent[0]!.text).toContain('No email given');
+    });
+
+    it('replies to the profile’s address when signed in, whatever was typed', async () => {
+      const { cookies } = await signUp();
+      expect((await feedback({ message: 'Hello', email: 'someone@else.com' }, cookies)).statusCode).toBe(204);
+      expect(sent[0]!.replyTo).toBe('student@example.com');
+      expect(sent[0]!.text).toContain('student@example.com (signed in)');
+    });
+
+    it('refuses an empty or very long message and a bad address, and sends nothing', async () => {
+      expect((await feedback({ message: '   ' })).statusCode).toBe(400);
+      expect((await feedback({ message: 'x'.repeat(4001) })).statusCode).toBe(400);
+      expect((await feedback({ message: 'Hello', email: 'not-an-email' })).statusCode).toBe(400);
+      expect(sent).toHaveLength(0);
+    });
+
+    it('takes at most five messages an hour from one address', async () => {
+      for (let i = 0; i < 5; i++) expect((await feedback({ message: `Message ${i}` })).statusCode).toBe(204);
+      expect((await feedback({ message: 'One too many' })).statusCode).toBe(429);
+      expect(sent).toHaveLength(5);
+    });
+  });
 });
 
 describe('a server that can’t send email', () => {
-  it('says resetting is unavailable rather than pretending to send', async () => {
+  it('says resetting and feedback are unavailable rather than pretending to send', async () => {
     const api = await buildApp({ database: 'memory://', secureCookies: false });
     try {
       const res = await api.inject({ method: 'POST', url: '/api/auth/forgot', payload: { email: 'student@example.com' } });
       expect(res.statusCode).toBe(503);
+      const feedback = await api.inject({ method: 'POST', url: '/api/feedback', payload: { message: 'Hello' } });
+      expect(feedback.statusCode).toBe(503);
+    } finally {
+      await api.close();
+    }
+  });
+
+  it('says when a message couldn’t be sent', async () => {
+    const api = await buildApp({
+      database: 'memory://',
+      secureCookies: false,
+      feedbackTo: OWNER,
+      sendMail: async () => {
+        throw new Error('Resend answered 500');
+      },
+    });
+    try {
+      const res = await api.inject({ method: 'POST', url: '/api/feedback', payload: { message: 'Hello' } });
+      expect(res.statusCode).toBe(502);
+      expect(res.json().error).toMatch(/couldn’t be sent/);
     } finally {
       await api.close();
     }

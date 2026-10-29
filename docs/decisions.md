@@ -45,6 +45,44 @@ Considered (a hosted vision model reading the handwriting, checked by the pilot)
 owner: typing the totals into the one-entry form is quick enough, and it avoids an API key, a
 per-photo charge and sending logbook photos to a third party.
 
+### D30. A privacy and terms page of its own
+Pilots give the app their email and their flight records, the data is stored in the United States,
+and both app stores will ask for a privacy policy's address. So `privacy/index.html` is a second
+page in the Vite build, published at `/hours-to-go/privacy/`. It is plain HTML that reads without
+JavaScript, and borrows the app's fonts and styles through `src/privacy.ts`.
+
+In the app's plain words it says:
+- who runs it: the owner, by name;
+- what is stored with and without a profile, and the one cookie;
+- what feedback sends, and that hosts log IP addresses;
+- the services, all in the US: Neon and Render in Ohio, Resend, GitHub, and Google for the owner's
+  inbox;
+- how long things are kept: until deletion, plus 90 days in backups;
+- how to export and delete, and the Privacy Commissioner of Canada;
+- the terms: free, a study aid and not an official record, interpretations may be wrong, no
+  warranty, fair use, and notice by email if it ever closes.
+
+It is linked from the welcome's footer, under the sign-up button ("Creating a profile means you
+agree to the privacy and terms") and from the Profile tab's footer. It must change whenever what
+is stored, or who stores it, changes: a new service, analytics, the store apps. It is a
+plain-language draft, not reviewed by a lawyer.
+
+Turned down: a screen inside the app (it needs the app and JavaScript to load, and the stores want
+a plain address); a policy generated from a template site (long, generic, and wrong in the details
+that matter here).
+
+### D32. Free until it has users
+On 2026-10-29 the owner agreed the plan in [roadmap.md](roadmap.md): fix the gaps, build every
+feature on the list, test with a few pilots, then advertise. Until there are users, nothing that
+costs money:
+- Render stays on the free plan, wake-up wait included.
+- The app stays at `nberkyilmaz.com/hours-to-go/`. A domain of its own, with a support address on
+  it, comes when the project grows.
+- The store apps wait.
+
+So each fix uses what is already free or paid for: GitHub, Neon's and Render's free plans, and
+Resend's free plan.
+
 ## Logbook model
 
 ### D6. A line has the paper personal log's columns (replaced one role per line)
@@ -196,6 +234,57 @@ sign-up form pings `/api/health` so the server wakes while the pilot types: on t
 the form, not on sight, since the welcome screen shows the form to every new visitor (D27). A
 sign-up still waiting after 4 seconds says the server is waking. Cost: a pilot whose browser lost
 the flag but kept the cookie opens as a guest and signs in again.
+
+### D29. Nightly backups, in a private repository
+Neon's free plan can roll back only a short recent window, and losing a pilot's logbook is the
+worst thing this app could do. A GitHub Actions workflow in the private repository
+`nberkyilmaz/hours-to-go-backups` runs every night at 08:23 UTC:
+1. `pg_dump`, in custom format, from the `postgres:18` image so its version matches Neon's.
+2. The copy is restored into an empty Postgres 18 in the same run, and the rows are counted. A
+   copy that won't restore fails the run, and GitHub emails the owner.
+3. The copy is kept as the run's artifact for 90 days.
+
+Restoring is described in that repository's README, and in [deploy.md](deploy.md), step 8.
+
+- **Private**, because each copy holds every pilot's email and logbook. This repository is
+  public, so anyone could download its artifacts.
+- **A second repository**, also because GitHub turns off scheduled workflows in a public repository
+  after 60 days without activity.
+- **Free**: a private repository's 2,000 Actions minutes and 500 MB of artifacts a month. A run
+  takes about a minute.
+- **The connection**: the repository secret `DATABASE_URL` is Neon's direct connection string,
+  with pooling off, because `pg_dump` doesn't work through Neon's pooler.
+- **Deleted profiles** stay in the copies for up to 90 days, which the privacy page says (D30).
+- A change to the workflow proves itself on its pull request, which makes a real copy and restore.
+
+Turned down:
+- Encrypted copies kept as artifacts of this public repository: a key to lose, and the 60-day
+  switch-off.
+- Cloudflare R2 or Amazon S3: a new account with a card on file.
+- Neon's longer restore window: a paid plan (D32).
+
+### D31. Feedback goes to the owner's inbox
+The owner wanted a way to be reached, without a support address until the app has a domain of its
+own (D32). "Send feedback" on the Profile tab posts to `POST /api/feedback`. That emails
+`FEEDBACK_TO` through Resend, with the pilot's address as Reply-To, so replying in the inbox
+answers the pilot. Signed in, the address is the profile's and the form asks for nothing; as a
+guest, the pilot may type one.
+
+- **Nothing is stored in the database.** A message is an email, and the inbox is where the owner
+  reads anyway.
+- **`FEEDBACK_TO` is typed in Render's dashboard**, not written in `render.yaml`, so the owner's
+  personal address isn't published in this public repository.
+- **Sent before replying.** A message that didn't go says so (502), and stays in the box.
+- **The browser's User-Agent goes with it**, to help with "it doesn't work". The form and the privacy
+  page say so.
+- **Limits**: 5 an hour from one IP, and 30 a day in all, so nobody can use up the 100 emails a day
+  that reset links also need. Messages are up to 4,000 characters, and escaped in the HTML email.
+
+Turned down:
+- A support address: it needs the domain, which comes later.
+- A feedback table: another place for personal data, and something to build to read it.
+- A form service such as Formspree: a new account, and another company holding the messages.
+- GitHub issues: public, and it needs a GitHub account.
 
 ## Interface
 

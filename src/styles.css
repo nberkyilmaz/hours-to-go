@@ -1896,3 +1896,53 @@ input.narrow {
 .danger-zone p {
   margin: 0;
 }
+
+/* ---- Privacy and terms (privacy/index.html) ------------------------------ */
+
+.doc-brand {
+  color: inherit;
+  text-decoration: none;
+}
+
+.doc {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 16px 64px;
+}
+
+.doc h1 {
+  font-size: clamp(28px, 6vw, 36px);
+  margin-bottom: 4px;
+}
+
+.doc h2 {
+  font-size: 20px;
+  margin: 32px 0 8px;
+}
+
+.doc p,
+.doc ul {
+  margin: 0 0 12px;
+}
+
+.doc ul {
+  padding-left: 22px;
+}
+
+.doc li + li {
+  margin-top: 6px;
+}
+
+.doc-lede {
+  font-size: 17px;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.doc-back {
+  margin-top: 40px;
+  font-weight: 600;
+}
