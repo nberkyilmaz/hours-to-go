@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { blankEntry, derive, isFtdOnly, type Entry } from './model/entry';
 import { hasContent } from './model/store';
+import { ConfirmBanner } from './ui/Account';
+import { ConfirmEmail } from './ui/ConfirmEmail';
 import { EntryForm, type FormLayout, type Suggestions } from './ui/EntryForm';
 import { BookIcon, CloudCheckIcon, Mark, ProgressIcon, UserIcon } from './ui/icons';
 import { LogbookView } from './ui/Logbook';
@@ -18,9 +20,15 @@ const TABS: { id: Tab; label: string; Icon: () => JSX.Element }[] = [
   { id: 'profile', label: 'Profile', Icon: UserIcon },
 ];
 
-/** The token from an emailed password-reset link, which opens the page at `#reset=…`. */
-function resetTokenInUrl(): string | null {
-  return /^#reset=([\w-]+)$/.exec(window.location.hash)?.[1] ?? null;
+/** An emailed link: to reset a password, or to confirm an address. It opens the page at `#reset=…` or `#confirm=…`. */
+interface EmailedLink {
+  kind: 'reset' | 'confirm';
+  token: string;
+}
+
+function linkInUrl(): EmailedLink | null {
+  const found = /^#(reset|confirm)=([\w-]+)$/.exec(window.location.hash);
+  return found ? { kind: found[1] as EmailedLink['kind'], token: found[2]! } : null;
 }
 
 /** A new screen starts at its top, not wherever the last one was scrolled to. */
@@ -50,19 +58,20 @@ export function App() {
   const [draft, setDraft] = useState<{ entry: Entry; isNew: boolean; layout: FormLayout } | null>(null);
   const [hideGuestNudge, setHideGuestNudge] = useState(false);
   const [hideStranded, setHideStranded] = useState(false);
-  const [resetToken, setResetToken] = useState(resetTokenInUrl);
+  const [hideConfirm, setHideConfirm] = useState(false);
+  const [link, setLink] = useState(linkInUrl);
   const entries = lb.book.entries;
 
   // Out of the address bar and the history once read, so the link isn't bookmarked or shared.
   useEffect(() => {
-    if (resetToken) window.history.replaceState(null, '', window.location.pathname + window.location.search);
-  }, [resetToken]);
+    if (link) window.history.replaceState(null, '', window.location.pathname + window.location.search);
+  }, [link]);
   // A link pasted into a tab that already has the app open changes only the fragment, so the
   // page doesn't load again.
   useEffect(() => {
     const onHash = () => {
-      const token = resetTokenInUrl();
-      if (token) setResetToken(token);
+      const found = linkInUrl();
+      if (found) setLink(found);
     };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
@@ -93,9 +102,10 @@ export function App() {
   // A first visit, with nothing logged yet: recommend a profile before anything else.
   const welcoming = lb.mode.kind === 'guest' && !lb.mode.offline && !lb.welcomed && !hasContent(lb.guest);
   // The welcome's buttons are low on a phone, so the app it gives way to would open scrolled.
-  useEffect(toTop, [welcoming, tab, resetToken]);
+  useEffect(toTop, [welcoming, tab, link]);
 
-  if (resetToken) return <ResetPassword token={resetToken} lb={lb} onDone={() => setResetToken(null)} />;
+  if (link?.kind === 'reset') return <ResetPassword token={link.token} lb={lb} onDone={() => setLink(null)} />;
+  if (link?.kind === 'confirm') return <ConfirmEmail token={link.token} lb={lb} onDone={() => setLink(null)} />;
   if (lb.mode.kind === 'loading') return <Loading />;
   if (welcoming) return <Welcome lb={lb} />;
 
@@ -158,6 +168,9 @@ export function App() {
               </button>
             </span>
           </div>
+        )}
+        {mode.kind === 'account' && !mode.confirmed && !mode.pendingEmail && !hideConfirm && tab !== 'profile' && (
+          <ConfirmBanner lb={lb} email={mode.email} onLater={() => setHideConfirm(true)} />
         )}
         {strandedCount > 0 && !hideStranded && (
           <div className="banner">
