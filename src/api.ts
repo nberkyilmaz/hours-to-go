@@ -37,8 +37,15 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
   return data as T;
 }
 
+/** The signed-in profile: its address, whether a link sent there has been opened, and an address it is moving to. */
+export interface Account {
+  email: string;
+  confirmed: boolean;
+  pendingEmail: string | null;
+}
+
 interface UserReply {
-  user: { email: string };
+  user: Account;
 }
 
 export const api = {
@@ -49,6 +56,11 @@ export const api = {
   logout: () => call<void>('POST', '/api/auth/logout'),
   forgotPassword: (email: string) => call<void>('POST', '/api/auth/forgot', { email }),
   resetPassword: (token: string, password: string) => call<UserReply>('POST', '/api/auth/reset', { token, password }),
+  confirmEmail: (token: string) => call<{ email: string; changed: boolean }>('POST', '/api/auth/confirm', { token }),
+  sendConfirmation: () => call<void>('POST', '/api/account/confirm'),
+  changeEmail: (email: string, password: string) => call<UserReply>('POST', '/api/account/email', { email, password }),
+  cancelEmailChange: () => call<UserReply>('DELETE', '/api/account/email'),
+  changePassword: (password: string, newPassword: string) => call<void>('POST', '/api/account/password', { password, newPassword }),
   deleteAccount: (password: string) => call<void>('DELETE', '/api/account', { password }),
   sendFeedback: (message: string, email: string) => call<void>('POST', '/api/feedback', { message, email }),
   logbook: () => call<Logbook>('GET', '/api/logbook'),

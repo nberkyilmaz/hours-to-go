@@ -166,7 +166,8 @@ their phone every week), SameSite=Lax, Secure in production. The 90 days start a
 app opens (`GET /api/me` extends the session and sets the cookie again), which also keeps Safari
 from signing out an iPhone after 7 days (D25). Failed sign-ins throttled per IP and
 email in memory (fine for one process). Turned down: magic links (sign in by email alone). A
-forgotten password is reset by an emailed link (D28).
+forgotten password is reset by an emailed link (D28); signed in, the email and password can be
+changed (D35).
 
 ### D28. A forgotten password is reset by an emailed link
 Asked for by the owner. "Forgot your password?" on the Sign in tab takes an email; if it belongs to
@@ -285,6 +286,73 @@ Turned down:
 - A feedback table: another place for personal data, and something to build to read it.
 - A form service such as Formspree: a new account, and another company holding the messages.
 - GitHub issues: public, and it needs a GitHub account.
+
+### D33. Changes to the tables are numbered steps, each run once
+Confirming emails was the first change to a table that already had rows in production (`users`).
+`create table if not exists` can't do that, so `server/db.ts` now has `MIGRATIONS`, a list of steps.
+When the server starts it runs every step the `migrations` table hasn't recorded, in one
+transaction, and records them.
+
+- **Step 1 is the old list**, unchanged, so on Neon's existing database it finds every table already
+  there and only records itself.
+- **Never edit a published step**: Neon has run it. A change is a new step at the end.
+- **One transaction for all of it**, because Postgres can undo table changes: a step that fails
+  leaves the database as it was, and the server doesn't start.
+- **An advisory lock** first, because a deploy starts the new server while the old one still runs,
+  and two new ones could start together.
+- A test builds the first release's `users` table with a pilot in it, then starts the server on it
+  twice, on PGlite and on Postgres in CI.
+
+Turned down: a migration library (one more dependency for a dozen lines); steps run by hand from a
+laptop (easy to forget, and the server would start against tables it doesn't expect).
+
+### D34. Confirming an email is asked for, never required
+The owner agreed to it as the gentle kind. Sign-up works at once, as before, and then emails a link
+that confirms the address. Until it's opened:
+- a banner above Progress and Logbook says why it matters (a password reset needs to reach you),
+  with "Send a new link" and "Later", which hides it until the app is next opened;
+- the Profile card says the same, with "Wrong address? Change it".
+
+Nothing is blocked or deleted for being unconfirmed. Opening a reset link confirms the address
+too, since it reached the inbox.
+
+- **The link** is `APP_URL#confirm=<token>`, built and stored like a reset link (D28): only the
+  token's SHA-256 is kept, in `email_links` with the address it confirms. It works once and for
+  7 days. Opening it needs no sign-in, since email apps open links in a browser of their own.
+- **Spent from the page, not by opening it**: the token is in the fragment and the page posts it.
+  Mail scanners that fetch every link in an email can't use it up.
+- **Limits**: 3 links an hour to one profile, and 50 a day in all, so the 100 emails a day Resend's
+  free plan allows stay mostly free for reset links. Past the daily cap a sign-up still works; its
+  link waits for "Send a new link".
+- Profiles from before this have no confirmed address, and see the notice.
+
+Turned down: blocking sign-in until the address is confirmed (a student at the airport would lose
+the app to an email in spam); deleting unconfirmed profiles after a while (their logbooks).
+
+### D35. The email and password can be changed while signed in
+Both are on the Profile card, and both ask for the current password.
+- **A new email takes over only once its link is opened.** Until then the profile keeps the old
+  one and shows the change waiting, with "Cancel the change". A typo can't lock anyone out, and
+  nobody can move a profile to an address they don't read. Asking again replaces the waiting
+  change. If another profile signs up with the new address in the meantime, the link says so and
+  nothing moves.
+- **Moving deletes every email and reset link the profile had.** An old link to confirm the old
+  address would otherwise move it back, and a reset link in the old inbox would still work.
+- **The email to the new address doesn't name the old one**, since a mistyped address reaches a
+  stranger.
+- **A new password signs out every other device** and spends any waiting reset link, as a reset
+  does (D28); this device stays signed in.
+- Wrong passwords on these (and on deleting the profile) count toward the sign-in limit, per
+  profile.
+
+### D36. Sign-ups are limited per network
+Only sign-in was limited, so a script could fill the free database with profiles, and since
+D34, Resend's daily emails too. Now: 20 sign-ups an hour from one IP. That is enough for a class
+signing up together on the school's Wi-Fi (the classmate test in the roadmap). In memory, like
+the other limits (D15).
+
+Turned down: a CAPTCHA (another company's script on the page, and a puzzle in the way of
+students); a daily cap on all sign-ups (one script could then stop every real student).
 
 ## Interface
 

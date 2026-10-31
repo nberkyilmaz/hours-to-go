@@ -261,6 +261,46 @@ describe('a forgotten password', () => {
   });
 });
 
+describe('an emailed link that confirms an address', () => {
+  const answer = (status: number, body: unknown) => ({ ok: status < 400, status, json: async () => body }) as Response;
+
+  it('confirms it at once, without being signed in', async () => {
+    window.history.replaceState(null, '', '/#confirm=tok-1');
+    vi.mocked(fetch).mockImplementation(async (url) =>
+      url === '/api/auth/confirm' ? answer(200, { email: 'student@example.com', changed: false }) : answer(401, {}),
+    );
+    render(<App />);
+    expect(await screen.findByRole('heading', { name: 'Your email is confirmed' })).toBeTruthy();
+    expect(screen.getByText(/is confirmed. If you ever forget your password/)).toBeTruthy();
+    expect(window.location.hash).toBe('');
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith('/api/auth/confirm', expect.objectContaining({ body: JSON.stringify({ token: 'tok-1' }) }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open Hours to Go' }));
+    expect(screen.getByRole('heading', { name: 'Create your free profile' })).toBeTruthy();
+  });
+
+  it('says when the profile has moved to a new address', async () => {
+    window.history.replaceState(null, '', '/#confirm=tok-2');
+    vi.mocked(fetch).mockImplementation(async (url) =>
+      url === '/api/auth/confirm' ? answer(200, { email: 'new@example.com', changed: true }) : answer(401, {}),
+    );
+    render(<App />);
+    expect(await screen.findByRole('heading', { name: 'Your email is changed' })).toBeTruthy();
+    expect(screen.getByText('new@example.com')).toBeTruthy();
+  });
+
+  it('says when the link has expired', async () => {
+    window.history.replaceState(null, '', '/#confirm=old');
+    vi.mocked(fetch).mockImplementation(async (url) =>
+      url === '/api/auth/confirm'
+        ? answer(400, { error: 'This link has expired or has already been used. Send a new one from your profile.' })
+        : answer(401, {}),
+    );
+    render(<App />);
+    expect(await screen.findByRole('heading', { name: 'This link didn’t work' })).toBeTruthy();
+    expect(screen.getByText(/Send a new one from your profile/)).toBeTruthy();
+  });
+});
+
 describe('reaching the developer', () => {
   const answer = (status: number, body: unknown) => ({ ok: status < 400, status, json: async () => body }) as Response;
   beforeEach(() => rememberWelcomed());
