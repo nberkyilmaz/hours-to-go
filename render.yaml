@@ -17,6 +17,9 @@ services:
     region: ohio
     dockerfilePath: ./Dockerfile
     healthCheckPath: /api/health
+    # A push to main goes live only once its CI checks pass (.github/workflows/ci.yml runs on every
+    # push), so a change that fails its tests never reaches pilots.
+    autoDeployTrigger: checksPass
     envVars:
       # Neon's connection string. Pasted in the dashboard, never written here.
       - key: DATABASE_URL
@@ -38,7 +41,8 @@ services:
       - key: APP_URL
         value: https://nberkyilmaz.com/hours-to-go/
 
-      # Where "Send feedback" goes: the owner's own address. Typed in the dashboard rather than
-      # written here, so it isn't published with this repository. Replies go to the pilot.
+      # Where "Send feedback" and error alerts go: the owner's own address. Typed in the dashboard
+      # rather than written here, so it isn't published with this repository. Replies to feedback
+      # go to the pilot.
       - key: FEEDBACK_TO
         sync: false

@@ -22,37 +22,30 @@ that costs money until it has users: no paid plan, no domain of its own, no stor
 
 ### 2. The rest of the gaps (all free)
 
-1. **Migrations.** The tables are made with `create table if not exists`. Confirming emails is
-   the first change to an existing table (`users`), so a numbered list of migration steps, run
-   once each at start-up, comes first.
-2. **Confirm email, gently.** Sign-up works at once as now. A "Confirm your email" link is sent,
-   lasting 7 days and working once, stored hashed like reset links. Until it's confirmed a notice
-   says why it matters (password reset), with "Send again" and "Change email". Opening a reset
-   link also confirms the address. Nothing is ever blocked or deleted for being unconfirmed.
-3. **Change email** (password required; the new address takes over only once confirmed) and
-   **change password** while signed in (today only the reset email changes it).
-4. **Sign-up protection.** Only sign-in is throttled today; a bot could fill the free database
-   with profiles. Throttle sign-ups per IP.
-5. **Error alerts.** The server emails the owner, through Resend and at most a few an hour, when
-   something fails that the pilot didn't cause. No new service.
-6. **Link previews.** `og:` tags and a preview image, so a shared link shows a picture and a line
-   in group chats, Instagram and Facebook.
+1. ~~**Migrations.**~~ Done: numbered steps, each run once at start-up (D33).
+2. ~~**Confirm email, gently.**~~ Done: a link on sign-up, a banner and a Profile notice until
+   it's opened, and nothing blocked (D34).
+3. ~~**Change email and change password**~~ while signed in. Done: a new address takes over once
+   its link is opened; a new password signs out other devices (D35).
+4. ~~**Sign-up protection.**~~ Done: 20 sign-ups an hour from one network (D36).
+5. ~~**Error alerts.**~~ Done: the owner gets an email, at most 5 an hour, and the pilot a plain
+   sentence (D37).
+6. ~~**Link previews.**~~ Done: `og:` tags and a 1200 × 630 picture, `public/og.png` (D38).
 7. **An instructor checks the numbers.** The four questions under
    [Confirm with the flight school](#confirm-with-the-flight-school), and a run through the app
    with a real student's logbook.
 8. **Settings for the owner, free:**
-   - Render → hours-to-go-api → Settings → Build & Deploy → Auto-Deploy → "After CI checks
-     pass", and `autoDeployTrigger: checksPass` in `render.yaml`, so a push that fails CI never
-     reaches pilots.
+   - ~~`autoDeployTrigger: checksPass` in `render.yaml`~~ (done), so a push that fails CI never
+     reaches pilots. After it is merged, check that Render → hours-to-go-api → Settings → Build &
+     Deploy → Auto-Deploy says "After CI checks pass"; if not, choose it there.
    - Verify `nberkyilmaz.com` on the GitHub account (Settings → Pages → Add a domain, a TXT
      record at Cloudflare), so no other account can claim it or a subdomain.
    - Retake the landing page's screenshot (`assets/hours-to-go.webp` in the user site), which
      shows the look before 2026-10-28.
-9. **The masthead on a phone, signed in.** "HOURS TO GO" breaks onto two lines beside "Saved to
-   your profile" at 390 px wide. Shorten the badge on narrow screens.
-10. **`@fastify/static` advisories** (path traversal and route-guard bypass, fixed in 10.x). The
-   published API never registers it, because it has no `dist/`. Upgrade before anyone uses the
-   one-process setup in public.
+9. ~~**The masthead on a phone, signed in.**~~ Done: the badge says "Saved" on a phone, so the
+   name stays on one line down to 320 px.
+10. ~~**`@fastify/static` advisories.**~~ Done: 10.1.8, with `glob` held at its fixed 14.x, and
+   Vitest 5 and Vite 6.4.5 for the advisories in the test and build tools. `npm audit` finds none.
 
 ### 3. Features, all before going public
 
@@ -131,8 +124,11 @@ The logbook-photo import was dropped by the owner (decision D24); pilots type th
 - Co-pilot cross-country isn't a column, so the ATPL's co-pilot alternative isn't counted.
 - Age, medical expiry, written-exam validity windows and flight-test 12-month windows aren't checked.
   The exam checklist asks for the right medical category but not its expiry date.
-- The sign-in, reset-email and feedback throttles are in memory, so they reset on restart and don't
-  work across several servers. On Render's free plan they also reset every time the service sleeps.
+- Resend's free plan sends 100 emails a day. Links to confirm an address are capped at 50 a day
+  so reset links keep room; past that, a new profile's link waits for "Send a new link".
+- The limits on sign-ins, sign-ups, reset and confirm emails, and feedback are in memory, so they
+  reset on restart and don't work across several servers. On Render's free plan they also reset
+  every time the service sleeps.
 - No service worker: the home-screen app needs a connection to open.
 - On the free plan the API sleeps. A signed-in pilot opening the app can wait up to a minute (D26).
 - Safari keeps the session cookie only 7 days (D25). The app renews it on every open, so this

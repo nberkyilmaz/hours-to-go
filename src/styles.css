@@ -369,8 +369,18 @@ button:focus-visible {
   .topbar > .save-state {
     margin-left: auto;
   }
-  .save-state.is-local {
+  .save-state.is-local,
+  .save-more {
     display: none;
+  }
+  /* The name stays on one line beside "Saved"; on the narrowest phones it gives way rather than wrap. */
+  .brand {
+    min-width: 0;
+    white-space: nowrap;
+  }
+  .brand span {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .main {
     padding: 16px 16px calc(var(--nav-h) + env(safe-area-inset-bottom) + 24px);
@@ -1883,18 +1893,44 @@ input.narrow {
   border-top: 0;
 }
 
-.danger-zone {
+/* Under the account's buttons: deleting on red, changing the email or password on grey. */
+.danger-zone,
+.subform {
   display: flex;
   flex-direction: column;
   gap: 12px;
   max-width: 420px;
+  margin-top: 12px;
   padding: 14px;
   border-radius: 10px;
   background: var(--danger-soft);
 }
 
-.danger-zone p {
+.subform {
+  background: var(--surface-2);
+}
+
+.danger-zone p,
+.subform p,
+.notice p {
   margin: 0;
+}
+
+.subform .hint {
+  margin-top: 4px;
+}
+
+/* The address's state, inside the account card: waiting to be confirmed, or moving to another. */
+.notice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 560px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  background: var(--accent-soft);
 }
 
 /* ---- Privacy and terms (privacy/index.html) ------------------------------ */

@@ -478,13 +478,96 @@ there are users (D32). The whole plan is in [roadmap.md](roadmap.md).
     sideways scroll), and back to the app;
   - a guest's message and a signed-in one, both printed by the API with the right Reply-To.
 
+## Phase 14: confirming and changing an email, and the password (2026-10-31)
+
+**Owner request.** "Let's go with confirm email and change email", then the rest of the first
+group of gaps on the roadmap, starting with whatever could be built at once. This phase is the
+account part of that group; error alerts, link previews, the phone's top bar and the
+`@fastify/static` update come next.
+
+**Built:**
+- **Migrations** (D33): `MIGRATIONS` in `server/db.ts`, numbered steps recorded in a
+  `migrations` table, run in one locked transaction at start-up. Step 1 is the old table list.
+  Step 2 adds `users.email_confirmed_at` and `email_links`.
+- **Confirming an email** (D34): a link emailed after sign-up (`#confirm=<token>`, 7 days, once),
+  `POST /api/auth/confirm` to spend it, `POST /api/account/confirm` for a new one. The page opens
+  such a link on `ConfirmEmail`. A banner above Progress and Logbook and a notice on Profile ask
+  for it until it's done. A reset link confirms the address too.
+- **Changing email and password** (D35): `POST` and `DELETE /api/account/email`, `POST
+  /api/account/password`, all asking for the current password. The signed-in part of Profile
+  moved into `src/ui/Account.tsx`, with the two forms beside "Delete my profile".
+- **Sign-up limit** (D36): 20 an hour from one IP.
+- `/api/me`, sign-up, sign-in and reset now answer `{ email, confirmed, pendingEmail }`.
+- The privacy page lists the confirm links and the date an address was confirmed.
+
+**Checked:**
+- **Server tests**, per database:
+  - the sign-up's link confirms once, signed in or not;
+  - a new link a few times an hour, then 429, and none once confirmed;
+  - links expire after 7 days;
+  - a change moves the profile only once its link is opened;
+  - a change needs the password and an address no other profile has;
+  - only the newest change counts, and it can be cancelled;
+  - after a move, neither an old confirm link nor an old reset link works;
+  - a move stops if the address was taken in the meantime;
+  - a new password signs out the other device only, and wrong guesses hit 429;
+  - 20 sign-ups an hour;
+  - a database made by the first release, with a pilot in it, upgrades, and a second start runs
+    nothing again.
+- **Web tests**: the banner and "Send a new link", and "Later"; changing email and cancelling it;
+  changing password, with a wrong old one first; a confirm link opened signed out, one that moved
+  a profile, and an expired one.
+- **In Edge**, against a build under `/hours-to-go/` and the API on 8797 printing its emails, at
+  phone size and on a desktop, light and dark:
+  - signing up shows the banner, and the Profile notice sends a new link;
+  - the emailed link confirms, takes the token out of the address bar, and the notices go;
+  - the first link then says it didn't work;
+  - changing email waits, and the link opened in another browser moves the profile;
+  - changing password keeps this device signed in.
+  No console errors.
+
+## Phase 15: error alerts, link previews, the phone's top bar, updates (2026-10-31)
+
+**Owner request.** The same as phase 14: the first group of gaps on the roadmap, whatever could be
+built at once. This is the rest of it. What's left in that group needs the owner or the flight
+school: the instructor's check, and settings in GitHub and Cloudflare.
+
+**Built:**
+- **Error alerts** (D37): a Fastify error handler answers a failure with a plain sentence and
+  emails `FEEDBACK_TO` the method, path and stack, at most 5 an hour. Emails that couldn't be sent
+  alert the same way.
+- **Link previews** (D38): Open Graph tags in `index.html` and `public/og.png`.
+- **The top bar on a phone**: signed in, the badge says "Saved" (its label still says "Saved to
+  your profile"), and the name keeps to one line.
+- **Deploys wait for CI**: `autoDeployTrigger: checksPass` in `render.yaml`.
+- **Updates**: `@fastify/static` 8 → 10.1.8 for its path-traversal advisories, `glob` held at
+  14.0.3 under it, Vitest 2 → 5 and Vite 6.4.5 for the test and build tools' advisories.
+  `npm audit` finds nothing.
+
+**Problems on the way:**
+1. *A space went missing* in phase 14's mail code (`={`), from an edit that ended on a space. It
+   was put back with a commit on that pull request.
+2. *The migration test timed out* in the full run: PGlite opens a folder in a second or two, the
+   test opens one three times, and other test files run alongside. It has 30 seconds now.
+
+**Checked:**
+- **Server tests**: a route that throws answers 500 with the plain sentence, emails the owner
+  without the request's body, and stops after 5 an hour; bad JSON answers 400 and emails nobody;
+  a confirm email that Resend refuses alerts the owner.
+- All 129 tests pass on Vitest 5.
+- `npm start`'s one process, with `dist/` built: the page, the privacy page, assets and app paths
+  load, and `..` tricks (`%2e%2e`, `%2f`, `%5c`) get the app page, never a file outside `dist/`.
+- **In Edge**, signed in: the name on one line at 390, 360 and 320 px wide, light and dark, with
+  no sideways scroll; the desktop bar unchanged. The built page carries every `og:` tag and
+  `og.png`.
+
 ## Where things stand
 
-- 108 tests pass (rules 37, logbook model 21, server API 27, first visit, guest, password reset
-  and feedback 20, signed in 3), and the API tests per database also run against a Postgres server
-  through `pg` in CI.
-- Typecheck clean on both configs.
+- 129 tests pass (rules 37, logbook model 21, server API 42, first visit, guest, password reset,
+  confirm links and feedback 23, signed in 6), and the API tests per database also run against a
+  Postgres server through `pg` in CI.
+- Typecheck clean on both configs; `npm audit` clean.
 - Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.
-- Password reset live. Feedback sends once `FEEDBACK_TO` is set in Render. Backups run once the
-  private repository exists and has its `DATABASE_URL` secret.
+- Password reset live. Feedback and error alerts send once `FEEDBACK_TO` is set in Render. Backups
+  run once the private repository exists and has its `DATABASE_URL` secret.
 - What comes next, in order, is the plan in [roadmap.md](roadmap.md).

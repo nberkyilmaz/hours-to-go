@@ -37,8 +37,11 @@ hours-to-go/
 │       ├── Logbook.tsx         empty state, totals tiles, column totals, by-type table, entry list/cards
 │       ├── EntryForm.tsx       the flight / FTD / paper-totals form and its questions
 │       ├── Profile.tsx         AuthForm: sign up, sign in, forgot password (also on the welcome);
-│       │                           licences held, medical, export / import, delete
+│       │                           licences held, medical, export / import
+│       ├── Account.tsx         signed in: the address and its state, change email or password,
+│       │                           delete; the banner asking to confirm the address (D34, D35)
 │       ├── ResetPassword.tsx   where an emailed reset link opens: choose a new password (D28)
+│       ├── ConfirmEmail.tsx    where an emailed link to confirm an address opens (D34)
 │       ├── Feedback.tsx        "Send feedback" on the Profile tab (D31)
 │       ├── links.ts            the privacy page's address, under the build's base path
 │       ├── useSlow.ts          useSlow: true once a request has taken 4 s, to say the server is
@@ -48,8 +51,10 @@ hours-to-go/
 │   ├── main.ts                 reads env, picks the database, starts Fastify
 │   ├── app.ts                  routes, CORS, session hook, health check, static files, SPA fallback
 │   ├── auth.ts                 scrypt hashing, random tokens (sessions, reset links), throttles
-│   ├── mail.ts                 Resend over HTTP, printing on a laptop, the reset and feedback emails
-│   └── db.ts                   Store: every SQL statement in the project; pg or PGlite
+│   ├── mail.ts                 Resend over HTTP, printing on a laptop, the reset, confirm and
+│   │                               feedback emails
+│   └── db.ts                   Store: every SQL statement in the project, and the numbered
+│                                   migration steps; pg or PGlite
 ├── test/
 │   ├── web/                    jsdom: fixtures, entry, rules, app as guest, app signed in
 │   └── server/                 node: the API through fastify.inject, on PGlite and (TEST_DATABASE_URL) Postgres
@@ -160,22 +165,30 @@ All JSON. Errors are `{ "error": "message for the pilot" }`. The session cookie 
 
 | Method and path | Body | Notes |
 | --- | --- | --- |
-| `POST /api/auth/signup` | `{ email, password }` | 400 bad email or password under 8 characters, 409 email taken; sets the cookie |
+| `POST /api/auth/signup` | `{ email, password }` | 400 bad email or password under 8 characters, 409 email taken, 429 after 20 an hour from one IP; sets the cookie, then emails a link to confirm the address |
 | `POST /api/auth/login` | `{ email, password }` | 401 wrong, 429 after 10 failures in 15 minutes per IP and email |
 | `POST /api/auth/logout` | | deletes the session row, clears the cookie, 204 |
 | `POST /api/auth/forgot` | `{ email }` | 204 whether or not the email has a profile; the link is made and emailed after replying. 429 after 3 an hour to one email or 10 from one IP; 503 without `RESEND_API_KEY` and `APP_URL` |
 | `POST /api/auth/reset` | `{ token, password }` | 400 short password, or a link that is unknown, used or over an hour old; otherwise sets the password, ends every session and sets the cookie for a new one |
-| `GET /api/me` | | `{ user: { email } }` or 401; extends the session to 90 days from now and sets the cookie again |
+| `POST /api/auth/confirm` | `{ token }` | spends a link from a confirm email, signed in or not: `{ email, changed }`. Confirms the profile's address, or moves the profile to the new one. 400 unknown, used or over 7 days old; 409 the new address has been taken since |
+| `GET /api/me` | | `{ user: { email, confirmed, pendingEmail } }` or 401; extends the session to 90 days from now and sets the cookie again. Sign-up, sign-in and reset answer with the same `user` |
 | `GET /api/health` | | `{ ok: true }`, or 503 when the database doesn't answer; Render's health check |
 | `POST /api/feedback` | `{ message, email }` | emails `FEEDBACK_TO`, Reply-To the profile's address (signed in) or `email` (optional); 400 empty, over 4,000 characters or a bad address; 429 after 5 an hour from one IP or 30 a day in all; 502 if sending fails; 503 without `RESEND_API_KEY` and `FEEDBACK_TO`; 204 |
 | `DELETE /api/account` | `{ password }` | deletes the user; entries, profile and sessions cascade; 204 |
+| `POST /api/account/confirm` | | emails a new link to confirm the profile's address; 400 already confirmed, 429 after 3 links an hour to one profile or 50 a day in all, 502 if sending fails, 503 without email; 204 |
+| `POST /api/account/email` | `{ email, password }` | emails a link to the new address, which takes over once it is opened; returns `{ user }` with `pendingEmail`. 400 bad or the same address, 401 wrong password, 409 another profile has it, 429/502/503 as above |
+| `DELETE /api/account/email` | | forgets a change not yet confirmed; returns `{ user }` |
+| `POST /api/account/password` | `{ password, newPassword }` | 401 wrong password, 400 new one under 8 characters; ends every other session and any reset link; 204 |
 | `GET /api/logbook` | | `{ version: 2, entries, profile }` |
 | `PUT /api/entries/:id` | an entry | parsed and validated with the same code as the browser; id must match |
 | `DELETE /api/entries/:id` | | 204, only the caller's own entry |
 | `PUT /api/profile` | a profile | replaces it |
 | `POST /api/logbook/merge` | a logbook | adds what is missing, never overwrites; returns the result |
 
-Any other `/api/*` is 404. Any other GET serves `index.html` (when `dist/` exists), so client-side
+A wrong password on the account routes counts toward the same limit as signing in (10 in 15
+minutes, per profile). Any other `/api/*` is 404. A route that throws answers 500 `{ error }` with a
+plain sentence, and emails `FEEDBACK_TO` the method, path and stack, at most 5 an hour (D37);
+a request Fastify rejects (bad JSON, too big) answers its 4xx with Fastify's reason as `error`. Any other GET serves `index.html` (when `dist/` exists), so client-side
 tabs survive a reload. The published API has no `dist/`: GitHub Pages serves the page.
 
 With `ALLOWED_ORIGINS` set, `@fastify/cors` lets those origins call every route with credentials
@@ -191,20 +204,28 @@ for PGlite: a folder (`data/pglite` by default) or `memory://` (the tests). Both
 interface (`query`, `transaction`, `close`), so the SQL is the same everywhere.
 
 ```sql
-users    (id text pk, email text unique, password_hash text, created_at timestamptz)
+users    (id text pk, email text unique, password_hash text, created_at timestamptz,
+          email_confirmed_at timestamptz /* null until a link sent there is opened */)
 sessions (token_hash text pk, user_id → users on delete cascade, expires_at bigint /* ms */)
 password_resets (token_hash text pk, user_id → users on delete cascade, expires_at bigint /* ms */)
+email_links (token_hash text pk, user_id → users on delete cascade, email text /* the address it confirms */,
+             expires_at bigint /* ms */)
 entries  (user_id → users on delete cascade, id text, data jsonb, pk (user_id, id))
 profiles (user_id pk → users on delete cascade, data jsonb)
+migrations (step integer pk, run_at timestamptz)
 ```
 
-The tables are created with `create table if not exists` when the store opens; there are no
-migrations yet, so a change to an existing table needs one. Entry and profile JSON is passed
+The tables come from `MIGRATIONS`, a list of numbered steps (D33). When the store opens it takes
+an advisory lock, runs in one transaction every step past the highest in `migrations`, and records
+each. A change to the tables is a new step at the end. Entry and profile JSON is passed
 through the same parsers as files, so old formats are converted when read. A merge inserts the
 whole incoming logbook in one statement (`jsonb_array_elements`), inside one transaction. Expired
 sessions are swept whenever a new one is created, and expired reset links whenever a new one is.
 A reset runs in one transaction: delete the link (`returning user_id`, so it can be spent once),
-set the password, delete the profile's other links and every session.
+set the password, confirm the address, delete the profile's other links and every session.
+Spending an email link is one transaction too: delete it (`returning`), then either confirm the
+address (and delete the other links to it) or move the profile to the new address, confirmed, and
+delete all its email and reset links.
 
 ## Client state (`src/useLogbook.ts`)
 
@@ -214,8 +235,12 @@ set the password, delete the profile's other links and every session.
   guest at once and calls nothing (D26). Entering a profile sets the flag; signing out, deleting
   the profile or a 401 clears it.
 - A page opened at `#reset=<token>` shows `ResetPassword` before anything else, and takes the
-  token out of the address bar. A `hashchange` does the same, for a link pasted into a tab that
-  already has the app open. `resetPassword` signs in like `signIn`.
+  token out of the address bar; `#confirm=<token>` does the same with `ConfirmEmail`. A
+  `hashchange` does the same, for a link pasted into a tab that already has the app open.
+  `resetPassword` signs in like `signIn`. `ConfirmEmail` waits until the app knows whether a
+  profile is signed in, spends the link once, and then asks `/api/me` again so the change shows.
+- In profile mode, `mode` carries `confirmed` and `pendingEmail`. Until the address is confirmed,
+  a banner above Progress and Logbook asks for it, and "Later" hides it until the app next opens.
 - `welcomed` (localStorage `hours-to-go/welcomed`, or the signed-in flag): until it is set, a
   guest with nothing logged sees the welcome screen instead of the tabs (D27). Entering a profile
   or "Continue without a profile" sets it. `AuthForm` pings `/api/health` on the first focus

@@ -170,7 +170,7 @@ describe('opening the app', () => {
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'student@example.com' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'correct horse' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create profile' }));
-    expect(await screen.findByText('Saved to your profile')).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Saved to your profile' })).toBeTruthy();
   });
 
   it('switches the welcome to signing in', () => {
@@ -238,7 +238,7 @@ describe('a forgotten password', () => {
 
     type('New password', 'a new long password');
     fireEvent.click(screen.getByRole('button', { name: 'Save new password' }));
-    expect(await screen.findByText('Saved to your profile')).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Saved to your profile' })).toBeTruthy();
     expect(vi.mocked(fetch)).toHaveBeenCalledWith(
       '/api/auth/reset',
       expect.objectContaining({ body: JSON.stringify({ token: 'tok-123', password: 'a new long password' }) }),
@@ -258,6 +258,46 @@ describe('a forgotten password', () => {
     expect(await screen.findByText(/This link has expired/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Back to Hours to Go' }));
     expect(screen.getByRole('heading', { name: 'Create your free profile' })).toBeTruthy();
+  });
+});
+
+describe('an emailed link that confirms an address', () => {
+  const answer = (status: number, body: unknown) => ({ ok: status < 400, status, json: async () => body }) as Response;
+
+  it('confirms it at once, without being signed in', async () => {
+    window.history.replaceState(null, '', '/#confirm=tok-1');
+    vi.mocked(fetch).mockImplementation(async (url) =>
+      url === '/api/auth/confirm' ? answer(200, { email: 'student@example.com', changed: false }) : answer(401, {}),
+    );
+    render(<App />);
+    expect(await screen.findByRole('heading', { name: 'Your email is confirmed' })).toBeTruthy();
+    expect(screen.getByText(/is confirmed. If you ever forget your password/)).toBeTruthy();
+    expect(window.location.hash).toBe('');
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith('/api/auth/confirm', expect.objectContaining({ body: JSON.stringify({ token: 'tok-1' }) }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open Hours to Go' }));
+    expect(screen.getByRole('heading', { name: 'Create your free profile' })).toBeTruthy();
+  });
+
+  it('says when the profile has moved to a new address', async () => {
+    window.history.replaceState(null, '', '/#confirm=tok-2');
+    vi.mocked(fetch).mockImplementation(async (url) =>
+      url === '/api/auth/confirm' ? answer(200, { email: 'new@example.com', changed: true }) : answer(401, {}),
+    );
+    render(<App />);
+    expect(await screen.findByRole('heading', { name: 'Your email is changed' })).toBeTruthy();
+    expect(screen.getByText('new@example.com')).toBeTruthy();
+  });
+
+  it('says when the link has expired', async () => {
+    window.history.replaceState(null, '', '/#confirm=old');
+    vi.mocked(fetch).mockImplementation(async (url) =>
+      url === '/api/auth/confirm'
+        ? answer(400, { error: 'This link has expired or has already been used. Send a new one from your profile.' })
+        : answer(401, {}),
+    );
+    render(<App />);
+    expect(await screen.findByRole('heading', { name: 'This link didn’t work' })).toBeTruthy();
+    expect(screen.getByText(/Send a new one from your profile/)).toBeTruthy();
   });
 });
 

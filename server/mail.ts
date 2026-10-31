@@ -51,9 +51,53 @@ export function resetMail(to: string, link: string, minutes: number): Mail {
   return { to, subject: 'Reset your Hours to Go password', text, html };
 }
 
+/**
+ * The link that confirms an address: the one a pilot signed up with, or, for a `change`, one they
+ * are moving to. A change doesn't name the old address: a mistyped new one reaches a stranger.
+ */
+export function confirmMail(to: string, link: string, days: number, change: boolean): Mail {
+  const why = change
+    ? 'Someone asked to move a Hours to Go profile to this email address.'
+    : 'Thanks for creating a Hours to Go profile. Confirm that this is your email address, so that a password reset can reach you if you ever need one.';
+  const until = change ? 'Until you do, the profile keeps its old address.' : '';
+  const ignore = change ? 'If it wasn’t you, ignore this email and nothing changes.' : 'If you didn’t create a profile, ignore this email.';
+  const text = [why, '', `Open this link in the next ${days} days. It works once. ${until}`.trim(), link, '', ignore].join('\n');
+  // As in the reset email, the link needs no escaping: APP_URL and a base64url token.
+  const html = `<!doctype html><html><body style="margin:0;padding:24px;background:#f3f4f6;font:16px/1.5 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#0f141b">
+<div style="max-width:480px;margin:0 auto;background:#fff;border:1px solid #e1e4e9;border-radius:10px;padding:24px">
+<p style="margin:0 0 16px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-size:13px;color:#0e7490">Hours to Go</p>
+<p style="margin:0 0 16px">${why}</p>
+<p style="margin:0 0 24px">Open this link in the next ${days} days. It works once. ${until}</p>
+<p style="margin:0 0 24px"><a href="${link}" style="display:inline-block;padding:12px 20px;border-radius:8px;background:#0e7490;color:#fff;font-weight:700;text-decoration:none">${change ? 'Use this email' : 'Confirm my email'}</a></p>
+<p style="margin:0;color:#5b6573;font-size:14px">${ignore}</p>
+</div></body></html>`;
+  return { to, subject: change ? 'Confirm your new email for Hours to Go' : 'Confirm your email for Hours to Go', text, html };
+}
+
 const HTML_ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 /** A pilot's own words go into the HTML as text, never as markup. */
 const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]!);
+
+/**
+ * To the owner: something failed that the pilot didn't cause. What was asked and the error's
+ * stack, never the request's body, which can hold a password.
+ */
+export function alertMail(to: string, what: string, err: unknown, when: Date, perHour: number): Mail {
+  const detail = err instanceof Error ? (err.stack ?? `${err.name}: ${err.message}`) : String(err);
+  const text = [
+    `Something failed on the Hours to Go server at ${when.toISOString()}.`,
+    '',
+    what,
+    '',
+    detail,
+    '',
+    `At most ${perHour} of these are sent an hour. Render’s logs (hours-to-go-api → Logs) have every one.`,
+  ].join('\n');
+  const html = `<!doctype html><html><body style="margin:0;padding:24px;color:#0f141b">
+<pre style="margin:0;white-space:pre-wrap;font:13px/1.5 ui-monospace,Consolas,monospace">${escapeHtml(text)}</pre>
+</body></html>`;
+  return { to, subject: `Hours to Go: ${what}`, text, html };
+}
 
 export interface Feedback {
   message: string;
