@@ -8,7 +8,7 @@ import { validateEntry } from '../src/model/entry';
 import { parseEntry, parseLogbook, parseProfile } from '../src/model/store';
 import { Throttle, hashPassword, hashToken, newToken, verifyPassword } from './auth';
 import { Store, type Account, type User } from './db';
-import { confirmMail, feedbackMail, resetMail, type SendMail } from './mail';
+import { alertMail, confirmMail, feedbackMail, resetMail, type SendMail } from './mail';
 
 export interface AppOptions {
   /** A `postgres://` URL, or for PGlite a folder or `memory://`. See `Store.open`. */
@@ -33,6 +33,8 @@ export interface AppOptions {
   appUrl?: string | undefined;
   /** The owner's address, where "Send feedback" goes. Without it (or `sendMail`), feedback is unavailable. */
   feedbackTo?: string | undefined;
+  /** Where an email goes when something fails that the pilot didn't cause. Without it, failures are only logged. */
+  alertTo?: string | undefined;
 }
 
 const COOKIE = 'htg_session';
@@ -40,7 +42,8 @@ const SESSION_DAYS = 90;
 const RESET_MINUTES = 60;
 const CONFIRM_DAYS = 7;
 const FEEDBACK_MAX = 4000;
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const ALERTS_PER_HOUR = 5;
+const EMAIL =/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function passwordProblem(password: string): string | null {
   if (password.length < 8) return 'Use a password of at least 8 characters.';
@@ -59,6 +62,7 @@ const bodyOf = (req: FastifyRequest): Record<string, unknown> =>
 
 export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   const app = Fastify({ logger: opts.logger ?? false, bodyLimit: 5 * 1024 * 1024, trustProxy: true });
+  // Logged, not alerted: Neon closes idle connections as a matter of course, and the pool reconnects.
   const store = await Store.open(opts.database, (err) => app.log.error(err, 'database connection dropped'));
   const throttle = new Throttle(10, 15 * 60_000);
   // Reset emails: a few to any one address, so nobody can flood someone's inbox, and a few more
@@ -75,7 +79,28 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   // Links to confirm an address: a few an hour to one profile, and a cap a day in all, as for feedback.
   const linksPerUser = new Throttle(3, 60 * 60_000);
   const linksPerDay = new Throttle(50, 24 * 60 * 60_000);
+  // Error alerts: a few an hour, so a failure on every request can't flood the owner's inbox or
+  // use up the day's emails.
+  const alertsPerHour = new Throttle(ALERTS_PER_HOUR, 60 * 60_000);
   app.addHook('onClose', async () => store.close());
+
+  /** Logs a failure the pilot didn't cause, and emails the owner about it. */
+  const failed = (err: unknown, what: string) => {
+    app.log.error(err, what);
+    const { sendMail, alertTo } = opts;
+    if (!sendMail || !alertTo || alertsPerHour.blocked('all')) return;
+    alertsPerHour.fail('all');
+    void sendMail(alertMail(alertTo, what, err, new Date(), ALERTS_PER_HOUR)).catch((e: unknown) => app.log.error(e, 'error alert not sent'));
+  };
+
+  // A request the server couldn't handle: the pilot gets a plain sentence rather than the error,
+  // and the owner gets an email. A request that was itself wrong (bad JSON, too big) says why.
+  app.setErrorHandler(async (err: Error & { statusCode?: number }, req, reply) => {
+    const status = err.statusCode ?? 500;
+    if (status < 500) return reply.code(status).send({ error: err.message });
+    failed(err, `${req.method} ${req.url} failed`);
+    return reply.code(500).send({ error: 'Something went wrong on our side. Try again in a few minutes.' });
+  });
 
   await app.register(cookie);
   if (opts.allowedOrigins?.length) {
@@ -167,7 +192,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
       await sendEmailLink(user, email);
       return true;
     } catch (err) {
-      app.log.error(err, 'email link not sent');
+      failed(err, 'email link not sent');
       await reply.code(502).send({ error: 'The email couldn’t be sent. Try again in a few minutes.' });
       return false;
     }
@@ -190,7 +215,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     if (!user) return reply.code(409).send({ error: 'An account with that email already exists. Sign in instead.' });
     await startSession(reply, user);
     if (opts.sendMail && opts.appUrl && !linksBlocked(user.id)) {
-      void sendEmailLink(user, user.email).catch((err: unknown) => app.log.error(err, 'confirmation email not sent'));
+      void sendEmailLink(user, user.email).catch((err: unknown) => failed(err, 'confirmation email not sent'));
     }
     return { user: { email: user.email, confirmed: false, pendingEmail: null } satisfies Account };
   });
@@ -234,7 +259,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
       const link = new URL(appUrl);
       link.hash = `reset=${token}`;
       await sendMail(resetMail(user.email, link.toString(), RESET_MINUTES));
-    })().catch((err: unknown) => app.log.error(err, 'password reset email not sent'));
+    })().catch((err: unknown) => failed(err, 'password reset email not sent'));
     return reply.code(204).send();
   });
 
@@ -384,7 +409,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     try {
       await sendMail(feedbackMail(feedbackTo, { message, from, signedIn: req.user !== null, browser }));
     } catch (err) {
-      app.log.error(err, 'feedback email not sent');
+      failed(err, 'feedback email not sent');
       return reply.code(502).send({ error: 'Your message couldn’t be sent. Try again in a few minutes.' });
     }
     return reply.code(204).send();
