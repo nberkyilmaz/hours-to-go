@@ -37,3 +37,8 @@ services:
         value: Hours to Go <no-reply@nberkyilmaz.com>
       - key: APP_URL
         value: https://nberkyilmaz.com/hours-to-go/
+
+      # Where "Send feedback" goes: the owner's own address. Typed in the dashboard rather than
+      # written here, so it isn't published with this repository. Replies go to the pilot.
+      - key: FEEDBACK_TO
+        sync: false

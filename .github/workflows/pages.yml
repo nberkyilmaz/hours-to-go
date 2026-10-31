@@ -17,6 +17,7 @@ on:
       - 'src/**'
       - 'public/**'
       - 'index.html'
+      - 'privacy/**'
       - 'vite.config.ts'
       - 'tsconfig.json'
       - 'package.json'
@@ -61,7 +62,7 @@ jobs:
           VITE_API: ${{ vars.API_URL }}
 
       - name: Fail rather than publish an empty site
-        run: test -s dist/index.html && test -s dist/manifest.webmanifest
+        run: test -s dist/index.html && test -s dist/privacy/index.html && test -s dist/manifest.webmanifest
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

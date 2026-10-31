@@ -5,7 +5,9 @@ import { MEDICAL_LABEL, type Medical, type Profile } from '../model/profile';
 import { hasContent, parseLogbook, type Logbook } from '../model/store';
 import { GOALS, STANDARD_421_URL } from '../rules/goals';
 import type { LogbookState } from '../useLogbook';
-import { useSlow } from './useSlow';
+import { Feedback } from './Feedback';
+import { PRIVACY_URL } from './links';
+import { useSlow, useWake } from './useSlow';
 
 export function ProfileView({ lb }: { lb: LogbookState }) {
   const { book, mode } = lb;
@@ -77,6 +79,8 @@ export function ProfileView({ lb }: { lb: LogbookState }) {
 
       <DataSection lb={lb} />
 
+      <Feedback signedInAs={mode.kind === 'account' ? mode.email : null} />
+
       <section className="card pad muted small">
         <p>
           Requirements come from Transport Canada{' '}
@@ -85,6 +89,9 @@ export function ProfileView({ lb }: { lb: LogbookState }) {
           </a>{' '}
           (text current to NSA 2025-008). This app is a study and planning aid, not an official record: your certified personal log and
           Transport Canada decide what counts. Check anything that matters with your flight training unit.
+        </p>
+        <p>
+          <a href={PRIVACY_URL}>Privacy and terms</a>
         </p>
       </section>
     </div>
@@ -125,15 +132,8 @@ export function AuthForm({ lb, tab: givenTab, onTabChange }: AuthFormProps) {
     (onTabChange ?? setOwnTab)(next);
   };
 
-  // A sleeping server takes up to a minute to wake: start it as soon as the pilot starts on the
-  // form, so it is up by the time they have typed. Not on sight: a visitor who only looks
-  // shouldn't wake it.
-  const woken = useRef(false);
-  const wake = () => {
-    if (woken.current) return;
-    woken.current = true;
-    api.health().catch(() => {});
-  };
+  // A sleeping server takes up to a minute to wake.
+  const wake = useWake();
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -205,6 +205,11 @@ export function AuthForm({ lb, tab: givenTab, onTabChange }: AuthFormProps) {
           )}
           {tab === 'signup' && local && <p className="hint">Everything you’ve logged on this device moves into your new profile.</p>}
           {tab === 'signin' && local && <p className="hint">After you sign in you can add what’s on this device to your profile.</p>}
+          {tab === 'signup' && (
+            <p className="hint">
+              Creating a profile means you agree to the <a href={PRIVACY_URL}>privacy and terms</a>.
+            </p>
+          )}
           <button type="submit" className="btn primary" disabled={busy}>
             {busy ? 'One moment…' : SUBMIT[tab]}
           </button>

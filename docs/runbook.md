@@ -93,7 +93,8 @@ when it starts, so new hashed asset names 404 until it restarts.
 ## Checking the UI in a real browser
 
 The jsdom tests can't see layout. Before calling a UI change done, open it at desktop size and at
-phone size (390×844 with touch). Three real bugs were only found this way.
+phone size (390×844 with touch). Three real bugs were only found this way. The privacy page is at
+`/privacy/` on the dev server, and `/hours-to-go/privacy/` when published.
 
 What was used: `playwright-core` driving the installed Edge, from a scratch folder outside the
 project so the project doesn't depend on it.
@@ -185,6 +186,16 @@ which stops cleanly.
 
 **Typecheck errors in `vite.config.ts`.** Vitest 2 ships its own Vite 5 types, which clash with Vite 6
 under `exactOptionalPropertyTypes`. The file is deliberately in neither tsconfig.
+
+**Git Bash rewrites paths.** In Git Bash, an environment variable or argument that starts with `/`
+is turned into a Windows path, so `VITE_BASE=/hours-to-go/ npm run build` links the assets at
+`C:/Program Files/Git/hours-to-go/`. Put `MSYS_NO_PATHCONV=1` in front, or build from PowerShell.
+With it, any other path must be a Windows one (`C:/Users/…`): a `/c/Users/…` argument is then
+taken as `C:\c\Users\…`.
+
+**Port 8787 is departure-brief's too.** Its dev server listens on the same port. If it's running,
+start this API on another (`PORT=8797`) and build the page with `VITE_API` pointing there, or stop
+that one first.
 
 **Long inline scripts in Git Bash.** Very long here-documents passed to `bash -c` sometimes fail with
 "unexpected EOF while looking for matching `''". Write the script to a file and run the file.

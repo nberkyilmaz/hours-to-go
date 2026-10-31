@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { LogbookState } from '../useLogbook';
 import { BookIcon, CiteIcon, Mark, ProgressIcon } from './icons';
+import { PRIVACY_URL } from './links';
 import { AuthForm, type AuthTab } from './Profile';
 
 const POINTS = [
@@ -68,7 +69,10 @@ export function Welcome({ lb }: { lb: LogbookState }) {
           ))}
         </ul>
 
-        <p className="welcome-foot">A study and planning aid, not an official record: your certified personal log and Transport Canada decide what counts.</p>
+        <p className="welcome-foot">
+          A study and planning aid, not an official record: your certified personal log and Transport Canada decide what counts.{' '}
+          <a href={PRIVACY_URL}>Privacy and terms</a>
+        </p>
       </main>
     </div>
   );

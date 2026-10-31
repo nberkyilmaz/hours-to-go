@@ -17,6 +17,7 @@ beforeEach(() => {
       const method = init?.method ?? 'GET';
       if (url === '/api/me') return reply(200, { user: { email: 'student@example.com' } });
       if (url === '/api/logbook' && method === 'GET') return reply(200, emptyLogbook());
+      if (url === '/api/feedback') return reply(204, null);
       if (failSaves) throw new TypeError('Failed to fetch');
       return reply(200, JSON.parse(String(init?.body ?? 'null')));
     }),
@@ -45,5 +46,16 @@ describe('signed in', () => {
     expect(picker.value).toBe('ifr3');
     expect(await screen.findByText(/Your last change was not saved/)).toBeTruthy();
     await waitFor(() => expect((screen.getByLabelText('Working on') as HTMLSelectElement).value).toBe('ppl'));
+  });
+
+  it('sends feedback with the profile’s address to reply to, without asking for one', async () => {
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: /^Profile/ }));
+    expect(screen.queryByLabelText('Your email, if you’d like a reply')).toBeNull();
+    expect(screen.getByText('Replies go to student@example.com.')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Love it' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
+    expect(await screen.findByText('Thanks, your message was sent. Any reply will go to student@example.com.')).toBeTruthy();
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith('/api/feedback', expect.objectContaining({ body: JSON.stringify({ message: 'Love it', email: '' }) }));
   });
 });

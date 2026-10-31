@@ -22,6 +22,9 @@ const resendKey = process.env.RESEND_API_KEY;
 const sendMail = resendKey ? resend(resendKey, process.env.MAIL_FROM || 'Hours to Go <no-reply@nberkyilmaz.com>') : production ? undefined : printMail;
 const appUrl = process.env.APP_URL || (production ? undefined : 'http://localhost:5173/');
 if (!sendMail || !appUrl) console.warn('Password reset emails are off: set RESEND_API_KEY and APP_URL.');
+// "Send feedback" emails the owner at this address. Set in Render's dashboard, so it isn't published.
+const feedbackTo = process.env.FEEDBACK_TO || (production ? undefined : 'owner@localhost');
+if (!sendMail || !feedbackTo) console.warn('Feedback is off: set RESEND_API_KEY and FEEDBACK_TO.');
 
 const app = await buildApp({
   database,
@@ -34,6 +37,7 @@ const app = await buildApp({
   logger: true,
   sendMail,
   appUrl,
+  feedbackTo,
 });
 
 await app.listen({
