@@ -186,7 +186,9 @@ All JSON. Errors are `{ "error": "message for the pilot" }`. The session cookie 
 | `POST /api/logbook/merge` | a logbook | adds what is missing, never overwrites; returns the result |
 
 A wrong password on the account routes counts toward the same limit as signing in (10 in 15
-minutes, per profile). Any other `/api/*` is 404. Any other GET serves `index.html` (when `dist/` exists), so client-side
+minutes, per profile). Any other `/api/*` is 404. A route that throws answers 500 `{ error }` with a
+plain sentence, and emails `FEEDBACK_TO` the method, path and stack, at most 5 an hour (D37);
+a request Fastify rejects (bad JSON, too big) answers its 4xx with Fastify's reason as `error`. Any other GET serves `index.html` (when `dist/` exists), so client-side
 tabs survive a reload. The published API has no `dist/`: GitHub Pages serves the page.
 
 With `ALLOWED_ORIGINS` set, `@fastify/cors` lets those origins call every route with credentials
