@@ -74,7 +74,7 @@ export function confirmMail(to: string, link: string, days: number, change: bool
   return { to, subject: change ? 'Confirm your new email for Hours to Go' : 'Confirm your email for Hours to Go', text, html };
 }
 
-const HTML_ESCAPES: Record<string, string> ={ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+const HTML_ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 /** A pilot's own words go into the HTML as text, never as markup. */
 const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]!);
 
