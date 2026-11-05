@@ -891,6 +891,16 @@ button:focus-visible {
   font-size: 14px;
 }
 
+/* Under the price: what the average costs, and the way to the rates. */
+.stat-more {
+  margin-top: 6px;
+  font-size: 14px;
+}
+
+.stat-more .link {
+  padding: 0;
+}
+
 .gates {
   list-style: none;
   margin: 16px 0 0;

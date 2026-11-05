@@ -41,10 +41,16 @@ export function priceOf(plan: Plan, rates: Rates): Cost {
   return { lines, subtotal, tax, total: cents(subtotal + tax), perHour: { dual: withTax(rate.dual), solo: withTax(rate.solo) } };
 }
 
-/** The headline figure: to the $100 from $1,000 up, to the $10 below. It is an estimate, not a quote. */
+const step = (dollars: number) => (dollars >= 1000 ? 100 : 10);
+
+/** An estimate, not a quote: to the $100 from $1,000 up, to the $10 below. */
 export function about(dollars: number): number {
-  const step = dollars >= 1000 ? 100 : 10;
-  return Math.round(dollars / step) * step;
+  return Math.round(dollars / step(dollars)) * step(dollars);
+}
+
+/** The headline, which says "at least": rounded down the same way, so it never tops the panel's total. */
+export function atLeast(dollars: number): number {
+  return Math.floor(dollars / step(dollars)) * step(dollars);
 }
 
 const WHOLE = new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 });

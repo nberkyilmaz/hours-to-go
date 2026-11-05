@@ -171,8 +171,10 @@ gates use the same conditions and add `passed` once their exams are passed.
 **The price** (`cost.ts`). `priceOf(plan, rates)` bills each kind of time in tenths of an hour,
 rounded up: dual at the aeroplane plus the instructor, simulator at its rate plus the instructor,
 solo at the aeroplane. Tax goes on the subtotal. It also returns what one more hour of each adds
-with tax. `about()` rounds the headline to $100 ($10 under $1,000). `Cost.tsx` hides the price for
-a goal held, credited or complete, or with nothing left to pay for.
+with tax. `about()` rounds an estimate to $100 ($10 under $1,000), and `atLeast()` rounds the
+headline down the same way. `Cost.tsx` hides the price for a goal held, credited or complete, or
+with nothing left to pay for. For the PPL the card adds the price at the 65 h average, and while
+the rates are the sample ones, a link that opens the panel at them.
 
 ## API (`server/app.ts`)
 
