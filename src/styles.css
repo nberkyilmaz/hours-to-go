@@ -369,8 +369,18 @@ button:focus-visible {
   .topbar > .save-state {
     margin-left: auto;
   }
-  .save-state.is-local {
+  .save-state.is-local,
+  .save-more {
     display: none;
+  }
+  /* The name stays on one line beside "Saved"; on the narrowest phones it gives way rather than wrap. */
+  .brand {
+    min-width: 0;
+    white-space: nowrap;
+  }
+  .brand span {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .main {
     padding: 16px 16px calc(var(--nav-h) + env(safe-area-inset-bottom) + 24px);

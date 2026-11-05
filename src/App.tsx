@@ -128,8 +128,9 @@ export function App() {
           ))}
         </nav>
         {mode.kind === 'account' ? (
-          <button type="button" className="save-state" onClick={() => setTab('profile')}>
-            <CloudCheckIcon /> Saved to your profile
+          // On a phone it says only "Saved", so the name keeps to one line; the label still says all of it.
+          <button type="button" className="save-state" aria-label="Saved to your profile" onClick={() => setTab('profile')}>
+            <CloudCheckIcon /> Saved<span className="save-more"> to your profile</span>
           </button>
         ) : (
           <div className="topbar-end">

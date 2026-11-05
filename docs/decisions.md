@@ -354,6 +354,30 @@ the other limits (D15).
 Turned down: a CAPTCHA (another company's script on the page, and a puzzle in the way of
 students); a daily cap on all sign-ups (one script could then stop every real student).
 
+### D37. Errors email the owner
+A failure the pilot didn't cause used to reach only Render's logs, which nobody reads unprompted,
+and the pilot saw "Internal Server Error". Now:
+- **The pilot** gets "Something went wrong on our side. Try again in a few minutes." A request
+  that was itself wrong (bad JSON, too big) still says why, with its 4xx.
+- **The owner** gets an email to `FEEDBACK_TO`, through Resend: what was asked (method and path),
+  when, and the error's stack. Never the request's body, which can hold a password. The same goes
+  for an email that couldn't be sent (reset, confirm, feedback), since that usually means Resend's
+  key or quota.
+- **At most 5 an hour**, so a failure on every request can't flood the inbox or use up the day's
+  emails. Render's logs still have every one.
+- **Not alerted**: Neon closing an idle connection, which the pool reports and recovers from many
+  times a day.
+
+Turned down: an error service such as Sentry (a new account, and another company holding stack
+traces); a separate `ALERT_TO` (one more setting for the same inbox).
+
+### D38. A shared link shows a picture
+`index.html` carries Open Graph tags and `public/og.png`, 1200 × 630, which group chats, Instagram,
+Facebook and others show with a shared link. The picture is the welcome screen's look: the name,
+the headline, and a gauge with hours to go. It was drawn as HTML with the app's colours and B612,
+and saved from Edge. Previews need full addresses, so the tags name
+`https://nberkyilmaz.com/hours-to-go/`; they move with the site if it gets a domain of its own.
+
 ## Interface
 
 ### D18. Three tabs: Progress, Logbook, Profile

@@ -78,6 +78,27 @@ const HTML_ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '
 /** A pilot's own words go into the HTML as text, never as markup. */
 const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]!);
 
+/**
+ * To the owner: something failed that the pilot didn't cause. What was asked and the error's
+ * stack, never the request's body, which can hold a password.
+ */
+export function alertMail(to: string, what: string, err: unknown, when: Date, perHour: number): Mail {
+  const detail = err instanceof Error ? (err.stack ?? `${err.name}: ${err.message}`) : String(err);
+  const text = [
+    `Something failed on the Hours to Go server at ${when.toISOString()}.`,
+    '',
+    what,
+    '',
+    detail,
+    '',
+    `At most ${perHour} of these are sent an hour. Render’s logs (hours-to-go-api → Logs) have every one.`,
+  ].join('\n');
+  const html = `<!doctype html><html><body style="margin:0;padding:24px;color:#0f141b">
+<pre style="margin:0;white-space:pre-wrap;font:13px/1.5 ui-monospace,Consolas,monospace">${escapeHtml(text)}</pre>
+</body></html>`;
+  return { to, subject: `Hours to Go: ${what}`, text, html };
+}
+
 export interface Feedback {
   message: string;
   /** The pilot's address, to reply to: their profile's, or one they typed. */

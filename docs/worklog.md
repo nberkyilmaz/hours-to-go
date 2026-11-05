@@ -526,13 +526,48 @@ account part of that group; error alerts, link previews, the phone's top bar and
   - changing password keeps this device signed in.
   No console errors.
 
+## Phase 15: error alerts, link previews, the phone's top bar, updates (2026-10-31)
+
+**Owner request.** The same as phase 14: the first group of gaps on the roadmap, whatever could be
+built at once. This is the rest of it. What's left in that group needs the owner or the flight
+school: the instructor's check, and settings in GitHub and Cloudflare.
+
+**Built:**
+- **Error alerts** (D37): a Fastify error handler answers a failure with a plain sentence and
+  emails `FEEDBACK_TO` the method, path and stack, at most 5 an hour. Emails that couldn't be sent
+  alert the same way.
+- **Link previews** (D38): Open Graph tags in `index.html` and `public/og.png`.
+- **The top bar on a phone**: signed in, the badge says "Saved" (its label still says "Saved to
+  your profile"), and the name keeps to one line.
+- **Deploys wait for CI**: `autoDeployTrigger: checksPass` in `render.yaml`.
+- **Updates**: `@fastify/static` 8 → 10.1.8 for its path-traversal advisories, `glob` held at
+  14.0.3 under it, Vitest 2 → 5 and Vite 6.4.5 for the test and build tools' advisories.
+  `npm audit` finds nothing.
+
+**Problems on the way:**
+1. *A space went missing* in phase 14's mail code (`={`), from an edit that ended on a space. It
+   was put back with a commit on that pull request.
+2. *The migration test timed out* in the full run: PGlite opens a folder in a second or two, the
+   test opens one three times, and other test files run alongside. It has 30 seconds now.
+
+**Checked:**
+- **Server tests**: a route that throws answers 500 with the plain sentence, emails the owner
+  without the request's body, and stops after 5 an hour; bad JSON answers 400 and emails nobody;
+  a confirm email that Resend refuses alerts the owner.
+- All 129 tests pass on Vitest 5.
+- `npm start`'s one process, with `dist/` built: the page, the privacy page, assets and app paths
+  load, and `..` tricks (`%2e%2e`, `%2f`, `%5c`) get the app page, never a file outside `dist/`.
+- **In Edge**, signed in: the name on one line at 390, 360 and 320 px wide, light and dark, with
+  no sideways scroll; the desktop bar unchanged. The built page carries every `og:` tag and
+  `og.png`.
+
 ## Where things stand
 
-- 126 tests pass (rules 37, logbook model 21, server API 39, first visit, guest, password reset,
+- 129 tests pass (rules 37, logbook model 21, server API 42, first visit, guest, password reset,
   confirm links and feedback 23, signed in 6), and the API tests per database also run against a
   Postgres server through `pg` in CI.
-- Typecheck clean on both configs.
+- Typecheck clean on both configs; `npm audit` clean.
 - Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.
-- Password reset live. Feedback sends once `FEEDBACK_TO` is set in Render. Backups run once the
-  private repository exists and has its `DATABASE_URL` secret.
+- Password reset live. Feedback and error alerts send once `FEEDBACK_TO` is set in Render. Backups
+  run once the private repository exists and has its `DATABASE_URL` secret.
 - What comes next, in order, is the plan in [roadmap.md](roadmap.md).

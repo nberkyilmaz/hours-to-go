@@ -45,7 +45,7 @@ afterEach(() => {
 describe('signed in', () => {
   it('saves to the profile, not to this browser', async () => {
     render(<App />);
-    expect(await screen.findByText('Saved to your profile')).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Saved to your profile' })).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Working on'), { target: { value: 'cpl' } });
     await waitFor(() => expect(vi.mocked(fetch)).toHaveBeenCalledWith('/api/profile', expect.objectContaining({ method: 'PUT' })));
     expect(localStorage.getItem('hours-to-go/v1')).toBeNull();
@@ -113,7 +113,7 @@ describe('signed in', () => {
     fireEvent.change(screen.getByLabelText('New password'), { target: { value: 'a new long password' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save new password' }));
     expect(await screen.findByText('That password is incorrect.')).toBeTruthy();
-    expect(screen.getByText('Saved to your profile')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Saved to your profile' })).toBeTruthy();
 
     fireEvent.change(screen.getByLabelText('Current password'), { target: { value: 'correct horse' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save new password' }));

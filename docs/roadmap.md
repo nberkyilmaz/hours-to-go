@@ -28,26 +28,24 @@ that costs money until it has users: no paid plan, no domain of its own, no stor
 3. ~~**Change email and change password**~~ while signed in. Done: a new address takes over once
    its link is opened; a new password signs out other devices (D35).
 4. ~~**Sign-up protection.**~~ Done: 20 sign-ups an hour from one network (D36).
-5. **Error alerts.** The server emails the owner, through Resend and at most a few an hour, when
-   something fails that the pilot didn't cause. No new service.
-6. **Link previews.** `og:` tags and a preview image, so a shared link shows a picture and a line
-   in group chats, Instagram and Facebook.
+5. ~~**Error alerts.**~~ Done: the owner gets an email, at most 5 an hour, and the pilot a plain
+   sentence (D37).
+6. ~~**Link previews.**~~ Done: `og:` tags and a 1200 × 630 picture, `public/og.png` (D38).
 7. **An instructor checks the numbers.** The four questions under
    [Confirm with the flight school](#confirm-with-the-flight-school), and a run through the app
    with a real student's logbook.
 8. **Settings for the owner, free:**
-   - Render → hours-to-go-api → Settings → Build & Deploy → Auto-Deploy → "After CI checks
-     pass", and `autoDeployTrigger: checksPass` in `render.yaml`, so a push that fails CI never
-     reaches pilots.
+   - ~~`autoDeployTrigger: checksPass` in `render.yaml`~~ (done), so a push that fails CI never
+     reaches pilots. After it is merged, check that Render → hours-to-go-api → Settings → Build &
+     Deploy → Auto-Deploy says "After CI checks pass"; if not, choose it there.
    - Verify `nberkyilmaz.com` on the GitHub account (Settings → Pages → Add a domain, a TXT
      record at Cloudflare), so no other account can claim it or a subdomain.
    - Retake the landing page's screenshot (`assets/hours-to-go.webp` in the user site), which
      shows the look before 2026-10-28.
-9. **The masthead on a phone, signed in.** "HOURS TO GO" breaks onto two lines beside "Saved to
-   your profile" at 390 px wide. Shorten the badge on narrow screens.
-10. **`@fastify/static` advisories** (path traversal and route-guard bypass, fixed in 10.x). The
-   published API never registers it, because it has no `dist/`. Upgrade before anyone uses the
-   one-process setup in public.
+9. ~~**The masthead on a phone, signed in.**~~ Done: the badge says "Saved" on a phone, so the
+   name stays on one line down to 320 px.
+10. ~~**`@fastify/static` advisories.**~~ Done: 10.1.8, with `glob` held at its fixed 14.x, and
+   Vitest 5 and Vite 6.4.5 for the advisories in the test and build tools. `npm audit` finds none.
 
 ### 3. Features, all before going public
 

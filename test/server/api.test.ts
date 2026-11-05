@@ -73,6 +73,7 @@ describe.each(DATABASES)('on $name', ({ url }) => {
       secureCookies: false,
       appUrl: APP_URL,
       feedbackTo: OWNER,
+      alertTo: OWNER,
       sendMail: async (mail) => {
         sent.push(mail);
       },
@@ -566,6 +567,70 @@ describe('a server that can’t send email', () => {
     } finally {
       await api.close();
     }
+  });
+
+  it('tells the owner when a pilot’s email couldn’t be sent', async () => {
+    const alerts: Mail[] = [];
+    const api = await buildApp({
+      database: 'memory://',
+      secureCookies: false,
+      appUrl: APP_URL,
+      alertTo: OWNER,
+      sendMail: async (mail) => {
+        if (mail.to !== OWNER) throw new Error('Resend answered 422: the daily quota is used up');
+        alerts.push(mail);
+      },
+    });
+    try {
+      await api.inject({ method: 'POST', url: '/api/auth/signup', payload: { email: 'student@example.com', password: 'correct horse' } });
+      await vi.waitFor(() => expect(alerts).toHaveLength(1));
+      expect(alerts[0]!.subject).toBe('Hours to Go: confirmation email not sent');
+      expect(alerts[0]!.text).toContain('the daily quota is used up');
+    } finally {
+      await api.close();
+    }
+  });
+});
+
+describe('a failure on the server', () => {
+  let api: FastifyInstance;
+  let alerts: Mail[];
+  beforeEach(async () => {
+    alerts = [];
+    api = await buildApp({
+      database: 'memory://',
+      secureCookies: false,
+      alertTo: OWNER,
+      sendMail: async (mail) => {
+        alerts.push(mail);
+      },
+    });
+    api.post('/api/test/fail', async () => {
+      throw new Error('the database fell over');
+    });
+  });
+  afterEach(() => api.close());
+
+  it('tells the pilot plainly, and emails the owner a few times an hour at most', async () => {
+    const res = await api.inject({ method: 'POST', url: '/api/test/fail', payload: { password: 'secret words' } });
+    expect(res.statusCode).toBe(500);
+    expect(res.json()).toEqual({ error: 'Something went wrong on our side. Try again in a few minutes.' });
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]!.to).toBe(OWNER);
+    expect(alerts[0]!.subject).toBe('Hours to Go: POST /api/test/fail failed');
+    expect(alerts[0]!.text).toContain('Error: the database fell over');
+    // What was sent with the request stays out of the email.
+    expect(alerts[0]!.text).not.toContain('secret words');
+
+    for (let i = 0; i < 6; i++) await api.inject({ method: 'POST', url: '/api/test/fail' });
+    expect(alerts).toHaveLength(5);
+  });
+
+  it('says why a request was wrong, and emails nobody', async () => {
+    const res = await api.inject({ method: 'POST', url: '/api/auth/login', headers: { 'content-type': 'application/json' }, payload: '{not json' });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error).toMatch(/JSON/);
+    expect(alerts).toHaveLength(0);
   });
 });
 

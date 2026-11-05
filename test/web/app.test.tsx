@@ -170,7 +170,7 @@ describe('opening the app', () => {
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'student@example.com' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'correct horse' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create profile' }));
-    expect(await screen.findByText('Saved to your profile')).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Saved to your profile' })).toBeTruthy();
   });
 
   it('switches the welcome to signing in', () => {
@@ -238,7 +238,7 @@ describe('a forgotten password', () => {
 
     type('New password', 'a new long password');
     fireEvent.click(screen.getByRole('button', { name: 'Save new password' }));
-    expect(await screen.findByText('Saved to your profile')).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Saved to your profile' })).toBeTruthy();
     expect(vi.mocked(fetch)).toHaveBeenCalledWith(
       '/api/auth/reset',
       expect.objectContaining({ body: JSON.stringify({ token: 'tok-123', password: 'a new long password' }) }),

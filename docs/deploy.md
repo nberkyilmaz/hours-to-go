@@ -41,7 +41,8 @@ this project's. Nothing here can be done for you: each needs your accounts.
    `postgresql://user:password@ep-something.us-east-2.aws.neon.tech/neondb?sslmode=require`.
    Keep the `?sslmode=require`.
 
-The tables create themselves the first time the server starts. At start, Render's logs show a
+The tables create themselves the first time the server starts, and later changes to them run
+once each when a new version starts (D33). At start, Render's logs show a
 "SECURITY WARNING" about SSL modes from the Postgres driver: it means the database's certificate
 is checked in full, which Neon passes. Nothing to do.
 
@@ -54,6 +55,8 @@ is checked in full, which Neon passes. Nothing to do.
    `https://nberkyilmaz.com`.
 3. Deploy, then open `https://<the service>.onrender.com/api/health`. It answers `{"ok":true}`
    once the database answers too, and 503 if it doesn't.
+4. **Settings → Build & Deploy → Auto-Deploy** should say "After CI checks pass", from
+   `autoDeployTrigger` in `render.yaml`: a push to main goes live only once its tests pass.
 
 ### 3. The API's subdomain
 
@@ -103,7 +106,7 @@ moves the page).
 3. **Actions → Pages → Run workflow**. Later pushes to `main` that touch the page publish it
    by themselves.
 
-### 6. Resend: the reset and feedback emails
+### 6. Resend: the emails
 
 nberkyilmaz.com already has Resend's DNS records at Cloudflare (`resend._domainkey`, `send`).
 
@@ -123,7 +126,8 @@ says "Password reset emails are off".
    where you want pilots' messages, and save. It isn't in `render.yaml`, so your address isn't
    published. Then Profile → **Send feedback** on the page: the message arrives from
    `no-reply@nberkyilmaz.com`, and **Reply** answers the pilot. Until it is set, sending says
-   feedback "isn't available yet", and Render's log says "Feedback is off".
+   feedback "isn't available yet", and Render's log says "Feedback and error alerts are off".
+   The same address gets an email when something fails on the server (D37), at most 5 an hour.
 
 ### 7. Check it as a pilot would
 

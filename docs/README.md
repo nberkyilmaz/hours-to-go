@@ -22,10 +22,11 @@ is, what went wrong along the way, and what is still open.
 - A forgotten password is reset by an emailed link (Resend). Sign-up emails a link to confirm the
   address, asked for but never required, and the email and password can be changed on Profile.
 - A privacy and terms page at `/hours-to-go/privacy/`, and "Send feedback" on the Profile tab,
-  emailed to the owner once `FEEDBACK_TO` is set in Render.
+  emailed to the owner once `FEEDBACK_TO` is set in Render. Server errors are emailed there too.
+- A shared link shows a picture and a line (Open Graph).
 - Nightly backups in the private repository `hours-to-go-backups`, once it has its `DATABASE_URL`
   secret ([deploy.md](deploy.md), step 8).
-- `npm run typecheck` is clean and `npm test` passes 126 tests in 5 files.
+- `npm run typecheck` is clean and `npm test` passes 129 tests in 5 files, and `npm audit` finds nothing.
 - Source at <https://github.com/nberkyilmaz/hours-to-go> (public, branch `main`).
 - Live at <https://nberkyilmaz.com/hours-to-go/> (page on GitHub Pages, API on Render at
   `hours-to-go-api.nberkyilmaz.com`, Postgres on Neon).
