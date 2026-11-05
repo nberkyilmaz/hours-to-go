@@ -953,6 +953,19 @@ button:focus-visible {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+/* When the pilot finishes at their pace, under the hours and the price. */
+.pace {
+  margin: 12px 0 0;
+}
+
+.pace p {
+  margin: 0;
+}
+
+.pace .hint {
+  margin-top: 2px;
+}
+
 .cost {
   margin-top: 12px;
   padding: 12px 14px;

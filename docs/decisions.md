@@ -173,6 +173,46 @@ Turned down:
 - **Exam, flight-test and licence fees as lines.** They differ by school and examiner. They could
   come later as optional one-off lines.
 
+### D40. Finish date: the plan's time left, at the pace of the last 8 weeks
+The second feature (roadmap, section 3). The owner's words: "At your pace (2.4 h a week) you'll
+reach the PPL minimum around March." Under the hours and the price each goal now says "At your
+pace, 1.3 h a week, you'll reach the minimum around June 2027, and the 65 h average around
+September 2027", and under it where the pace comes from.
+
+**The pace** is the flight and FTD time logged a week (`rules/pace.ts`).
+- **Over the last 8 weeks.** Students fly once to three times a week and lose whole weeks to
+  weather. Over 4 weeks one grounded fortnight halves the pace; over 12 a student who has just
+  started flying more takes months to see it. 8 weeks is between.
+- **From flights logged one by one.** Paper totals are a lump with one date, so they never count,
+  and the flying before their date can't be told apart: the pace starts the day after the latest.
+  With no paper totals it starts at the first flight, so a new student isn't measured over weeks
+  before they began. Either way over at least 14 days, so two flights in two days aren't a pace.
+- **Two flights at least** in that time, or there is no date. The card then says that a date
+  needs two flights in the last 8 weeks, unless the logbook is empty: that has its own call to add
+  hours.
+- **FTD sessions count**, because a goal's plan puts time in a simulator when the pilot has a
+  simulator rate, and FTD time counts toward the PPL and the instrument time.
+
+**The time left** is the plan the price is for (D39), all of it: dual, simulator and solo. So the
+date and the price never disagree, and like the price it can be more than D4's "at least"
+(the IFR's 40 h of instrument time with an instructor and 50 h cross-country as PIC are different
+flights). A goal that isn't priced uses D4's figure: the ATPL. The multi-engine rating has no
+minimum, so no date. For the PPL the line goes on to the 65 h average, from the same `toAverage`
+the price uses.
+
+**The date** is today plus the time left at the pace, shown as a month ("June 2027", or "June" this
+year): it's an estimate, and a day would claim more than it knows. Past five years it says the
+minimum is more than 5 years away instead, which is the ATPL at most paces.
+
+Turned down:
+- **The pace since the first flight.** A student who flew weekly in the summer and monthly since
+  would be told the summer's date.
+- **A pace the pilot types in.** It's one more thing to fill in, and the logbook already knows.
+- **Flight time only.** An IFR student doing their 20 h in the simulator would get a date as if
+  they weren't flying.
+- **A day, or a range.** A range would look precise about its own error, which nobody can know
+  from a few weeks of flying.
+
 ## Logbook model
 
 ### D6. A line has the paper personal log's columns (replaced one role per line)

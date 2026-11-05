@@ -54,8 +54,9 @@ The owner wants every one of these. Roughly in order of value:
 1. ~~**Cost to go.**~~ Done: each goal shows what its least flying costs at the school's rates
    (sample rates until the pilot enters their own), next to the hours, with the arithmetic
    (D39). Money is a student's biggest worry, and it's the line the advertising can lead with.
-2. **Finish date.** "At your pace (2.4 h a week) you'll reach the PPL minimum around March",
-   from the last few weeks of flying.
+2. ~~**Finish date.**~~ Done: "At your pace, 1.3 h a week, you'll reach the minimum around June
+   2027", from the flights and FTD sessions of the last 8 weeks, for the time the price is for
+   (D40).
 3. **Email reminders**, opted into: medical expiry (needs the expiry date in the profile), the
    recommendation letter's 60 days, written exam results expiring before the flight test, IFR
    renewal. Render's free server sleeps, so a daily GitHub Actions run would wake it to send them.

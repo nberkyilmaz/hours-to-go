@@ -1,7 +1,7 @@
 import { useState, type RefObject } from 'react';
 import { SAMPLE_RATES, type Profile, type Rates } from '../model/profile';
 import { about, atLeast, money, priceOf, rateText, type Cost, type CostLine } from '../rules/cost';
-import type { GoalResult, ReqResult } from '../rules/evaluate';
+import type { GoalResult } from '../rules/evaluate';
 import type { Priced } from '../rules/goals';
 
 type UpdateProfile = (fn: (p: Profile) => Profile) => unknown;
@@ -56,27 +56,11 @@ export function openRates(panel: HTMLDetailsElement | null) {
   panel.querySelector<HTMLInputElement>('#rate-aircraft')?.focus();
 }
 
-const haveOf = (r: GoalResult, id: string): number => {
-  const walk = (rs: readonly ReqResult[]): number | undefined => {
-    for (const x of rs) {
-      if (x.req.id === id) return x.have;
-      const hit = walk(x.children);
-      if (hit !== undefined) return hit;
-    }
-    return undefined;
-  };
-  return walk(r.sections.flatMap((s) => s.results)) ?? 0;
-};
-
 /** The price at the hours schools quote as the average (the PPL's 65 h), while the pilot is short of them. */
 function typicalOf(r: GoalResult, cost: Cost): { hours: number; total: number } | null {
-  const pricing = r.goal.cost;
-  if (!('plan' in pricing) || !pricing.average || !r.plan) return null;
-  const avg = pricing.average;
+  if (!r.toAverage) return null;
   // Past the minimum, schools add hours with an instructor.
-  const beyond = avg.hours * 60 - haveOf(r, avg.of) - (r.plan.dual + r.plan.sim + r.plan.solo);
-  if (beyond <= 0) return null;
-  return { hours: avg.hours, total: cost.total + (Math.ceil(beyond / 6) / 10) * cost.perHour.dual };
+  return { hours: r.toAverage.hours, total: cost.total + (Math.ceil(r.toAverage.minutes / 6) / 10) * cost.perHour.dual };
 }
 
 function lineLabel(l: CostLine, pricing: Priced): string {

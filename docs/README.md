@@ -27,9 +27,10 @@ is, what went wrong along the way, and what is still open.
 - Each licence and rating shows what its least flying costs ("$14,500 left to pay, at least", and
   about $21,500 at the 65 h average for the PPL) at the school's rates, or sample Ontario rates
   until the pilot enters their own (D39).
+- And when it will be flown at the pilot's pace over the last 8 weeks ("around June 2027", D40).
 - Nightly backups in the private repository `hours-to-go-backups`, once it has its `DATABASE_URL`
   secret ([deploy.md](deploy.md), step 8).
-- `npm run typecheck` is clean and `npm test` passes 147 tests in 6 files, and `npm audit` finds nothing.
+- `npm run typecheck` is clean and `npm test` passes 156 tests in 7 files, and `npm audit` finds nothing.
 - Source at <https://github.com/nberkyilmaz/hours-to-go> (public, branch `main`).
 - Live at <https://nberkyilmaz.com/hours-to-go/> (page on GitHub Pages, API on Render at
   `hours-to-go-api.nberkyilmaz.com`, Postgres on Neon).

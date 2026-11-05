@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { emptyLogbook, rememberSignedIn, rememberWelcomed, saveGuestLogbook } from '../../src/model/store';
+import { line } from './fixtures';
 
 // No server in these tests: every call answers "not signed in", so the app runs as a guest.
 beforeEach(() => {
@@ -170,6 +171,29 @@ describe('the app as a guest', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Use the sample rates' }));
     expect(price()).toBe('$14,500');
     expect(screen.getByRole('button', { name: 'Enter your school’s rates' })).toBeTruthy();
+  });
+
+  it('says when the minimum is flown at the pace of the last 8 weeks', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 10, 5, 12));
+    try {
+      // Flying since before the 8 weeks, then 1.2 h a week in them: 11.6 h dual, 33.4 h of the PPL's 45 h left.
+      const weekly = ['09-17', '09-24', '10-01', '10-08', '10-15', '10-22', '10-29', '11-05'].map((d) => line(`2026-${d}`, { seDayDual: 1.2 }));
+      saveGuestLogbook({ ...emptyLogbook(), entries: [line('2026-09-05', { seDayDual: 2 }), ...weekly] });
+      render(<App />);
+      const finish = (await screen.findByText(/At your pace/)).textContent;
+      expect(finish).toBe('At your pace, 1.2 h a week, you’ll reach the minimum around May 2027, and the 65 h average around September 2027.');
+      expect(screen.getByText(/you logged in the last 8 weeks/)).toBeTruthy();
+
+      // Months later with no flying, there is no pace to go on.
+      cleanup();
+      vi.setSystemTime(new Date(2027, 1, 1, 12));
+      render(<App />);
+      expect(await screen.findByText('A finish date needs two flights logged in the last 8 weeks.')).toBeTruthy();
+      expect(screen.queryByText(/At your pace/)).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('says why a rating has no price', async () => {
