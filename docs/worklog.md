@@ -595,6 +595,13 @@ at a vocational school up to the minimum hours.
    tests filled whole values at once and missed it; Edge typing a key at a time showed it. Now only
    "Use the sample rates" refills the boxes. And the panel no longer hides at a $0 price, which it
    did while a pilot cleared both rates to retype them. A test checks the box survives both.
+3. *The page didn't go live.* After the merge on 2026-11-05, GitHub Pages sat on "updating_pages"
+   for the deploy step's 10 minutes and gave up, probably because departure-brief was publishing to
+   nberkyilmaz.com in the same minute. Re-running the step, then running the whole workflow again,
+   timed out the same way: the deploy is named after the commit, and that commit's was cancelled
+   for good. A new commit on `main` gets past it (docs/deploy.md, step 5). Looking at the merged
+   build in Edge on the way, "· sample rates" broke with "rates" alone on a phone's second line;
+   it now moves down whole.
 
 **Checked:**
 - 18 new tests: every plan from an empty log and part-way, the simulator rule (the CPL's 35 h
