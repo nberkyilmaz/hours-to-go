@@ -106,6 +106,11 @@ moves the page).
 3. **Actions → Pages → Run workflow**. Later pushes to `main` that touch the page publish it
    by themselves.
 
+If the deploy step waits its 10 minutes and stops with "Timeout reached, aborting!", run it again
+once. If that fails the same way, GitHub's deployment for that commit is stuck, and nothing run on
+the same commit gets past it: the deploy is named after the commit. Merge any new commit to `main`
+and it goes through.
+
 ### 6. Resend: the emails
 
 nberkyilmaz.com already has Resend's DNS records at Cloudflare (`resend._domainkey`, `send`).

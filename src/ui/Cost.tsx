@@ -66,8 +66,8 @@ export function CostDetail({ result: r, cost, profile, updateProfile }: Props) {
   return (
     <details className="cost">
       <summary>
-        How the cost is worked out
-        <span className="muted">{own ? ' · your school’s rates' : ' · sample rates'}</span>
+        How the cost is worked out{' '}
+        <span className="muted">{own ? '· your school’s rates' : '· sample rates'}</span>
       </summary>
       <table className="type-table cost-table">
         <caption className="sr-only">The cost to go, line by line</caption>

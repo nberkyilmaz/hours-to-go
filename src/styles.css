@@ -956,8 +956,10 @@ button:focus-visible {
   cursor: pointer;
 }
 
+/* On a phone "· sample rates" goes to the next line whole, rather than leave "rates" there alone. */
 .cost > summary .muted {
   font-weight: 400;
+  white-space: nowrap;
 }
 
 .cost p {
