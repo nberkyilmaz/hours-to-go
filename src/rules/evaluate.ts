@@ -69,6 +69,8 @@ export interface GoalResult {
   minutesToGo: number;
   /** The least time still to pay for, by kind; null when the goal isn't priced (D39). */
   plan: Plan | null;
+  /** The flying past the plan to the hours schools quote as the average (the PPL's 65 h), while short of them. */
+  toAverage: { hours: number; minutes: number } | null;
   complete: boolean;
 }
 
@@ -206,6 +208,9 @@ export function evaluateGoal(goal: Goal, entries: readonly Entry[], profile: Pro
     return !r || r.met ? 0 : Math.max(0, r.need - r.have);
   };
   const sim = (profile.rates ?? SAMPLE_RATES).sim !== null;
+  const plan = 'plan' in goal.cost ? goal.cost.plan(c, left, sim) : null;
+  const avg = 'plan' in goal.cost ? goal.cost.average : undefined;
+  const beyond = plan && avg ? avg.hours * 60 - (nodes.find((n) => n.req.id === avg.of)?.have ?? 0) - (plan.dual + plan.sim + plan.solo) : 0;
 
   const done = nodes.filter((r) => r.met).length;
   return {
@@ -218,7 +223,8 @@ export function evaluateGoal(goal: Goal, entries: readonly Entry[], profile: Pro
     done,
     total: nodes.length,
     minutesToGo,
-    plan: 'plan' in goal.cost ? goal.cost.plan(c, left, sim) : null,
+    plan,
+    toAverage: avg && beyond > 0 ? { hours: avg.hours, minutes: beyond } : null,
     complete: done === nodes.length,
   };
 }

@@ -891,6 +891,16 @@ button:focus-visible {
   font-size: 14px;
 }
 
+/* Under the price: what the average costs, and the way to the rates. */
+.stat-more {
+  margin-top: 6px;
+  font-size: 14px;
+}
+
+.stat-more .link {
+  padding: 0;
+}
+
 .gates {
   list-style: none;
   margin: 16px 0 0;
@@ -941,6 +951,19 @@ button:focus-visible {
 /* The cost to go: the arithmetic behind the price, and the school's rates. */
 .summary.with-cost {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* When the pilot finishes at their pace, under the hours and the price. */
+.pace {
+  margin: 12px 0 0;
+}
+
+.pace p {
+  margin: 0;
+}
+
+.pace .hint {
+  margin-top: 2px;
 }
 
 .cost {

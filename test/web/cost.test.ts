@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Entry } from '../../src/model/entry';
 import { SAMPLE_RATES, type GoalId, type Profile } from '../../src/model/profile';
 import { emptyLogbook, mergeLogbooks, parseProfile } from '../../src/model/store';
-import { about, money, priceOf, rateText } from '../../src/rules/cost';
+import { about, atLeast, money, priceOf, rateText } from '../../src/rules/cost';
 import { evaluateGoal } from '../../src/rules/evaluate';
 import { GOALS, goalById } from '../../src/rules/goals';
 import { line, profile } from './fixtures';
@@ -112,8 +112,10 @@ describe('the price', () => {
     expect(cost.total).toBe(652);
   });
 
-  it('rounds the headline to $100, or to $10 under $1,000, and prints rates as schools do', () => {
+  it('rounds to $100, or to $10 under $1,000, the headline down, and prints rates as schools do', () => {
     expect([about(14550), about(14549), about(949), about(0)]).toEqual([14600, 14500, 950, 0]);
+    // "At least" never tops the panel's own total.
+    expect([atLeast(14599.99), atLeast(14500), atLeast(1000), atLeast(999.99), atLeast(0)]).toEqual([14500, 14500, 1000, 990, 0]);
     expect([rateText(212.5), rateText(220), money(123456.7)]).toEqual(['$212.50', '$220', '$123,457']);
   });
 });

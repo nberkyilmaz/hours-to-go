@@ -33,10 +33,12 @@ hours-to-go/
 │   │   ├── goals.ts            the Standard 421 catalogue: every requirement with its paragraph,
 │   │   │                           and each goal's plan of the least time left to pay for
 │   │   ├── evaluate.ts         turns a logbook + profile into progress per goal
-│   │   └── cost.ts             prices a plan at the school's rates; money formatting (D39)
+│   │   ├── cost.ts             prices a plan at the school's rates; money formatting (D39)
+│   │   └── pace.ts             the time logged a week lately, and when a goal's time left is flown (D40)
 │   └── ui/
 │       ├── Progress.tsx        goal detail, gates, requirement rows, milestone tick-offs, goal cards
 │       ├── Cost.tsx            the price beside the hours, how it is worked out, the rates form
+│       ├── Finish.tsx          when the goal's minimum is flown at the pilot's pace
 │       ├── Welcome.tsx         a first visit: what the app is, the sign-up form, go on without (D27)
 │       ├── Logbook.tsx         empty state, totals tiles, column totals, by-type table, entry list/cards
 │       ├── EntryForm.tsx       the flight / FTD / paper-totals form and its questions
@@ -166,13 +168,22 @@ gates use the same conditions and add `passed` once their exams are passed.
 5. Works out the goal's `plan`: the least time left to pay for, in minutes, as `{ dual, sim, solo }`.
    Each goal's `cost.plan` gets `left(id)`, what a requirement still needs, and whether the pilot
    uses a simulator (a simulator rate is set). A goal that isn't priced has `cost.unpriced`, the
-   reason shown instead, and a null plan.
+   reason shown instead, and a null plan. A goal with a quoted average (the PPL's 65 h) also gets
+   `toAverage`: the flying past the plan to reach it, while short of it.
 
 **The price** (`cost.ts`). `priceOf(plan, rates)` bills each kind of time in tenths of an hour,
 rounded up: dual at the aeroplane plus the instructor, simulator at its rate plus the instructor,
 solo at the aeroplane. Tax goes on the subtotal. It also returns what one more hour of each adds
-with tax. `about()` rounds the headline to $100 ($10 under $1,000). `Cost.tsx` hides the price for
-a goal held, credited or complete, or with nothing left to pay for.
+with tax. `about()` rounds an estimate to $100 ($10 under $1,000), and `atLeast()` rounds the
+headline down the same way. `Cost.tsx` hides the price for a goal held, credited or complete, or
+with nothing left to pay for. For the PPL the card adds the price at the 65 h average, and while
+the rates are the sample ones, a link that opens the panel at them.
+
+**The finish date** (`pace.ts`). `paceOf(entries, today)` is the flight and FTD time logged a week
+over the last 8 weeks, from flights logged one by one: after the latest paper totals, or from the
+first flight, over 14 days at least, with two flights at least; else null. `finishOn(minutes, pace,
+today)` is the day that much more is flown, or null past five years. `Finish.tsx` takes the plan's
+time left (D4's figure for a goal with no plan) and shows the month.
 
 ## API (`server/app.ts`)
 

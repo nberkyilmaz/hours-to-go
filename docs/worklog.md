@@ -613,10 +613,64 @@ at a vocational school up to the minimum hours.
   ($235 with the surcharge, $92, simulator $135): PPL about $15,400, IFR Group 3 about $25,800
   with 20 h in the simulator.
 
+## Phase 17: the price card, after a look at it live (2026-11-05)
+
+**Owner request.** Check the live page as a pilot would, and change what needs it.
+
+**Seen live**, as a guest from an empty log and part-way (20 h dual, 6 h solo: $6,000 left, and
+$13,100 at 65 h): the price followed the logbook, the arithmetic was there to check, and the
+rates were kept. Two things didn't work for a student budgeting:
+1. The card said "about $14,500", which reads as the likely cost. It is the least: at the 65 h
+   most students fly it is about $21,500, and that figure was only in the closed panel.
+2. The rates were in that panel too, under "How the cost is worked out", where a pilot looking for
+   them might not open it.
+
+**Changed** (D39):
+- The card says "left to pay, at least", like the hours beside it, rounded down so it never tops
+  the panel's total. Under it, for the PPL: "About $21,500 at the 65 h average".
+- While the rates are the sample ones, the card says "At sample rates. Enter your school's rates".
+  The link opens the panel with the cursor in the aeroplane's box, and goes once a rate is typed.
+
+**Checked:** the screen test now follows the link and checks the panel opens on the aeroplane's
+box, and the link goes and comes back with the rates; a test for rounding down. In Edge on a phone
+(390, 360, 320 px) and a desktop (1280, 1024, 800 px), light and dark: no sideways scroll, the box
+in view and typed into after the link.
+
+## Phase 18: finish date (2026-11-05)
+
+**Owner request.** The next feature: "At your pace (2.4 h a week) you'll reach the PPL minimum
+around March."
+
+**Built** (D40):
+- `src/rules/pace.ts`: the flight and FTD time logged a week over the last 8 weeks, from flights
+  logged one by one (after the latest paper totals, or from the first flight), over 14 days at
+  least and with two flights at least; the day a goal's time left is flown at it; the month.
+- The time left is the plan the price is for, so the date and the price agree. The PPL's 65 h
+  average moved from the cost panel into the rules (`toAverage`), so both use it.
+- Under the hours and the price: "At your pace, 1.3 h a week, you'll reach the minimum around June
+  2027, and the 65 h average around September 2027", then where the pace comes from. With fewer
+  than two flights lately: "A finish date needs two flights logged in the last 8 weeks."
+
+**Problem on the way:** the screen test's student flew weekly from September 17, and the app said
+1.3 h a week where the test expected 1.2. The app was right: with no flight before the 8 weeks,
+September 17 was the first flight, and the pace is measured from it, over 50 days. The test now
+has the student flying before the 8 weeks, which is what it meant to check.
+
+**Checked:**
+- 9 new tests: the 8 weeks, a new student's first two weeks, paper totals never counting and the
+  pace starting after them, FTD counting, no pace after 8 weeks without flying, the date and its
+  month, nothing past five years, the 65 h average, and the screen from a fixed date, then months
+  later with no flying.
+- **In Edge**, as a guest logging three flights in the app: one flight asks for a second; three
+  give 1.3 h a week and June 2027. Night February 2027, CPL August 2029, IFR Group 3 February 2028,
+  ATPL "more than 5 years away", multi-engine no line. A phone at 390, 360 and 320 px and a
+  desktop, light and dark, with no sideways scroll and no page errors.
+
 ## Where things stand
 
-- 147 tests pass (rules 37, cost to go 16, logbook model 21, server API 42, first visit, guest,
-  cost to go, password reset, confirm links and feedback 25, signed in 6), and the API tests per
+- 156 tests pass (rules 37, cost to go 16, finish date 8, logbook model 21, server API 42, first
+  visit, guest, cost to go, finish date, password reset, confirm links and feedback 26, signed in
+  6), and the API tests per
   database also run against a Postgres server through `pg` in CI.
 - Typecheck clean on both configs; `npm audit` clean.
 - Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.

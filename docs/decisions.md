@@ -86,9 +86,10 @@ Resend's free plan.
 ### D39. Cost to go: the least flying, priced at the school's rates
 The owner asked for it first among the features (roadmap, section 3), with a C172 at $220 an
 hour with fuel, plus tax, and the instructor on top for dual. Each goal's summary now shows
-"$14,500, left to pay, about" next to the hours, and a "How the cost is worked out" panel: hours
-by kind times the rate, the tax, the total, what each hour past the minimum adds, and the
-pilot's rates. The multi-engine rating (Transport Canada sets no minimum hours) and the ATPL
+"$14,500, left to pay, at least" next to the hours, with "About $21,500 at the 65 h average" under
+it for the PPL, and a "How the cost is worked out" panel: hours by kind times the rate, the tax, the
+total, what each hour past the minimum adds, and the pilot's rates. While the rates are the sample
+ones, the card says so, with a link that opens the panel at the aeroplane's rate. The multi-engine rating (Transport Canada sets no minimum hours) and the ATPL
 (mostly flown at work) aren't priced, and say why.
 
 **The hours.** D4's "least flying left" is the largest single shortfall, so it can't say who is
@@ -119,8 +120,10 @@ way schools teach it.
 
 **The arithmetic.** Each kind of time is rounded up to the tenth of an hour, as schools bill.
 Dual is the aeroplane plus the instructor, the simulator is its rate plus the instructor, and the
-tax goes on the lot. The headline is rounded to $100 (to $10 under $1,000) and says "about": it is
-an estimate, not a quote. Each hour past the minimum is priced as dual. For the PPL the panel
+tax goes on the lot. The headline prices the minimum, so it says "at least", like the hours
+beside it, and is rounded down to $100 (to $10 under $1,000) so it never tops the panel's total.
+The other figures are rounded to the nearest and say "about": they are estimates, not quotes. Each
+hour past the minimum is priced as dual. For the PPL the panel
 also prices the 65 h that Ontario Flight Centre gives as the national average, because most
 students need more than the minimum.
 
@@ -159,12 +162,56 @@ Dollars are kept to the cent up to $10,000 an hour; the tax to three places up t
 Turned down:
 - **The 65 h average as the headline.** Transport Canada publishes no average, and the minimum is
   what the app can show from the standard. The 65 h figure is the line under it.
+- **"About" on the headline**, as first published. Seen live on 2026-11-05, it read as the likely
+  cost while it was the least: a student budgeting from it would be about $7,000 short at 65 h, and
+  the 65 h figure was only in the closed panel. It now says "at least", with the 65 h figure on the
+  card. The rates were in that panel too, which a pilot looking for them might not open.
 - **A province picker for the tax.** Whether provincial sales tax applies to flight training
   varies, and the school's invoice is what counts.
 - **Pricing D4's figure as all dual.** It overstates goals with solo time and understates a plan
   with dual and solo both open.
 - **Exam, flight-test and licence fees as lines.** They differ by school and examiner. They could
   come later as optional one-off lines.
+
+### D40. Finish date: the plan's time left, at the pace of the last 8 weeks
+The second feature (roadmap, section 3). The owner's words: "At your pace (2.4 h a week) you'll
+reach the PPL minimum around March." Under the hours and the price each goal now says "At your
+pace, 1.3 h a week, you'll reach the minimum around June 2027, and the 65 h average around
+September 2027", and under it where the pace comes from.
+
+**The pace** is the flight and FTD time logged a week (`rules/pace.ts`).
+- **Over the last 8 weeks.** Students fly once to three times a week and lose whole weeks to
+  weather. Over 4 weeks one grounded fortnight halves the pace; over 12 a student who has just
+  started flying more takes months to see it. 8 weeks is between.
+- **From flights logged one by one.** Paper totals are a lump with one date, so they never count,
+  and the flying before their date can't be told apart: the pace starts the day after the latest.
+  With no paper totals it starts at the first flight, so a new student isn't measured over weeks
+  before they began. Either way over at least 14 days, so two flights in two days aren't a pace.
+- **Two flights at least** in that time, or there is no date. The card then says that a date
+  needs two flights in the last 8 weeks, unless the logbook is empty: that has its own call to add
+  hours.
+- **FTD sessions count**, because a goal's plan puts time in a simulator when the pilot has a
+  simulator rate, and FTD time counts toward the PPL and the instrument time.
+
+**The time left** is the plan the price is for (D39), all of it: dual, simulator and solo. So the
+date and the price never disagree, and like the price it can be more than D4's "at least"
+(the IFR's 40 h of instrument time with an instructor and 50 h cross-country as PIC are different
+flights). A goal that isn't priced uses D4's figure: the ATPL. The multi-engine rating has no
+minimum, so no date. For the PPL the line goes on to the 65 h average, from the same `toAverage`
+the price uses.
+
+**The date** is today plus the time left at the pace, shown as a month ("June 2027", or "June" this
+year): it's an estimate, and a day would claim more than it knows. Past five years it says the
+minimum is more than 5 years away instead, which is the ATPL at most paces.
+
+Turned down:
+- **The pace since the first flight.** A student who flew weekly in the summer and monthly since
+  would be told the summer's date.
+- **A pace the pilot types in.** It's one more thing to fill in, and the logbook already knows.
+- **Flight time only.** An IFR student doing their 20 h in the simulator would get a date as if
+  they weren't flying.
+- **A day, or a range.** A range would look precise about its own error, which nobody can know
+  from a few weeks of flying.
 
 ## Logbook model
 
