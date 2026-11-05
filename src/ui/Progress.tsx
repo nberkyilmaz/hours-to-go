@@ -1,10 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { formatHours, formatHoursUp, today } from '../model/entry';
 import { MEDICAL_LABEL, type GoalId, type Medical, type MilestoneRecord, type Profile } from '../model/profile';
 import type { Logbook } from '../model/store';
 import { evaluateGoal, type ExamResult, type GateResult, type GoalResult, type ReqResult } from '../rules/evaluate';
 import { GOALS, STANDARD_421_URL, goalById } from '../rules/goals';
-import { CostDetail, CostStat, costOf } from './Cost';
+import { CostDetail, CostStat, costOf, openRates } from './Cost';
 import { CheckIcon, LockIcon, PlusIcon } from './icons';
 
 type UpdateProfile = (fn: (p: Profile) => Profile) => unknown;
@@ -88,6 +88,7 @@ function GoalDetail({ result: r, profile, updateProfile }: { result: GoalResult;
   const { goal } = r;
   const holding = GOALS.filter((g) => g.id !== goal.id && profile.held[g.id] !== undefined);
   const cost = costOf(r, profile);
+  const costPanel = useRef<HTMLDetailsElement>(null);
   const setHeld = (date: string | null) =>
     updateProfile((p) => {
       const held = { ...p.held };
@@ -146,10 +147,10 @@ function GoalDetail({ result: r, profile, updateProfile }: { result: GoalResult;
             </span>
             <span className="stat-label">requirements met</span>
           </div>
-          {cost && <CostStat cost={cost} />}
+          {cost && <CostStat result={r} cost={cost} profile={profile} onRates={() => openRates(costPanel.current)} />}
         </div>
       )}
-      {cost && <CostDetail result={r} cost={cost} profile={profile} updateProfile={updateProfile} />}
+      {cost && <CostDetail result={r} cost={cost} profile={profile} updateProfile={updateProfile} panel={costPanel} />}
       {'unpriced' in goal.cost && !r.held && !r.credited && <p className="note cost-none">{goal.cost.unpriced}</p>}
 
       {r.gates.length > 0 && !r.held && (

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, type RefObject } from 'react';
 import { SAMPLE_RATES, type Profile, type Rates } from '../model/profile';
-import { about, money, priceOf, rateText, type Cost, type CostLine } from '../rules/cost';
+import { about, atLeast, money, priceOf, rateText, type Cost, type CostLine } from '../rules/cost';
 import type { GoalResult, ReqResult } from '../rules/evaluate';
 import type { Priced } from '../rules/goals';
 
@@ -15,14 +15,45 @@ export function costOf(r: GoalResult, profile: Profile): Cost | null {
   return priceOf(r.plan, profile.rates ?? SAMPLE_RATES);
 }
 
-/** Sits beside the hours left in the goal's summary. */
-export function CostStat({ cost }: { cost: Cost }) {
+interface StatProps {
+  result: GoalResult;
+  cost: Cost;
+  profile: Profile;
+  onRates: () => void;
+}
+
+/**
+ * Sits beside the hours left in the goal's summary: the minimum's price, which is a floor like the
+ * hours, then what most students pay, and a way to the rates while they are the sample ones.
+ */
+export function CostStat({ result: r, cost, profile, onRates }: StatProps) {
+  const typical = typicalOf(r, cost);
   return (
     <div className="stat stat-money">
-      <span className="stat-value">{money(about(cost.total))}</span>
-      <span className="stat-label">left to pay, about</span>
+      <span className="stat-value">{money(atLeast(cost.total))}</span>
+      <span className="stat-label">left to pay, at least</span>
+      {typical && (
+        <span className="stat-more">
+          About {money(about(typical.total))} at the {typical.hours} h average
+        </span>
+      )}
+      {profile.rates === null && (
+        <span className="stat-more muted">
+          At sample rates.{' '}
+          <button type="button" className="link" onClick={onRates}>
+            Enter your school’s rates
+          </button>
+        </span>
+      )}
     </div>
   );
+}
+
+/** Opens the panel at the rates, with the aeroplane's box ready to type in. */
+export function openRates(panel: HTMLDetailsElement | null) {
+  if (!panel) return;
+  panel.open = true;
+  panel.querySelector<HTMLInputElement>('#rate-aircraft')?.focus();
 }
 
 const haveOf = (r: GoalResult, id: string): number => {
@@ -37,6 +68,17 @@ const haveOf = (r: GoalResult, id: string): number => {
   return walk(r.sections.flatMap((s) => s.results)) ?? 0;
 };
 
+/** The price at the hours schools quote as the average (the PPL's 65 h), while the pilot is short of them. */
+function typicalOf(r: GoalResult, cost: Cost): { hours: number; total: number } | null {
+  const pricing = r.goal.cost;
+  if (!('plan' in pricing) || !pricing.average || !r.plan) return null;
+  const avg = pricing.average;
+  // Past the minimum, schools add hours with an instructor.
+  const beyond = avg.hours * 60 - haveOf(r, avg.of) - (r.plan.dual + r.plan.sim + r.plan.solo);
+  if (beyond <= 0) return null;
+  return { hours: avg.hours, total: cost.total + (Math.ceil(beyond / 6) / 10) * cost.perHour.dual };
+}
+
 function lineLabel(l: CostLine, pricing: Priced): string {
   if (l.kind === 'dual') return 'with an instructor';
   if (l.kind === 'sim') return 'in a simulator, with an instructor';
@@ -48,23 +90,20 @@ interface Props {
   cost: Cost;
   profile: Profile;
   updateProfile: UpdateProfile;
+  panel: RefObject<HTMLDetailsElement>;
 }
 
 /** How the price is worked out, and where the pilot puts their school's rates. */
-export function CostDetail({ result: r, cost, profile, updateProfile }: Props) {
+export function CostDetail({ result: r, cost, profile, updateProfile, panel }: Props) {
   const pricing = r.goal.cost;
   if (!('plan' in pricing)) return null;
   const rates = profile.rates ?? SAMPLE_RATES;
   const own = profile.rates !== null;
   const hasSolo = cost.lines.some((l) => l.kind === 'solo');
-  const avg = pricing.average;
-  const planned = r.plan ? r.plan.dual + r.plan.sim + r.plan.solo : 0;
-  // Past the minimum, schools add hours with an instructor.
-  const beyond = avg ? avg.hours * 60 - haveOf(r, avg.of) - planned : 0;
-  const atAverage = cost.total + (Math.ceil(beyond / 6) / 10) * cost.perHour.dual;
+  const typical = typicalOf(r, cost);
 
   return (
-    <details className="cost">
+    <details className="cost" ref={panel}>
       <summary>
         How the cost is worked out{' '}
         <span className="muted">{own ? '· your school’s rates' : '· sample rates'}</span>
@@ -98,11 +137,11 @@ export function CostDetail({ result: r, cost, profile, updateProfile }: Props) {
       <p>
         Each hour past the minimum adds about {money(cost.perHour.dual)} with an instructor
         {hasSolo ? `, or ${money(cost.perHour.solo)} ${pricing.solo}` : ''}, tax included.
-        {avg && beyond > 0 && (
+        {typical && (
           <>
             {' '}
-            Most students need more than the minimum: schools often quote {avg.hours} h as the national average. At {avg.hours} h, it
-            would be about <strong>{money(about(atAverage))}</strong>.
+            Most students need more than the minimum: schools often quote {typical.hours} h as the national average. At {typical.hours} h,
+            it would be about <strong>{money(about(typical.total))}</strong>.
           </>
         )}
       </p>

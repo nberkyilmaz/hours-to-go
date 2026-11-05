@@ -613,6 +613,29 @@ at a vocational school up to the minimum hours.
   ($235 with the surcharge, $92, simulator $135): PPL about $15,400, IFR Group 3 about $25,800
   with 20 h in the simulator.
 
+## Phase 17: the price card, after a look at it live (2026-11-05)
+
+**Owner request.** Check the live page as a pilot would, and change what needs it.
+
+**Seen live**, as a guest from an empty log and part-way (20 h dual, 6 h solo: $6,000 left, and
+$13,100 at 65 h): the price followed the logbook, the arithmetic was there to check, and the
+rates were kept. Two things didn't work for a student budgeting:
+1. The card said "about $14,500", which reads as the likely cost. It is the least: at the 65 h
+   most students fly it is about $21,500, and that figure was only in the closed panel.
+2. The rates were in that panel too, under "How the cost is worked out", where a pilot looking for
+   them might not open it.
+
+**Changed** (D39):
+- The card says "left to pay, at least", like the hours beside it, rounded down so it never tops
+  the panel's total. Under it, for the PPL: "About $21,500 at the 65 h average".
+- While the rates are the sample ones, the card says "At sample rates. Enter your school's rates".
+  The link opens the panel with the cursor in the aeroplane's box, and goes once a rate is typed.
+
+**Checked:** the screen test now follows the link and checks the panel opens on the aeroplane's
+box, and the link goes and comes back with the rates; a test for rounding down. In Edge on a phone
+(390, 360, 320 px) and a desktop (1280, 1024, 800 px), light and dark: no sideways scroll, the box
+in view and typed into after the link.
+
 ## Where things stand
 
 - 147 tests pass (rules 37, cost to go 16, logbook model 21, server API 42, first visit, guest,

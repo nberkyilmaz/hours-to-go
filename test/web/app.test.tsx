@@ -133,17 +133,22 @@ describe('the app as a guest', () => {
 
   it('prices what is left at sample rates, then at the school’s own, and keeps them', async () => {
     render(<App />);
-    const price = () => screen.getByText('left to pay, about').previousElementSibling?.textContent;
-    await screen.findByText('left to pay, about');
+    const price = () => screen.getByText('left to pay, at least').previousElementSibling?.textContent;
+    await screen.findByText('left to pay, at least');
     expect(price()).toBe('$14,500');
-    fireEvent.click(screen.getByText('How the cost is worked out'));
+    expect(screen.getByText(/at the 65 h average/).textContent).toBe('About $21,500 at the 65 h average');
+
+    // The card's link opens the panel at the rates, ready to type in.
+    fireEvent.click(screen.getByRole('button', { name: 'Enter your school’s rates' }));
+    const aeroplane = screen.getByLabelText('Aeroplane, $ an hour');
+    expect(aeroplane.closest('details')?.open).toBe(true);
+    expect(document.activeElement).toBe(aeroplane);
     const table = screen.getByRole('table', { name: 'The cost to go, line by line' });
     expect(table.textContent).toContain('33.0 h with an instructor× $310$10,230');
     expect(table.textContent).toContain('12.0 h solo× $220$2,640');
-    expect(screen.getByText(/At 65 h, it\s+would be about/).textContent).toContain('$21,500');
+    expect(screen.getByText(/At 65 h,\s+it would be about/).textContent).toContain('$21,500');
 
     // The first key typed makes the rates the pilot's own; the box being typed in must stay put.
-    const aeroplane = screen.getByLabelText('Aeroplane, $ an hour');
     fireEvent.change(aeroplane, { target: { value: '2' } });
     expect(screen.getByLabelText('Aeroplane, $ an hour')).toBe(aeroplane);
     // Nor does the panel go while the rates are cleared to retype them.
@@ -156,20 +161,22 @@ describe('the app as a guest', () => {
     type('Tax, %', '5');
     // 33 h at $280 and 12 h at $200, with 5% on top.
     expect(price()).toBe('$12,200');
+    expect(screen.queryByRole('button', { name: 'Enter your school’s rates' })).toBeNull();
 
     cleanup();
     render(<App />);
-    await screen.findByText('left to pay, about');
+    await screen.findByText('left to pay, at least');
     expect(price()).toBe('$12,200');
     fireEvent.click(screen.getByRole('button', { name: 'Use the sample rates' }));
     expect(price()).toBe('$14,500');
+    expect(screen.getByRole('button', { name: 'Enter your school’s rates' })).toBeTruthy();
   });
 
   it('says why a rating has no price', async () => {
     render(<App />);
     fireEvent.change(await screen.findByLabelText('Working on'), { target: { value: 'multi' } });
     expect(await screen.findByText(/sets no minimum hours for this rating, so there is nothing to price/)).toBeTruthy();
-    expect(screen.queryByText('left to pay, about')).toBeNull();
+    expect(screen.queryByText('left to pay, at least')).toBeNull();
   });
 });
 
