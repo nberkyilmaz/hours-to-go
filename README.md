@@ -8,6 +8,8 @@ actual IMC, hood, FTD, IFR approaches, and day and night takeoffs and landings. 
 the same boxes, one line per aircraft type if you want totals by type. For every licence and
 rating the app shows each requirement, how much you have, how much is left, what is unlocked
 (writing the exam, booking the flight test), and the paragraph of the standard it comes from.
+It also prices what is left at your school's aeroplane, instructor and simulator rates, with
+the arithmetic shown ([docs/decisions.md](docs/decisions.md), D39).
 
 It runs in a browser on a computer or a phone, and can be added to a phone's home screen. It is
 published at <https://nberkyilmaz.com/hours-to-go/>; [docs/deploy.md](docs/deploy.md) says how.
@@ -147,8 +149,6 @@ on every push.
 
 ## Not done yet
 
-- **Password reset** needs an email service. Until then a forgotten password means a new profile,
-  so "Export logbook" in Profile is worth doing now and then.
 - Offline logging while signed in. Without a connection the app falls back to this device's
   logbook and offers to add it to the profile once back online.
 - A native app-store app. The web app installs to the home screen instead.

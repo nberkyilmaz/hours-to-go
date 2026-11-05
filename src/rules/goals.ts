@@ -111,7 +111,37 @@ export interface Goal {
   credit?: (c: Ctx) => string | null;
   sections: Section[];
   gates: Gate[];
+  cost: Pricing;
 }
+
+/** The least time still to pay for, in minutes, laid out the way schools teach it (D39). */
+export interface Plan {
+  /** In the aeroplane with an instructor. */
+  dual: number;
+  /** In a simulator with an instructor. */
+  sim: number;
+  /** In the aeroplane without one: solo, or time as pilot-in-command. */
+  solo: number;
+}
+
+export interface Priced {
+  /**
+   * `left` is what an hour requirement still needs, in minutes (0 once met). `sim` is whether the
+   * pilot will use a simulator, which moves the time the standard allows on the ground into it.
+   */
+  plan: (c: Ctx, left: (id: string) => number, sim: boolean) => Plan;
+  /** What the time without an instructor is in this goal. */
+  solo: string;
+  /** How the plan is laid out, shown under the price. */
+  note: string;
+  /** Training a vocational school may sell free of GST/HST up to the minimum hours (CRA Memorandum 20-4). */
+  vocational?: boolean;
+  /** The hours schools say students really take, and the requirement whose time counts toward them. */
+  average?: { hours: number; of: string };
+}
+
+/** Or why the goal has no price. */
+export type Pricing = Priced | { unpriced: string };
 
 // ---------------------------------------------------------------------------
 // Sums over the log. All in minutes.
@@ -136,6 +166,16 @@ const soloLandingsHint = (scope: 'all' | 'scoped') => (c: Ctx) => {
 
 const upTo = (minutes: number, hours: number) => Math.min(minutes, hours * 60);
 const fmt = (minutes: number) => `${(minutes / 60).toFixed(1)} h`;
+/** What is still unused of a requirement's allowance of `hours` of ground time. */
+const groundLeft = (entries: readonly Entry[], hours: number) => Math.max(0, hours * 60 - sum(entries, 'ftd'));
+
+/** Dual instrument time where up to `hours` may be on the ground: in the simulator when the pilot uses one. */
+function instrumentPlan(minutes: number, entries: readonly Entry[], hours: number, sim: boolean): Plan {
+  const ground = sim ? Math.min(minutes, groundLeft(entries, hours)) : 0;
+  return { dual: minutes - ground, sim: ground, solo: 0 };
+}
+
+const simNote = (hours: number, what: string) => `With a simulator rate, up to ${hours} h of ${what} is in the simulator.`;
 
 // ---------------------------------------------------------------------------
 // Builders.
@@ -321,6 +361,19 @@ const ppl: Goal = {
     writeGate('Write the PPAER', 'exam-ppaer'),
     { label: 'Take the flight test', cite: '421.14(4)(a)', needs: [time('gate-ppl-test', '35 of the 45 h of flight training', 35, pplTraining, '421.14(4)(a)')] },
   ],
+  cost: {
+    // Schools' own estimates at the minimum put the hours past 17 dual and 12 solo with an
+    // instructor (Adventure Aviation: 33 dual, 12 solo). Few teach the PPL in a simulator.
+    plan: (_c, left) => {
+      const solo = Math.max(left('ppl-solo'), left('ppl-solo-xc'));
+      const dual = Math.max(left('ppl-dual'), left('ppl-dual-xc'), left('ppl-dual-inst'), left('ppl-training') - solo);
+      return { dual, sim: 0, solo };
+    },
+    solo: 'solo',
+    note: 'Priced for the least Transport Canada allows: 45 h, with everything past the 12 h solo flown with an instructor, as schools price it. Up to 5 h may be in a simulator, but this prices it all in the aeroplane.',
+    // Ontario Flight Centre prices its course on a national average of about 65 h.
+    average: { hours: 65, of: 'ppl-training' },
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -361,6 +414,15 @@ const night: Goal = {
     },
   ],
   gates: [],
+  cost: {
+    // 5 h dual and 5 h solo make the 10 night hours; the instrument time is on top of them.
+    plan: (c, left, sim) => {
+      const inst = instrumentPlan(left('night-inst'), c.all, 5, sim);
+      return { ...inst, dual: Math.max(left('night-dual'), left('night-dual-xc')) + inst.dual, solo: left('night-solo') };
+    },
+    solo: 'solo at night',
+    note: `Priced for the least Transport Canada allows: 5 h dual and 5 h solo at night, and the 10 h of dual instrument time on top. ${simNote(5, 'the instrument time')}`,
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -388,6 +450,11 @@ const vfrott: Goal = {
     { kind: 'skill', title: 'Skill', reqs: [milestone('test-vfrott', 'Skill to the Flight Instructor Standard — VFR OTT', '421.44(4)')] },
   ],
   gates: [],
+  cost: {
+    plan: (c, left, sim) => instrumentPlan(left('vfrott-inst'), c.all, 5, sim),
+    solo: 'solo',
+    note: `Priced for the 15 h of dual instrument time. ${simNote(5, 'it')}`,
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -486,6 +553,25 @@ const cpl: Goal = {
       ],
     },
   ],
+  cost: {
+    plan: (c, left, sim) => {
+      // The 2 h night cross-country counts toward the 5 h dual cross-country too; the instrument
+      // time is on top of both. Together they can need more than the 35 h dual.
+      const nightXc = left('cpl-dual-night-xc');
+      const inst = left('cpl-dual-inst');
+      const parts = Math.max(left('cpl-dual-night'), nightXc) + Math.max(0, left('cpl-dual-xc') - nightXc) + inst;
+      // A simulator hour only replaces aeroplane time the parts need beyond the 35 h, which is flown.
+      const ground = sim ? Math.min(inst, groundLeft(c.scoped, 10), Math.max(0, parts - left('cpl-dual'))) : 0;
+      const dual = Math.max(left('cpl-dual'), parts - ground);
+      const solo = Math.max(left('cpl-solo'), left('cpl-solo-night'));
+      // Then time building to 200 h in all and 100 h as PIC, of it 20 h cross-country; solo is PIC.
+      const build = Math.max(0, left('cpl-total') - dual - solo, left('cpl-pic') - solo, left('cpl-pic-xc') - solo);
+      return { dual, sim: ground, solo: solo + build };
+    },
+    solo: 'solo and time building',
+    note: 'Priced for the least Transport Canada allows: the 35 h dual and 30 h solo since your PPL, then time building without an instructor up to 200 h in all and 100 h as pilot-in-command. With a simulator rate, up to 10 h of the instrument time is in the simulator where that saves flying.',
+    vocational: true,
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -513,6 +599,7 @@ const multiEngine: Goal = {
     { kind: 'skill', title: 'Skill', reqs: [milestone('test-multi', 'Multi-engine class rating flight test', '421.38(3)(a)')] },
   ],
   gates: [],
+  cost: { unpriced: 'Transport Canada sets no minimum hours for this rating, so there is nothing to price. Ask your school how many hours their course takes.' },
 };
 
 // ---------------------------------------------------------------------------
@@ -569,6 +656,19 @@ function instrument(group: 1 | 3): Goal {
       writeGate('Write the INRAT', 'exam-inrat'),
       { label: 'Take the flight test', cite: '421.14(4)(d)', needs: 'knowledge-and-experience' },
     ],
+    cost: {
+      // Instrument time past the 15 h dual is priced with an instructor too: few train it with a safety pilot.
+      plan: (c, left, sim) => {
+        const dual = left('ifr-dual-inst');
+        const rest = instrumentPlan(Math.max(0, left('ifr-inst') - dual), c.all, 20, sim);
+        return { dual: dual + rest.dual, sim: rest.sim, solo: left('ifr-pic-xc') };
+      },
+      solo: 'PIC cross-country',
+      note: `Priced for the least Transport Canada allows: the cross-country time as pilot-in-command without an instructor, and all the instrument time with one. ${simNote(20, 'the instrument time')}${
+        group === 1 ? ' Group 1 is flown in a multi-engine aeroplane, at least for the flight test, which costs more than a single.' : ''
+      }`,
+      vocational: true,
+    },
   };
 }
 
@@ -623,6 +723,12 @@ const instructor4: Goal = {
     writeGate('Write the AIRAF', 'exam-airaf'),
     { label: 'Take the flight test', cite: '421.14(4)(d)', needs: 'knowledge-and-experience' },
   ],
+  cost: {
+    plan: (c, left, sim) => instrumentPlan(left('i4-dual'), c.scoped, 5, sim),
+    solo: 'solo',
+    note: `Priced for the 30 h of instructor flight training. ${simNote(5, 'it')} Many schools charge more an hour for an instructor-rating instructor.`,
+    vocational: true,
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -685,6 +791,7 @@ const atpl: Goal = {
     writeGate('Write SAMRA and SARON', 'exam-samra', 'exam-saron'),
     { label: 'Take the flight test', cite: '421.14(4)(c)', needs: [time('gate-atpl-test', '1125 h flight time (75% of 1500 h)', 1125, (c) => sum(c.all, 'total'), '421.14(4)(c)')] },
   ],
+  cost: { unpriced: 'Not priced: most of the 1500 h is flown at work, not paid for at a school.' },
 };
 
 export const GOALS: readonly Goal[] = [ppl, night, vfrott, cpl, multiEngine, instrument(3), instrument(1), instructor4, atpl];

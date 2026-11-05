@@ -4,6 +4,7 @@ import { MEDICAL_LABEL, type GoalId, type Medical, type MilestoneRecord, type Pr
 import type { Logbook } from '../model/store';
 import { evaluateGoal, type ExamResult, type GateResult, type GoalResult, type ReqResult } from '../rules/evaluate';
 import { GOALS, STANDARD_421_URL, goalById } from '../rules/goals';
+import { CostDetail, CostStat, costOf } from './Cost';
 import { CheckIcon, LockIcon, PlusIcon } from './icons';
 
 type UpdateProfile = (fn: (p: Profile) => Profile) => unknown;
@@ -86,6 +87,7 @@ function GoalCard({ result: r, active, onSelect }: { result: GoalResult; active:
 function GoalDetail({ result: r, profile, updateProfile }: { result: GoalResult; profile: Profile; updateProfile: UpdateProfile }) {
   const { goal } = r;
   const holding = GOALS.filter((g) => g.id !== goal.id && profile.held[g.id] !== undefined);
+  const cost = costOf(r, profile);
   const setHeld = (date: string | null) =>
     updateProfile((p) => {
       const held = { ...p.held };
@@ -133,7 +135,7 @@ function GoalDetail({ result: r, profile, updateProfile }: { result: GoalResult;
       {r.held || r.credited ? (
         <p className="banner ok">{r.held ? 'You hold this. The requirements are below for reference.' : r.credited}</p>
       ) : (
-        <div className="summary">
+        <div className={`summary${cost ? ' with-cost' : ''}`}>
           <div className="stat">
             <span className="stat-value">{r.minutesToGo > 0 ? formatHoursUp(r.minutesToGo) : '0'}<small> h</small></span>
             <span className="stat-label">{r.minutesToGo > 0 ? 'of flying left, at least' : 'hours all met'}</span>
@@ -144,8 +146,11 @@ function GoalDetail({ result: r, profile, updateProfile }: { result: GoalResult;
             </span>
             <span className="stat-label">requirements met</span>
           </div>
+          {cost && <CostStat cost={cost} />}
         </div>
       )}
+      {cost && <CostDetail result={r} cost={cost} profile={profile} updateProfile={updateProfile} />}
+      {'unpriced' in goal.cost && !r.held && !r.credited && <p className="note cost-none">{goal.cost.unpriced}</p>}
 
       {r.gates.length > 0 && !r.held && (
         <ul className="gates" aria-label="What is unlocked">

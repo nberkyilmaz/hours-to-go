@@ -26,13 +26,17 @@ hours-to-go/
 │   │                           phone rules at max-width 720px
 │   ├── model/
 │   │   ├── entry.ts            a logbook line: columns, Breakdown, derive(), validation, after-PPL part
-│   │   ├── profile.ts          goals held, medical, milestones, training start dates, focus
+│   │   ├── profile.ts          goals held, medical, milestones, training start dates, focus,
+│   │   │                           the school's rates and the sample ones (D39)
 │   │   └── store.ts            parsing (and converting old lines), merging, guest localStorage
 │   ├── rules/
-│   │   ├── goals.ts            the Standard 421 catalogue: every requirement with its paragraph
-│   │   └── evaluate.ts         turns a logbook + profile into progress per goal
+│   │   ├── goals.ts            the Standard 421 catalogue: every requirement with its paragraph,
+│   │   │                           and each goal's plan of the least time left to pay for
+│   │   ├── evaluate.ts         turns a logbook + profile into progress per goal
+│   │   └── cost.ts             prices a plan at the school's rates; money formatting (D39)
 │   └── ui/
 │       ├── Progress.tsx        goal detail, gates, requirement rows, milestone tick-offs, goal cards
+│       ├── Cost.tsx            the price beside the hours, how it is worked out, the rates form
 │       ├── Welcome.tsx         a first visit: what the app is, the sign-up form, go on without (D27)
 │       ├── Logbook.tsx         empty state, totals tiles, column totals, by-type table, entry list/cards
 │       ├── EntryForm.tsx       the flight / FTD / paper-totals form and its questions
@@ -116,6 +120,7 @@ requirement reads from these, never from raw columns.
 | `milestones` | key → `{ date, score? }` (exams, ground school, special flights, flight tests) |
 | `trainingStart` | goal id → date, overriding where a goal's training window starts |
 | `focus` | the goal shown first on Progress |
+| `rates` | `{ aircraft, instructor, sim, tax }` in dollars an hour and percent, `sim` null when not used; null until entered, when `SAMPLE_RATES` are shown |
 
 Goal ids: `ppl night vfrott cpl multi ifr3 ifr1 inst4 atpl`.
 
@@ -158,6 +163,16 @@ gates use the same conditions and add `passed` once their exams are passed.
    either list their own requirements or take "every knowledge and experience requirement".
 4. Returns done/total counts, the largest time shortfall (`minutesToGo`), whether everything is met,
    and the held or credited state.
+5. Works out the goal's `plan`: the least time left to pay for, in minutes, as `{ dual, sim, solo }`.
+   Each goal's `cost.plan` gets `left(id)`, what a requirement still needs, and whether the pilot
+   uses a simulator (a simulator rate is set). A goal that isn't priced has `cost.unpriced`, the
+   reason shown instead, and a null plan.
+
+**The price** (`cost.ts`). `priceOf(plan, rates)` bills each kind of time in tenths of an hour,
+rounded up: dual at the aeroplane plus the instructor, simulator at its rate plus the instructor,
+solo at the aeroplane. Tax goes on the subtotal. It also returns what one more hour of each adds
+with tax. `about()` rounds the headline to $100 ($10 under $1,000). `Cost.tsx` hides the price for
+a goal held, credited or complete, or with nothing left to pay for.
 
 ## API (`server/app.ts`)
 

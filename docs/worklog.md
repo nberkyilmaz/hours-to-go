@@ -561,11 +561,56 @@ school: the instructor's check, and settings in GitHub and Cloudflare.
   no sideways scroll; the desktop bar unchanged. The built page carries every `og:` tag and
   `og.png`.
 
+## Phase 16: cost to go (2026-11-04)
+
+**Owner request.** Start the features (roadmap, section 3) with the cost to go. The owner's
+figures: "most flight school numbers are C172 wet 220 dollars plus tax, but do check on their
+website", the instructor on top for dual, and a deep look at how the numbers are worked out.
+
+**Research.** School websites on 2026-11-04 (sources in D39). $220 is Waterloo Wellington Flight
+Centre's C172S, before a $15 fuel surcharge; Ontario clubs run $195 to $259, private schools and
+the west $260 to $355. Instructors are $80 to $95. Schools' own PPL estimates put the hours past
+the 17 h dual and 12 h solo minimums with the instructor (33 + 12 at the minimum; 51.2 + 15.8 at
+the 65 h Ontario Flight Centre quotes as the national average). The CRA's GST/HST Memorandum 20-4
+taxes PPL training and private ratings, and exempts commercial, instrument and instructor training
+at a vocational school up to the minimum hours.
+
+**Built** (D39):
+- Each goal in `goals.ts` has a plan of the least time left to pay for: dual, simulator, and solo
+  or PIC. Multi-engine and the ATPL say why they aren't priced.
+- `src/rules/cost.ts` bills each kind in tenths of an hour, rounded up, adds tax, and rounds the
+  headline to $100.
+- On Progress, the price sits beside the hours ("left to pay, about"; its own row on a phone).
+  "How the cost is worked out" lists the lines, what each hour past the minimum adds, the price at
+  65 h for the PPL, how the plan is laid out, what isn't counted, and the rates form.
+- `profile.rates`, null until entered. Sample rates until then: $220, $90, 13%, no simulator.
+- The privacy page lists the rates among the settings kept.
+
+**Problems on the way:**
+1. *Hand-built test profile.* `withSim(cplPilot())` spread a whole profile over the simulator
+   rate, so its `rates: null` won, and the CPL test with a simulator got no simulator. The test
+   was wrong, not the plan; the helper now takes the rates as a change.
+2. *The box lost focus at the first key.* The rates form was keyed on whether the rates were the
+   pilot's own, and the first key typed makes them so, which rebuilt the box being typed in. The
+   tests filled whole values at once and missed it; Edge typing a key at a time showed it. Now only
+   "Use the sample rates" refills the boxes. And the panel no longer hides at a $0 price, which it
+   did while a pilot cleared both rates to retype them. A test checks the box survives both.
+
+**Checked:**
+- 18 new tests: every plan from an empty log and part-way, the simulator rule (the CPL's 35 h
+  dual stays in the aeroplane), every plan covering at least D4's figure, the billing and
+  rounding, parsing and merging the rates, the screen with sample rates, then the school's, kept
+  across a reload, and the multi-engine note. The server keeps the rates with the profile.
+- **In Edge**, as a guest: the price at 390, 360 and 320 px wide and on a desktop, light and dark,
+  with no sideways scroll and the table inside its panel. With Waterloo Wellington's rates
+  ($235 with the surcharge, $92, simulator $135): PPL about $15,400, IFR Group 3 about $25,800
+  with 20 h in the simulator.
+
 ## Where things stand
 
-- 129 tests pass (rules 37, logbook model 21, server API 42, first visit, guest, password reset,
-  confirm links and feedback 23, signed in 6), and the API tests per database also run against a
-  Postgres server through `pg` in CI.
+- 147 tests pass (rules 37, cost to go 16, logbook model 21, server API 42, first visit, guest,
+  cost to go, password reset, confirm links and feedback 25, signed in 6), and the API tests per
+  database also run against a Postgres server through `pg` in CI.
 - Typecheck clean on both configs; `npm audit` clean.
 - Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.
 - Password reset live. Feedback and error alerts send once `FEEDBACK_TO` is set in Render. Backups

@@ -130,6 +130,47 @@ describe('the app as a guest', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Mark PPL as held' }));
     expect(await screen.findByText(/only on this device/)).toBeTruthy();
   });
+
+  it('prices what is left at sample rates, then at the school’s own, and keeps them', async () => {
+    render(<App />);
+    const price = () => screen.getByText('left to pay, about').previousElementSibling?.textContent;
+    await screen.findByText('left to pay, about');
+    expect(price()).toBe('$14,500');
+    fireEvent.click(screen.getByText('How the cost is worked out'));
+    const table = screen.getByRole('table', { name: 'The cost to go, line by line' });
+    expect(table.textContent).toContain('33.0 h with an instructor× $310$10,230');
+    expect(table.textContent).toContain('12.0 h solo× $220$2,640');
+    expect(screen.getByText(/At 65 h, it\s+would be about/).textContent).toContain('$21,500');
+
+    // The first key typed makes the rates the pilot's own; the box being typed in must stay put.
+    const aeroplane = screen.getByLabelText('Aeroplane, $ an hour');
+    fireEvent.change(aeroplane, { target: { value: '2' } });
+    expect(screen.getByLabelText('Aeroplane, $ an hour')).toBe(aeroplane);
+    // Nor does the panel go while the rates are cleared to retype them.
+    type('Aeroplane, $ an hour', '');
+    type('Instructor, $ an hour', '');
+    expect(screen.getByLabelText('Aeroplane, $ an hour')).toBe(aeroplane);
+
+    type('Aeroplane, $ an hour', '200');
+    type('Instructor, $ an hour', '80');
+    type('Tax, %', '5');
+    // 33 h at $280 and 12 h at $200, with 5% on top.
+    expect(price()).toBe('$12,200');
+
+    cleanup();
+    render(<App />);
+    await screen.findByText('left to pay, about');
+    expect(price()).toBe('$12,200');
+    fireEvent.click(screen.getByRole('button', { name: 'Use the sample rates' }));
+    expect(price()).toBe('$14,500');
+  });
+
+  it('says why a rating has no price', async () => {
+    render(<App />);
+    fireEvent.change(await screen.findByLabelText('Working on'), { target: { value: 'multi' } });
+    expect(await screen.findByText(/sets no minimum hours for this rating, so there is nothing to price/)).toBeTruthy();
+    expect(screen.queryByText('left to pay, about')).toBeNull();
+  });
 });
 
 describe('opening the app', () => {

@@ -143,13 +143,15 @@ describe.each(DATABASES)('on $name', ({ url }) => {
       const b = await signUp('b@example.com');
       const e = anEntry();
       expect((await app.inject({ method: 'PUT', url: `/api/entries/${e.id}`, payload: e, cookies: a.cookies })).statusCode).toBe(200);
-      await app.inject({ method: 'PUT', url: '/api/profile', payload: { medical: 'cat1', held: { ppl: { date: '2025-05-01' } }, focus: 'ifr3' }, cookies: a.cookies });
+      const rates = { aircraft: 235, instructor: 92, sim: 135, tax: 13 };
+      await app.inject({ method: 'PUT', url: '/api/profile', payload: { medical: 'cat1', held: { ppl: { date: '2025-05-01' } }, focus: 'ifr3', rates }, cookies: a.cookies });
 
       const mine = (await app.inject({ method: 'GET', url: '/api/logbook', cookies: a.cookies })).json();
       expect(mine.entries).toHaveLength(1);
       expect(mine.entries[0].xcDayPic).toBe(90);
       expect(mine.profile.focus).toBe('ifr3');
       expect(mine.profile.held.ppl.date).toBe('2025-05-01');
+      expect(mine.profile.rates).toEqual(rates);
 
       const theirs = (await app.inject({ method: 'GET', url: '/api/logbook', cookies: b.cookies })).json();
       expect(theirs.entries).toHaveLength(0);

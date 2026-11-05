@@ -9,7 +9,7 @@ import {
   type Breakdown,
   type Entry,
 } from './entry';
-import { GOAL_IDS, blankProfile, type GoalId, type Medical, type MilestoneRecord, type Profile } from './profile';
+import { GOAL_IDS, blankProfile, type GoalId, type Medical, type MilestoneRecord, type Profile, type Rates } from './profile';
 
 /**
  * Everything one pilot has logged. Signed in, it lives on the server; as a
@@ -105,7 +105,9 @@ export function rememberWelcomed(): void {
 /** True when a guest logbook holds anything worth keeping. */
 export function hasContent(book: Logbook): boolean {
   const p = book.profile;
-  return book.entries.length > 0 || Object.keys(p.held).length > 0 || Object.keys(p.milestones).length > 0 || p.medical !== 'none';
+  return (
+    book.entries.length > 0 || Object.keys(p.held).length > 0 || Object.keys(p.milestones).length > 0 || p.medical !== 'none' || p.rates !== null
+  );
 }
 
 /**
@@ -125,6 +127,7 @@ export function mergeLogbooks(base: Logbook, incoming: Logbook): Logbook {
     trainingStart: { ...i.trainingStart, ...b.trainingStart },
     // A brand-new account has not chosen anything yet; keep what the guest was working on.
     focus: hasContent(base) ? b.focus : i.focus,
+    rates: b.rates ?? i.rates,
   };
   return { version: 2, entries, profile };
 }
@@ -138,6 +141,18 @@ const isObject = (x: unknown): x is Record<string, unknown> => typeof x === 'obj
 const str = (x: unknown, max = 200): string => (typeof x === 'string' ? x.slice(0, max) : '');
 const whole = (x: unknown): number => (typeof x === 'number' && Number.isFinite(x) && x > 0 ? Math.min(Math.round(x), MAX_MINUTES) : 0);
 const isGoal = (x: string): x is GoalId => (GOAL_IDS as readonly string[]).includes(x);
+/** Dollars to the cent, or a percent to three places (Quebec's 14.975), up to `max`. */
+const amount = (x: unknown, max: number, places = 2): number | null =>
+  typeof x === 'number' && Number.isFinite(x) && x >= 0 ? Math.min(Math.round(x * 10 ** places) / 10 ** places, max) : null;
+
+function parseRates(x: Record<string, unknown>): Rates {
+  return {
+    aircraft: amount(x.aircraft, 10_000) ?? 0,
+    instructor: amount(x.instructor, 10_000) ?? 0,
+    sim: amount(x.sim, 10_000),
+    tax: amount(x.tax, 30, 3) ?? 0,
+  };
+}
 
 /**
  * The first version stored one role per line (dual, solo, PIC, co-pilot) with
@@ -243,6 +258,7 @@ export function parseProfile(x: unknown): Profile {
       p.milestones[k] = rec;
     }
   }
+  if (isObject(x.rates)) p.rates = parseRates(x.rates);
   return p;
 }
 

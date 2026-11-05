@@ -1,6 +1,6 @@
 import { afterPplPart, today as todayDate, type Entry } from '../model/entry';
-import type { MilestoneRecord, Profile } from '../model/profile';
-import { examCheck, goalById, passed, type Ctx, type Gate, type Goal, type Req, type Section } from './goals';
+import { SAMPLE_RATES, type MilestoneRecord, type Profile } from '../model/profile';
+import { examCheck, goalById, passed, type Ctx, type Gate, type Goal, type Plan, type Req, type Section } from './goals';
 
 export interface ReqResult {
   req: Req;
@@ -67,6 +67,8 @@ export interface GoalResult {
    * least flying left, not a sum.
    */
   minutesToGo: number;
+  /** The least time still to pay for, by kind; null when the goal isn't priced (D39). */
+  plan: Plan | null;
   complete: boolean;
 }
 
@@ -199,6 +201,11 @@ export function evaluateGoal(goal: Goal, entries: readonly Entry[], profile: Pro
   for (const r of nodes) {
     if (r.req.kind === 'time' && !r.met) minutesToGo = Math.max(minutesToGo, r.need - r.have);
   }
+  const left = (id: string) => {
+    const r = nodes.find((n) => n.req.id === id);
+    return !r || r.met ? 0 : Math.max(0, r.need - r.have);
+  };
+  const sim = (profile.rates ?? SAMPLE_RATES).sim !== null;
 
   const done = nodes.filter((r) => r.met).length;
   return {
@@ -211,6 +218,7 @@ export function evaluateGoal(goal: Goal, entries: readonly Entry[], profile: Pro
     done,
     total: nodes.length,
     minutesToGo,
+    plan: 'plan' in goal.cost ? goal.cost.plan(c, left, sim) : null,
     complete: done === nodes.length,
   };
 }

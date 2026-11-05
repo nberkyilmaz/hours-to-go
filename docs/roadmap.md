@@ -51,9 +51,9 @@ that costs money until it has users: no paid plan, no domain of its own, no stor
 
 The owner wants every one of these. Roughly in order of value:
 
-1. **Cost to go.** The pilot enters their school's aircraft and instructor rates; the app shows
-   "about $8,400 to go" next to the hours. Money is a student's biggest worry, and it's the line
-   the advertising can lead with.
+1. ~~**Cost to go.**~~ Done: each goal shows what its least flying costs at the school's rates
+   (sample rates until the pilot enters their own), next to the hours, with the arithmetic
+   (D39). Money is a student's biggest worry, and it's the line the advertising can lead with.
 2. **Finish date.** "At your pace (2.4 h a week) you'll reach the PPL minimum around March",
    from the last few weeks of flying.
 3. **Email reminders**, opted into: medical expiry (needs the expiry date in the profile), the
@@ -112,6 +112,8 @@ These are interpretations the app shows in its notes; the owner's FTU can settle
 - Is the CPL's 30 h "solo" strictly alone on board? (App: yes.)
 - Do night-rating and IFR dual after the PPL count as CPL "commercial flight training"? (App: yes,
   everything after the PPL issue date counts.)
+- For the cost to go (D39): are the hours past the PPL's 17 h dual and 12 h solo mostly dual, and
+  does the school charge GST/HST on CPL and IFR training up to the minimum hours?
 
 The logbook-photo import was dropped by the owner (decision D24); pilots type their totals in.
 
@@ -129,6 +131,9 @@ The logbook-photo import was dropped by the owner (decision D24); pilots type th
 - The limits on sign-ins, sign-ups, reset and confirm emails, and feedback are in memory, so they
   reset on restart and don't work across several servers. On Render's free plan they also reset
   every time the service sleeps.
+- The cost to go prices the flying only: not ground school, briefings, exam and flight-test fees,
+  the medical or the licence. It takes one aeroplane rate, so a Group 1 IFR flown partly in a twin
+  is priced as a single.
 - No service worker: the home-screen app needs a connection to open.
 - On the free plan the API sleeps. A signed-in pilot opening the app can wait up to a minute (D26).
 - Safari keeps the session cookie only 7 days (D25). The app renews it on every open, so this
