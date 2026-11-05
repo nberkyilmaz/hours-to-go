@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ApiError, api } from './api';
+import { ApiError, api, type Account } from './api';
 import type { Entry } from './model/entry';
 import type { Profile } from './model/profile';
 import {
@@ -20,7 +20,7 @@ export type Mode =
   | { kind: 'loading' }
   /** `offline`: the server could not be reached, so a signed-in pilot may be looking at the guest log. */
   | { kind: 'guest'; offline: boolean }
-  | { kind: 'account'; email: string };
+  | ({ kind: 'account' } & Account);
 
 export interface LogbookState {
   mode: Mode;
@@ -46,6 +46,13 @@ export interface LogbookState {
   signIn: (email: string, password: string) => Promise<void>;
   /** Sets a new password with the token from an emailed link, and signs in with it. */
   resetPassword: (token: string, password: string) => Promise<void>;
+  /** Spends a link that confirms an address, which needs no sign-in. */
+  confirmEmail: (token: string) => Promise<{ email: string; changed: boolean }>;
+  sendConfirmation: () => Promise<void>;
+  /** The new address takes over once the link sent to it is opened. */
+  changeEmail: (email: string, password: string) => Promise<void>;
+  cancelEmailChange: () => Promise<void>;
+  changePassword: (password: string, newPassword: string) => Promise<void>;
   signOut: () => Promise<void>;
   deleteAccount: (password: string) => Promise<void>;
 }
@@ -98,12 +105,17 @@ export function useLogbook(): LogbookState {
     setWelcomed(true);
   };
 
-  const enterAccount = (email: string, server: Logbook) => {
+  const enterAccount = (account: Account, server: Logbook) => {
     rememberSignedIn(true);
     skipWelcome();
-    setMode({ kind: 'account', email });
+    setMode({ kind: 'account', ...account });
     commit(server);
     setGuest(loadGuestLogbook());
+  };
+
+  /** What the server now says about the signed-in profile's address. */
+  const showAccount = (account: Account) => {
+    if (modeRef.current.kind === 'account') setMode({ kind: 'account', ...account });
   };
 
   useEffect(() => {
@@ -114,7 +126,7 @@ export function useLogbook(): LogbookState {
       try {
         const { user } = await api.me();
         const server = await api.logbook();
-        if (live) enterAccount(user.email, server);
+        if (live) enterAccount(user, server);
       } catch (err) {
         // 401 is simply "not signed in"; anything else means the server is out of reach.
         if (live) becomeGuest(!(err instanceof ApiError && err.status === 401));
@@ -217,18 +229,34 @@ export function useLogbook(): LogbookState {
     // A new profile starts with whatever was logged on this device.
     const server = hasContent(local) ? await api.merge(local) : await api.logbook();
     if (hasContent(local)) clearGuestLogbook();
-    enterAccount(user.email, server);
+    enterAccount(user, server);
   };
 
   const signIn = async (email: string, password: string) => {
     const { user } = await api.login(email, password);
-    enterAccount(user.email, await api.logbook());
+    enterAccount(user, await api.logbook());
   };
 
   const resetPassword = async (token: string, password: string) => {
     const { user } = await api.resetPassword(token, password);
-    enterAccount(user.email, await api.logbook());
+    enterAccount(user, await api.logbook());
   };
+
+  const confirmEmail = async (token: string) => {
+    const result = await api.confirmEmail(token);
+    // The link may be for another profile than the one signed in here, so ask rather than assume.
+    if (modeRef.current.kind === 'account') {
+      try {
+        showAccount((await api.me()).user);
+      } catch {
+        // It shows the next time the app opens.
+      }
+    }
+    return result;
+  };
+
+  const changeEmail = async (email: string, password: string) => showAccount((await api.changeEmail(email, password)).user);
+  const cancelEmailChange = async () => showAccount((await api.cancelEmailChange()).user);
 
   const signOut = async () => {
     await api.logout();
@@ -258,6 +286,11 @@ export function useLogbook(): LogbookState {
     signUp,
     signIn,
     resetPassword,
+    confirmEmail,
+    sendConfirmation: api.sendConfirmation,
+    changeEmail,
+    cancelEmailChange,
+    changePassword: api.changePassword,
     signOut,
     deleteAccount,
   };

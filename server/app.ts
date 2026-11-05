@@ -7,8 +7,8 @@ import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest }
 import { validateEntry } from '../src/model/entry';
 import { parseEntry, parseLogbook, parseProfile } from '../src/model/store';
 import { Throttle, hashPassword, hashToken, newToken, verifyPassword } from './auth';
-import { Store, type User } from './db';
-import { feedbackMail, resetMail, type SendMail } from './mail';
+import { Store, type Account, type User } from './db';
+import { confirmMail, feedbackMail, resetMail, type SendMail } from './mail';
 
 export interface AppOptions {
   /** A `postgres://` URL, or for PGlite a folder or `memory://`. See `Store.open`. */
@@ -38,6 +38,7 @@ export interface AppOptions {
 const COOKIE = 'htg_session';
 const SESSION_DAYS = 90;
 const RESET_MINUTES = 60;
+const CONFIRM_DAYS = 7;
 const FEEDBACK_MAX = 4000;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -68,6 +69,12 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   // up Resend's 100 emails a day that reset links need too.
   const feedbackPerIp = new Throttle(5, 60 * 60_000);
   const feedbackPerDay = new Throttle(30, 24 * 60 * 60_000);
+  // Sign-ups: enough an hour for a class signing up on the school's Wi-Fi, too few for a script
+  // to fill the free database.
+  const signupsPerIp = new Throttle(20, 60 * 60_000);
+  // Links to confirm an address: a few an hour to one profile, and a cap a day in all, as for feedback.
+  const linksPerUser = new Throttle(3, 60 * 60_000);
+  const linksPerDay = new Throttle(50, 24 * 60 * 60_000);
   app.addHook('onClose', async () => store.close());
 
   await app.register(cookie);
@@ -106,8 +113,70 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     if (!req.user) return reply.code(401).send({ error: 'Sign in to continue.' });
   };
 
+  const accountOf = async (userId: string): Promise<Account> => (await store.account(userId, Date.now()))!;
+
+  /**
+   * The signed-in pilot's password again, before a change that matters. Wrong guesses count
+   * toward the same limit as signing in. False once it has replied with why not.
+   */
+  const passwordChecked = async (req: FastifyRequest, reply: FastifyReply, password: string): Promise<boolean> => {
+    const key = `password|${req.user!.id}`;
+    if (throttle.blocked(key)) {
+      await reply.code(429).send({ error: 'Too many attempts. Try again in 15 minutes.' });
+      return false;
+    }
+    const stored = await store.passwordHashFor(req.user!.id);
+    if (!stored || !(await verifyPassword(password, stored))) {
+      throttle.fail(key);
+      await reply.code(401).send({ error: 'That password is incorrect.' });
+      return false;
+    }
+    throttle.clear(key);
+    return true;
+  };
+
+  const linksBlocked = (userId: string) => linksPerUser.blocked(userId) || linksPerDay.blocked('all');
+
+  /**
+   * Emails a link that confirms `email` for this profile: its own address, or one it is moving
+   * to. In the fragment, like a reset link, so the token stays out of logs.
+   */
+  const sendEmailLink = async (user: User, email: string) => {
+    const { sendMail, appUrl } = opts;
+    if (!sendMail || !appUrl) throw new Error('Email is not set up.');
+    linksPerUser.fail(user.id);
+    linksPerDay.fail('all');
+    const { token, hash } = newToken();
+    await store.createEmailLink(user.id, email, hash, Date.now() + CONFIRM_DAYS * 86_400_000);
+    const link = new URL(appUrl);
+    link.hash = `confirm=${token}`;
+    await sendMail(confirmMail(email, link.toString(), CONFIRM_DAYS, email !== user.email));
+  };
+
+  /** For a pilot asking for a link: false once it has replied with why one can't be sent. */
+  const emailLinkSent = async (reply: FastifyReply, user: User, email: string): Promise<boolean> => {
+    if (!opts.sendMail || !opts.appUrl) {
+      await reply.code(503).send({ error: 'Sending email isn’t available yet.' });
+      return false;
+    }
+    if (linksBlocked(user.id)) {
+      await reply.code(429).send({ error: 'Too many emails sent. Try again in an hour.' });
+      return false;
+    }
+    try {
+      await sendEmailLink(user, email);
+      return true;
+    } catch (err) {
+      app.log.error(err, 'email link not sent');
+      await reply.code(502).send({ error: 'The email couldn’t be sent. Try again in a few minutes.' });
+      return false;
+    }
+  };
+
   // --- Accounts --------------------------------------------------------------
 
+  // The profile works at once. The link to confirm the address is sent after replying, and only
+  // matters for a password reset later; nothing waits for it.
   app.post('/api/auth/signup', async (req, reply) => {
     const body = bodyOf(req);
     const email = String(body.email ?? '').trim().toLowerCase();
@@ -115,10 +184,15 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     if (!EMAIL.test(email) || email.length > 254) return reply.code(400).send({ error: 'Enter a valid email address.' });
     const problem = passwordProblem(password);
     if (problem) return reply.code(400).send({ error: problem });
+    if (signupsPerIp.blocked(req.ip)) return reply.code(429).send({ error: 'Too many profiles created from this network. Try again in an hour.' });
+    signupsPerIp.fail(req.ip);
     const user = await store.createUser(email, await hashPassword(password));
     if (!user) return reply.code(409).send({ error: 'An account with that email already exists. Sign in instead.' });
     await startSession(reply, user);
-    return { user: { email: user.email } };
+    if (opts.sendMail && opts.appUrl && !linksBlocked(user.id)) {
+      void sendEmailLink(user, user.email).catch((err: unknown) => app.log.error(err, 'confirmation email not sent'));
+    }
+    return { user: { email: user.email, confirmed: false, pendingEmail: null } satisfies Account };
   });
 
   app.post('/api/auth/login', async (req, reply) => {
@@ -135,7 +209,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     }
     throttle.clear(key);
     await startSession(reply, found);
-    return { user: { email: found.email } };
+    return { user: await accountOf(found.id) };
   });
 
   // The same answer whether or not the email has a profile, and as fast either way: the link is
@@ -178,7 +252,22 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
       return reply.code(400).send({ error: 'This link has expired or has already been used. Ask for a new one.' });
     }
     await startSession(reply, user);
-    return { user: { email: user.email } };
+    return { user: await accountOf(user.id) };
+  });
+
+  // Opened from an emailed link, on whatever browser the email app picks: no session needed.
+  app.post('/api/auth/confirm', async (req, reply) => {
+    const key = `confirm|${req.ip}`;
+    if (throttle.blocked(key)) return reply.code(429).send({ error: 'Too many attempts. Try again in 15 minutes.' });
+    const result = await store.spendEmailLink(hashToken(String(bodyOf(req).token ?? '')), Date.now());
+    if (result === null) {
+      throttle.fail(key);
+      return reply.code(400).send({ error: 'This link has expired or has already been used. Send a new one from your profile.' });
+    }
+    if (result === 'taken') {
+      return reply.code(409).send({ error: 'Another profile has started using that email since, so your profile keeps its old one.' });
+    }
+    return result;
   });
 
   app.post('/api/auth/logout', async (req, reply) => {
@@ -194,15 +283,48 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     const token = req.cookies[COOKIE]!;
     await store.extendSession(hashToken(token), Date.now() + SESSION_DAYS * 86_400_000);
     setSessionCookie(reply, token);
-    return { user: { email: req.user!.email } };
+    return { user: await accountOf(req.user!.id) };
   });
 
   app.delete('/api/account', { preHandler: requireUser }, async (req, reply) => {
-    const password = String(bodyOf(req).password ?? '');
-    const stored = await store.passwordHashFor(req.user!.id);
-    if (!stored || !(await verifyPassword(password, stored))) return reply.code(401).send({ error: 'That password is incorrect.' });
+    if (!(await passwordChecked(req, reply, String(bodyOf(req).password ?? '')))) return reply;
     await store.deleteUser(req.user!.id);
     reply.clearCookie(COOKIE, { path: '/' });
+    return reply.code(204).send();
+  });
+
+  // Sends the link to confirm the profile's own address again.
+  app.post('/api/account/confirm', { preHandler: requireUser }, async (req, reply) => {
+    if (req.user!.confirmed) return reply.code(400).send({ error: 'Your email is already confirmed.' });
+    if (!(await emailLinkSent(reply, req.user!, req.user!.email))) return reply;
+    return reply.code(204).send();
+  });
+
+  // The new address takes over only once its link is opened, so a typo can't lock anyone out.
+  app.post('/api/account/email', { preHandler: requireUser }, async (req, reply) => {
+    const body = bodyOf(req);
+    const email = String(body.email ?? '').trim().toLowerCase();
+    if (!EMAIL.test(email) || email.length > 254) return reply.code(400).send({ error: 'Enter a valid email address.' });
+    if (email === req.user!.email) return reply.code(400).send({ error: 'That’s already your email.' });
+    if (!(await passwordChecked(req, reply, String(body.password ?? '')))) return reply;
+    if (await store.findUserByEmail(email)) return reply.code(409).send({ error: 'Another profile already uses that email.' });
+    if (!(await emailLinkSent(reply, req.user!, email))) return reply;
+    return { user: await accountOf(req.user!.id) };
+  });
+
+  app.delete('/api/account/email', { preHandler: requireUser }, async (req) => {
+    await store.cancelEmailChange(req.user!.id);
+    return { user: await accountOf(req.user!.id) };
+  });
+
+  // Signed in here still; signed out everywhere else, as after a reset.
+  app.post('/api/account/password', { preHandler: requireUser }, async (req, reply) => {
+    const body = bodyOf(req);
+    const next = String(body.newPassword ?? '');
+    const problem = passwordProblem(next);
+    if (problem) return reply.code(400).send({ error: problem });
+    if (!(await passwordChecked(req, reply, String(body.password ?? '')))) return reply;
+    await store.setPassword(req.user!.id, await hashPassword(next), hashToken(req.cookies[COOKIE]!));
     return reply.code(204).send();
   });
 

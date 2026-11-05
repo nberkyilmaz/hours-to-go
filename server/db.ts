@@ -7,13 +7,28 @@ import { mergeLogbooks, parseEntry, parseProfile, type Logbook } from '../src/mo
 export interface User {
   id: string;
   email: string;
+  /** The pilot has opened a link emailed to this address. */
+  confirmed: boolean;
 }
+
+/** What the app shows about a profile: its address, whether that is confirmed, and an address it is changing to. */
+export interface Account {
+  email: string;
+  confirmed: boolean;
+  pendingEmail: string | null;
+}
+
+/** What spending an emailed link did: confirmed the profile's address, or moved the profile to a new one. */
+export type EmailLinkResult = { email: string; changed: boolean } | 'taken' | null;
 
 interface UserRow {
   id: string;
   email: string;
   password_hash: string;
+  confirmed: boolean;
 }
+
+const USER_COLUMNS = 'id, email, email_confirmed_at is not null as confirmed';
 
 /** One statement, its rows back. */
 type Query = <T>(text: string, params?: unknown[]) => Promise<T[]>;
@@ -25,37 +40,73 @@ interface Db {
   close(): Promise<void>;
 }
 
-const SCHEMA = [
-  `create table if not exists users (
-    id text primary key,
-    email text not null unique,
-    password_hash text not null,
-    created_at timestamptz not null default now()
-  )`,
-  `create table if not exists sessions (
-    token_hash text primary key,
-    user_id text not null references users(id) on delete cascade,
-    expires_at bigint not null
-  )`,
-  'create index if not exists sessions_user on sessions(user_id)',
-  `create table if not exists entries (
-    user_id text not null references users(id) on delete cascade,
-    id text not null,
-    data jsonb not null,
-    primary key (user_id, id)
-  )`,
-  `create table if not exists profiles (
-    user_id text primary key references users(id) on delete cascade,
-    data jsonb not null
-  )`,
-  // A new table, so `if not exists` is all it needs, on a laptop and on Neon alike.
-  `create table if not exists password_resets (
-    token_hash text primary key,
-    user_id text not null references users(id) on delete cascade,
-    expires_at bigint not null
-  )`,
-  'create index if not exists password_resets_user on password_resets(user_id)',
+/**
+ * The tables, as numbered steps, each run once and in order when the server starts; the
+ * `migrations` table remembers which have run. Add a step at the end. Never change one that has
+ * been published, because Neon has already run it. Step 1 is what the app made before steps
+ * existed, so on a database from then it finds everything already there.
+ */
+const MIGRATIONS: string[][] = [
+  [
+    `create table if not exists users (
+      id text primary key,
+      email text not null unique,
+      password_hash text not null,
+      created_at timestamptz not null default now()
+    )`,
+    `create table if not exists sessions (
+      token_hash text primary key,
+      user_id text not null references users(id) on delete cascade,
+      expires_at bigint not null
+    )`,
+    'create index if not exists sessions_user on sessions(user_id)',
+    `create table if not exists entries (
+      user_id text not null references users(id) on delete cascade,
+      id text not null,
+      data jsonb not null,
+      primary key (user_id, id)
+    )`,
+    `create table if not exists profiles (
+      user_id text primary key references users(id) on delete cascade,
+      data jsonb not null
+    )`,
+    `create table if not exists password_resets (
+      token_hash text primary key,
+      user_id text not null references users(id) on delete cascade,
+      expires_at bigint not null
+    )`,
+    'create index if not exists password_resets_user on password_resets(user_id)',
+  ],
+  // 2: confirming an email address, and changing it. An emailed link carries the address it
+  // confirms: the profile's own, or the one it is changing to.
+  [
+    'alter table users add column email_confirmed_at timestamptz',
+    `create table email_links (
+      token_hash text primary key,
+      user_id text not null references users(id) on delete cascade,
+      email text not null,
+      expires_at bigint not null
+    )`,
+    'create index email_links_user on email_links(user_id)',
+  ],
 ];
+
+/**
+ * Runs the steps this database hasn't had yet, all in one transaction, so a step that fails
+ * leaves the database as it was. A deploy starts the new server while the old one still runs;
+ * the lock makes a second server starting at the same moment wait its turn.
+ */
+async function migrate(db: Db): Promise<void> {
+  await db.transaction(async (q) => {
+    await q('select pg_advisory_xact_lock(421)');
+    await q('create table if not exists migrations (step integer primary key, run_at timestamptz not null default now())');
+    const [last] = await q<{ step: number | null }>('select max(step) as step from migrations');
+    for (let step = (last?.step ?? 0) + 1; step <= MIGRATIONS.length; step++) {
+      for (const statement of MIGRATIONS[step - 1]!) await q(statement);
+      await q('insert into migrations (step) values ($1)', [step]);
+    }
+  });
+}
 
 /**
  * A Postgres server (Neon in production). The `error` listener is not
@@ -127,7 +178,7 @@ export class Store {
   static async open(where: string, onPoolError: (err: Error) => void = () => {}): Promise<Store> {
     const db = /^postgres(ql)?:\/\//.test(where) ? server(where, onPoolError) : embedded(where);
     try {
-      for (const statement of SCHEMA) await db.query(statement);
+      await migrate(db);
     } catch (err) {
       await db.close().catch(() => {});
       throw err;
@@ -151,12 +202,24 @@ export class Store {
       'insert into users (id, email, password_hash) values ($1, $2, $3) on conflict (email) do nothing returning id',
       [id, email, passwordHash],
     );
-    return rows.length > 0 ? { id, email } : null;
+    return rows.length > 0 ? { id, email, confirmed: false } : null;
   }
 
   async findUserByEmail(email: string): Promise<(User & { passwordHash: string }) | null> {
-    const [row] = await this.db.query<UserRow>('select id, email, password_hash from users where email = $1', [email]);
-    return row ? { id: row.id, email: row.email, passwordHash: row.password_hash } : null;
+    const [row] = await this.db.query<UserRow>(`select ${USER_COLUMNS}, password_hash from users where email = $1`, [email]);
+    return row ? { id: row.id, email: row.email, confirmed: row.confirmed, passwordHash: row.password_hash } : null;
+  }
+
+  /** The newest unexpired link to an address other than the profile's own is a change waiting to be confirmed. */
+  async account(userId: string, now: number): Promise<Account | null> {
+    const [row] = await this.db.query<{ email: string; confirmed: boolean; pending_email: string | null }>(
+      `select u.email, u.email_confirmed_at is not null as confirmed,
+         (select l.email from email_links l where l.user_id = u.id and l.email <> u.email and l.expires_at > $2
+          order by l.expires_at desc limit 1) as pending_email
+       from users u where u.id = $1`,
+      [userId, now],
+    );
+    return row ? { email: row.email, confirmed: row.confirmed, pendingEmail: row.pending_email } : null;
   }
 
   async passwordHashFor(userId: string): Promise<string | null> {
@@ -180,10 +243,11 @@ export class Store {
 
   async userForSession(tokenHash: string, now: number): Promise<User | null> {
     const [row] = await this.db.query<User>(
-      'select u.id, u.email from sessions s join users u on u.id = s.user_id where s.token_hash = $1 and s.expires_at > $2',
+      `select u.id, u.email, u.email_confirmed_at is not null as confirmed
+       from sessions s join users u on u.id = s.user_id where s.token_hash = $1 and s.expires_at > $2`,
       [tokenHash, now],
     );
-    return row ? { id: row.id, email: row.email } : null;
+    return row ? { id: row.id, email: row.email, confirmed: row.confirmed } : null;
   }
 
   async deleteSession(tokenHash: string): Promise<void> {
@@ -202,7 +266,8 @@ export class Store {
   /**
    * Spends a reset link on a new password. The link is deleted as it is read, so it works once;
    * the profile's other links go too, and so does every session, so a device signed in by
-   * whoever knew the old password is signed out. Null when the link is unknown or expired.
+   * whoever knew the old password is signed out. The link reached the profile's inbox, so the
+   * address is confirmed too. Null when the link is unknown or expired.
    */
   resetPassword(tokenHash: string, passwordHash: string, now: number): Promise<User | null> {
     return this.db.transaction(async (q) => {
@@ -211,12 +276,81 @@ export class Store {
         [tokenHash, now],
       );
       if (!spent) return null;
-      await q('update users set password_hash = $2 where id = $1', [spent.user_id, passwordHash]);
+      await q('update users set password_hash = $2, email_confirmed_at = coalesce(email_confirmed_at, now()) where id = $1', [
+        spent.user_id,
+        passwordHash,
+      ]);
       await q('delete from password_resets where user_id = $1', [spent.user_id]);
       await q('delete from sessions where user_id = $1', [spent.user_id]);
-      const [user] = await q<User>('select id, email from users where id = $1', [spent.user_id]);
-      return user ? { id: user.id, email: user.email } : null;
+      const [user] = await q<User>(`select ${USER_COLUMNS} from users where id = $1`, [spent.user_id]);
+      return user ? { id: user.id, email: user.email, confirmed: user.confirmed } : null;
     });
+  }
+
+  /**
+   * A new password, from a pilot who knows the old one. Every other device is signed out, as
+   * after a reset, and any reset link still waiting in the inbox stops working.
+   */
+  setPassword(userId: string, passwordHash: string, keepSession: string): Promise<void> {
+    return this.db.transaction(async (q) => {
+      await q('update users set password_hash = $2 where id = $1', [userId, passwordHash]);
+      await q('delete from sessions where user_id = $1 and token_hash <> $2', [userId, keepSession]);
+      await q('delete from password_resets where user_id = $1', [userId]);
+    });
+  }
+
+  /**
+   * A link to email to `email`: the profile's own address to confirm it, or a new one to change
+   * to. Asking for a change cancels a different change still waiting; links to confirm the
+   * profile's own address stay good.
+   */
+  async createEmailLink(userId: string, email: string, tokenHash: string, expiresAt: number): Promise<void> {
+    await this.db.query('delete from email_links where expires_at < $1', [Date.now()]);
+    await this.db.query('delete from email_links where user_id = $1 and email not in ($2, (select email from users where id = $1))', [
+      userId,
+      email,
+    ]);
+    await this.db.query('insert into email_links (token_hash, user_id, email, expires_at) values ($1, $2, $3, $4)', [
+      tokenHash,
+      userId,
+      email,
+      expiresAt,
+    ]);
+  }
+
+  /**
+   * Spends an emailed link, which works once. To the profile's own address, it confirms it. To
+   * another, the profile moves to that address, confirmed, and every link it had goes: old links
+   * to the old address would otherwise move it back, and reset links sent there would still work.
+   * 'taken' when another profile has signed up with the new address since; null when the link is
+   * unknown or expired.
+   */
+  spendEmailLink(tokenHash: string, now: number): Promise<EmailLinkResult> {
+    return this.db.transaction(async (q) => {
+      const [link] = await q<{ user_id: string; email: string }>(
+        'delete from email_links where token_hash = $1 and expires_at > $2 returning user_id, email',
+        [tokenHash, now],
+      );
+      if (!link) return null;
+      const [user] = await q<{ email: string }>('select email from users where id = $1', [link.user_id]);
+      if (!user) return null;
+      if (link.email === user.email) {
+        await q('update users set email_confirmed_at = coalesce(email_confirmed_at, now()) where id = $1', [link.user_id]);
+        await q('delete from email_links where user_id = $1 and email = $2', [link.user_id, link.email]);
+        return { email: link.email, changed: false };
+      }
+      const [other] = await q('select id from users where email = $1', [link.email]);
+      if (other) return 'taken';
+      await q('update users set email = $2, email_confirmed_at = now() where id = $1', [link.user_id, link.email]);
+      await q('delete from email_links where user_id = $1', [link.user_id]);
+      await q('delete from password_resets where user_id = $1', [link.user_id]);
+      return { email: link.email, changed: true };
+    });
+  }
+
+  /** Forgets a change of address that hasn't been confirmed. */
+  async cancelEmailChange(userId: string): Promise<void> {
+    await this.db.query('delete from email_links where user_id = $1 and email <> (select email from users where id = $1)', [userId]);
   }
 
   getLogbook(userId: string): Promise<Logbook> {

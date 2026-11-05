@@ -5,6 +5,7 @@ import { MEDICAL_LABEL, type Medical, type Profile } from '../model/profile';
 import { hasContent, parseLogbook, type Logbook } from '../model/store';
 import { GOALS, STANDARD_421_URL } from '../rules/goals';
 import type { LogbookState } from '../useLogbook';
+import { SignedIn } from './Account';
 import { Feedback } from './Feedback';
 import { PRIVACY_URL } from './links';
 import { useSlow, useWake } from './useSlow';
@@ -16,7 +17,7 @@ export function ProfileView({ lb }: { lb: LogbookState }) {
       <section className="card pad" aria-labelledby="account-title">
         <h2 id="account-title">Your profile</h2>
         {mode.kind === 'account' ? (
-          <SignedIn lb={lb} email={mode.email} />
+          <SignedIn lb={lb} account={mode} />
         ) : (
           <>
             <p className="muted">
@@ -229,65 +230,6 @@ export function AuthForm({ lb, tab: givenTab, onTabChange }: AuthFormProps) {
             </button>
           )}
         </form>
-      )}
-    </>
-  );
-}
-
-function SignedIn({ lb, email }: { lb: LogbookState; email: string }) {
-  const [confirming, setConfirming] = useState(false);
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-
-  const remove = async (e: FormEvent) => {
-    e.preventDefault();
-    try {
-      await lb.deleteAccount(password);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Something went wrong. Try again.');
-    }
-  };
-
-  return (
-    <>
-      <p>
-        Signed in as <strong>{email}</strong>. Your logbook is saved to your profile, so it’s the same on every device you sign in on.
-      </p>
-      <div className="row">
-        <button
-          type="button"
-          className="btn"
-          onClick={() => lb.signOut().catch((err: unknown) => setError(err instanceof ApiError ? err.message : 'Couldn’t sign out.'))}
-        >
-          Sign out
-        </button>
-        {!confirming && (
-          <button type="button" className="link danger" onClick={() => setConfirming(true)}>
-            Delete my profile
-          </button>
-        )}
-      </div>
-      {confirming && (
-        <form className="danger-zone" onSubmit={remove}>
-          <p>This permanently deletes your profile and every entry in it. Export your logbook first if you want a copy.</p>
-          <div className="field">
-            <label htmlFor="delete-password">Password</label>
-            <input id="delete-password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-          </div>
-          <div className="row">
-            <button type="submit" className="btn danger">
-              Delete permanently
-            </button>
-            <button type="button" className="link" onClick={() => setConfirming(false)}>
-              Keep my profile
-            </button>
-          </div>
-        </form>
-      )}
-      {error && (
-        <p className="field-error" role="alert">
-          {error}
-        </p>
       )}
     </>
   );
