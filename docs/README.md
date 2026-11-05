@@ -13,7 +13,7 @@ is, what went wrong along the way, and what is still open.
 | [deploy.md](deploy.md) | Putting it live at nberkyilmaz.com/hours-to-go: GitHub Pages, Render, Neon, the domain, step by step, and what each free plan costs in other ways. |
 | [roadmap.md](roadmap.md) | The plan to going public, step by step; what waits until it has users; questions for the flight school; known limits. |
 
-## State at the last update (2026-10-31)
+## State at the last update (2026-11-04)
 
 - Everything in the root README works: logbook with paper-log columns, progress for nine
   Transport Canada licences and ratings, profiles (email and password) with a guest mode,
@@ -24,9 +24,11 @@ is, what went wrong along the way, and what is still open.
 - A privacy and terms page at `/hours-to-go/privacy/`, and "Send feedback" on the Profile tab,
   emailed to the owner once `FEEDBACK_TO` is set in Render. Server errors are emailed there too.
 - A shared link shows a picture and a line (Open Graph).
+- Each licence and rating shows what its least flying costs ("about $14,500 left to pay") at the
+  school's rates, or sample Ontario rates until the pilot enters their own (D39).
 - Nightly backups in the private repository `hours-to-go-backups`, once it has its `DATABASE_URL`
   secret ([deploy.md](deploy.md), step 8).
-- `npm run typecheck` is clean and `npm test` passes 129 tests in 5 files, and `npm audit` finds nothing.
+- `npm run typecheck` is clean and `npm test` passes 147 tests in 6 files, and `npm audit` finds nothing.
 - Source at <https://github.com/nberkyilmaz/hours-to-go> (public, branch `main`).
 - Live at <https://nberkyilmaz.com/hours-to-go/> (page on GitHub Pages, API on Render at
   `hours-to-go-api.nberkyilmaz.com`, Postgres on Neon).

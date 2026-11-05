@@ -83,6 +83,89 @@ costs money:
 So each fix uses what is already free or paid for: GitHub, Neon's and Render's free plans, and
 Resend's free plan.
 
+### D39. Cost to go: the least flying, priced at the school's rates
+The owner asked for it first among the features (roadmap, section 3), with a C172 at $220 an
+hour with fuel, plus tax, and the instructor on top for dual. Each goal's summary now shows
+"$14,500, left to pay, about" next to the hours, and a "How the cost is worked out" panel: hours
+by kind times the rate, the tax, the total, what each hour past the minimum adds, and the
+pilot's rates. The multi-engine rating (Transport Canada sets no minimum hours) and the ATPL
+(mostly flown at work) aren't priced, and say why.
+
+**The hours.** D4's "least flying left" is the largest single shortfall, so it can't say who is
+in the aeroplane. A price needs dual and solo apart, because dual is the aeroplane plus the
+instructor. So each goal in `goals.ts` has a plan: the least Transport Canada allows, laid out the
+way schools teach it.
+- **PPL**: the 12 h solo (5 h of it cross-country), and the rest of the 45 h dual: 33 + 12 from
+  nothing. Schools' own estimates put the hours past the dual and solo minimums with the
+  instructor: Adventure Aviation's at the minimum is exactly 33 + 12, Centennial College's 30 + 15,
+  and at 65 h Ontario Flight Centre's is 51.2 dual + 15.8 solo. All in the aeroplane: few schools
+  teach the PPL in a simulator.
+- **Night rating**: 5 h dual (2 h cross-country) and 5 h solo at night, and the 10 h of dual
+  instrument time on top.
+- **CPL**: since the PPL, 35 h dual and 30 h solo, with the 2 h night cross-country counting
+  toward the 5 h dual cross-country and the instrument time on top; then time building without an
+  instructor to 200 h in all, 100 h PIC and 20 h PIC cross-country.
+- **IFR**: the 50 h PIC cross-country without an instructor, and all 40 h of instrument time with
+  one. Few train instrument time with a safety pilot.
+- **VFR OTT**: the 15 h of dual instrument time. **Class 4**: the course's 30 h only; the 200 h
+  needed before it come with a CPL.
+- **Simulator**: given a simulator rate, the ground time each standard allows is done there, at
+  the simulator plus the instructor, but only where it replaces aeroplane time. The CPL's 35 h dual
+  is aeroplane time (the app's reading), so there a simulator only helps once those are flown.
+- Dual and solo can't be the same flight, so a plan can come to more than D4's figure (after 45 h
+  with the dual and solo cross-countries both open). The summary keeps D4's "at least"; the panel
+  lists its own hours. A test checks that every plan but Class 4's (the course alone) covers at
+  least D4's figure.
+
+**The arithmetic.** Each kind of time is rounded up to the tenth of an hour, as schools bill.
+Dual is the aeroplane plus the instructor, the simulator is its rate plus the instructor, and the
+tax goes on the lot. The headline is rounded to $100 (to $10 under $1,000) and says "about": it is
+an estimate, not a quote. Each hour past the minimum is priced as dual. For the PPL the panel
+also prices the 65 h that Ontario Flight Centre gives as the national average, because most
+students need more than the minimum.
+
+**The sample rates**, used until the pilot enters their own: $220 for a C172 with fuel, $90 for
+the instructor, 13% tax, no simulator. The $220 is the owner's figure. Checked against school
+websites on 2026-11-04:
+- Waterloo Wellington Flight Centre: C172S $220, plus a $15 an hour fuel surcharge since
+  2026-07-02; instructor $92; ALSIM simulator $135.
+- Durham Flight Centre: C172 $195, instructor $85, Redbird simulator $80.
+- Brantford Flight Centre: C172 $205, plus a $15 fuel surcharge.
+- Rockcliffe Flying Club, Ottawa: C172 from $259 solo.
+- Centennial College, Toronto: about $325 dual and $230 solo, worked out from its PPL estimate.
+- Further west it costs more: Edmonton Flying Club $240 and $80 for the instructor; Adventure
+  Aviation, Grande Prairie, $288.75 solo and $346.50 dual; Pacific Rim Aviation, Pitt Meadows,
+  $262 and $355; Professional Flight Centre, Boundary Bay, $233 and $323.
+
+So $220 is a Southern Ontario flying-club rate, at the low end nationally, and instructors are
+$80 to $95 everywhere. Fuel surcharges are common, so the field asks for the rate with them. A
+school that quotes a dual rate with the instructor in it is entered as its solo rate plus the
+difference.
+
+**Tax.** GST/HST applies to PPL training and to private ratings, the night rating included (CRA
+GST/HST Memorandum 20-4, May 2022, paragraphs 56 and 59). Training for a commercial or airline
+licence, an instrument rating or an instructor rating at a vocational school is exempt up to the
+minimum flight time. Hours past the minimum and time building are taxed (paragraphs 53 to 55, 58,
+60 to 62). The app takes one tax figure. Under the CPL, IFR and Class 4 it says the school may not
+charge tax, and to set it to 0 if so.
+
+**Not counted**, and the panel says so: ground school, briefings (Centennial bills 30 h of them
+at $95 for the PPL), exam and flight-test fees, the medical, the licence.
+
+The rates are `profile.rates`, null until entered, and saved like the rest of the profile.
+Dollars are kept to the cent up to $10,000 an hour; the tax to three places up to 30%, so Quebec's
+14.975 fits.
+
+Turned down:
+- **The 65 h average as the headline.** Transport Canada publishes no average, and the minimum is
+  what the app can show from the standard. The 65 h figure is the line under it.
+- **A province picker for the tax.** Whether provincial sales tax applies to flight training
+  varies, and the school's invoice is what counts.
+- **Pricing D4's figure as all dual.** It overstates goals with solo time and understates a plan
+  with dual and solo both open.
+- **Exam, flight-test and licence fees as lines.** They differ by school and examiner. They could
+  come later as optional one-off lines.
+
 ## Logbook model
 
 ### D6. A line has the paper personal log's columns (replaced one role per line)
