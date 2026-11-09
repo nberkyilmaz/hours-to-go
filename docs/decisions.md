@@ -812,6 +812,13 @@ nothing), and infinite scroll (a logbook is a record, and it should all be there
 Turned down: a province picker for tax and regional sample rates (the audit's F14). D39 already turned it
 down: whether provincial tax applies to flight training varies, and the school's invoice is what counts.
 
+### D50. Made for reading outdoors
+The audit's last batch. Students read this on an apron in the sun, so the base text went from 15 to 16 px,
+nothing is under 14 px, secondary text is darker (7.6:1 on white), and progress bars are thicker on a
+darker track. The paper columns are headed groups rather than outlined boxes inside boxes, a number stays
+on the same line as its "h", and the small motion there is (the ring, the message after saving) stops for
+anyone who has asked their device for less.
+
 ## Process
 
 ### D22. Check the UI in a real browser, at phone size, before calling it done

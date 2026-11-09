@@ -12,7 +12,7 @@
   --surface: #ffffff;
   --surface-2: #eef0f3;
   --text: #0f141b;
-  --muted: #5b6573;
+  --muted: #4a5361;
   --border: #e1e4e9;
   --border-strong: #c5cad3;
   --accent: #0e7490;
@@ -50,7 +50,7 @@
     --surface: #151b24;
     --surface-2: #1c2430;
     --text: #e6e9ee;
-    --muted: #9aa3b2;
+    --muted: #aeb6c3;
     --border: #252e3b;
     --border-strong: #354152;
     --accent: #22d3ee;
@@ -84,7 +84,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font: 15px/1.5 var(--font);
+  font: 16px/1.5 var(--font);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -112,6 +112,11 @@ h3,
 .save-state,
 .stat-value,
 .tile dd,
+.c-total,
+.loading-title {
+  font-family: var(--font-display);
+}
+
 input,
 select,
 textarea,
@@ -353,7 +358,7 @@ button:focus-visible {
     flex-direction: column;
     gap: 2px;
     border-radius: 12px;
-    font-size: 13px;
+    font-size: 14px;
     padding: 4px;
     color: var(--muted);
   }
@@ -560,7 +565,7 @@ button:focus-visible {
   border-radius: 6px;
   background: var(--surface-2);
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -675,7 +680,7 @@ button:focus-visible {
   gap: 10px;
   margin: 0 0 12px;
   color: var(--panel-accent);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -782,7 +787,7 @@ button:focus-visible {
 .welcome-foot {
   margin: 32px 0 0;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
   text-align: center;
 }
 
@@ -1200,7 +1205,7 @@ button:focus-visible {
 
 .cite {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 400;
   white-space: nowrap;
 }
@@ -1425,7 +1430,7 @@ button:focus-visible {
 
 .tile dt {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .tile dd {
@@ -1537,7 +1542,7 @@ button.log-row:hover {
 .log-head {
   border-top: 0;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -1594,7 +1599,7 @@ button.log-row:hover {
 
 .paper-group h4 {
   margin: 0 0 6px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--muted);
 }
 
@@ -1606,7 +1611,7 @@ button.log-row:hover {
 }
 
 .paper-group dt {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--muted);
 }
 
@@ -1650,7 +1655,7 @@ button.log-row:hover {
 .type-table thead th {
   border-top: 0;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 @media (max-width: 720px) {
@@ -2156,6 +2161,17 @@ input.quick-time {
   margin: 0;
 }
 
+.toast {
+  animation: rise 0.22s ease-out;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
 .toast-actions {
   display: inline-flex;
   gap: 16px;
@@ -2360,14 +2376,14 @@ input.quick-time {
 .col-group {
   min-width: 0;
   margin: 0;
-  padding: 10px 12px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  padding: 0;
+  border: 0;
 }
 
 .col-group legend {
-  padding: 0 4px;
-  font-size: 14px;
+  padding: 0;
+  margin-bottom: 4px;
+  font-size: 15px;
   font-weight: 700;
 }
 
@@ -2378,7 +2394,7 @@ input.quick-time {
 }
 
 .field.compact label {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   line-height: 1.25;
   color: var(--muted);
@@ -2683,5 +2699,14 @@ input.narrow {
   }
   .welcome-card .auth {
     gap: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation: none !important;
+    transition: none !important;
   }
 }

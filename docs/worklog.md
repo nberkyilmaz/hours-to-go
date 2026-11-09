@@ -869,6 +869,19 @@ labelled, the columns explained, account actions confirmed, a password that can 
 at 780, on an 844 px screen; axe finds nothing on the welcome or the first step; nothing spills sideways at
 320 px.
 
+## Phase 29: made for reading outdoors (2026-11-08)
+
+The audit's last batch (D50): 16 px text and nothing under 14, stronger secondary text, the paper columns
+as headed groups, "45 h" kept together, and motion that stops when a device asks for less.
+
+**Problem on the way:** cleaning unused styles in the Progress batch cut a shared selector list in half, so
+headings, buttons and tabs lost the display font. A screenshot of the form showed it. Only that rule was
+damaged, checked against `main`.
+
+**Checked.** In Edge on a phone (light and dark) and a desktop: the smallest text on Progress, the Logbook
+and the paper columns is 14 px, axe finds nothing, nothing spills sideways. All six of the audit's batches
+are done; what's left of it needs a real phone or real students.
+
 ## Where things stand
 
 - 254 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model

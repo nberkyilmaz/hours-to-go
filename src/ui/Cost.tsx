@@ -3,6 +3,7 @@ import { SAMPLE_RATES, type Profile, type Rates } from '../model/profile';
 import { about, atLeast, money, priceOf, rateText, type Cost, type CostLine } from '../rules/cost';
 import type { GoalResult } from '../rules/evaluate';
 import type { Priced } from '../rules/goals';
+import { keepUnits } from './text';
 
 type UpdateProfile = (fn: (p: Profile) => Profile) => unknown;
 
@@ -129,7 +130,7 @@ export function CostDetail({ result: r, cost, profile, updateProfile, panel }: P
           </>
         )}
       </p>
-      <p className="note">{pricing.note}</p>
+      <p className="note">{keepUnits(pricing.note)}</p>
       {pricing.vocational && (
         <p className="note">
           A vocational school may not charge GST or HST on this training up to the minimum hours (CRA GST/HST Memorandum 20-4). If
