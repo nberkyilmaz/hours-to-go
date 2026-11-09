@@ -1,16 +1,18 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { dateText, formatHours, formatHoursUp, today, type Entry } from '../model/entry';
 import type { GoalId, MilestoneRecord, Profile } from '../model/profile';
-import type { Logbook } from '../model/store';
+import { isSnoozed, snooze, type Logbook } from '../model/store';
 import { evaluateGoal, flatten, type ExamResult, type GateResult, type GoalResult, type ReqResult, type SectionResult } from '../rules/evaluate';
 import { GOALS, STANDARD_421_URL, goalById } from '../rules/goals';
 import { paceOf, type Pace } from '../rules/pace';
 import { progressOf, type GoalProgress } from '../rules/progress';
 import { CostDetail, CostStat, costOf, openRates } from './Cost';
 import { Finish } from './Finish';
+import { Ring } from './Ring';
 import { MedicalFields } from './Medical';
 import { NextFlightCard } from './NextFlight';
 import { CheckIcon, LockIcon, PlusIcon } from './icons';
+import { STANDARD_CURRENT } from './links';
 
 type UpdateProfile = (fn: (p: Profile) => Profile) => unknown;
 
@@ -30,20 +32,21 @@ export function ProgressView({ book, updateProfile, onAddHours }: Props) {
   );
   const pace = useMemo(() => paceOf(book.entries, today()), [book.entries]);
   const focus = results.find((r) => r.now.goal.id === book.profile.focus) ?? results[0]!;
+  const [settled, setSettled] = useState(() => isSnoozed('first-step'));
   const setFocus = (id: GoalId) => updateProfile((p) => ({ ...p, focus: id }));
 
   return (
     <div className="stack">
-      {book.entries.length === 0 && (
-        <div className="callout">
-          <div>
-            <strong>Start with the hours you already have.</strong>
-            <p>Copy the totals from your paper logbook in a few lines, then log each new flight here.</p>
-          </div>
-          <button type="button" className="btn primary" onClick={onAddHours}>
-            <PlusIcon /> Add my hours
-          </button>
-        </div>
+      {book.entries.length === 0 && !settled && (
+        <FirstStep
+          profile={book.profile}
+          updateProfile={updateProfile}
+          onAddHours={onAddHours}
+          onDone={() => {
+            snooze('first-step');
+            setSettled(true);
+          }}
+        />
       )}
 
       <GoalDetail
@@ -71,20 +74,6 @@ export function ProgressView({ book, updateProfile, onAddHours }: Props) {
   );
 }
 
-/** How far along: a picture first, since that's the question this screen is for. */
-function Ring({ percent }: { percent: number }) {
-  const length = 2 * Math.PI * 44;
-  return (
-    <svg className={`ring${percent === 100 ? ' is-full' : ''}`} viewBox="0 0 100 100" role="img" aria-label={`${percent}% of the way there`}>
-      <circle className="ring-track" cx="50" cy="50" r="44" />
-      <circle className="ring-fill" cx="50" cy="50" r="44" strokeDasharray={length} strokeDashoffset={length * (1 - percent / 100)} transform="rotate(-90 50 50)" />
-      <text x="50" y="50" dominantBaseline="central" textAnchor="middle">
-        {percent}%
-      </text>
-    </svg>
-  );
-}
-
 interface DetailProps {
   result: GoalResult;
   progress: GoalProgress;
@@ -93,6 +82,55 @@ interface DetailProps {
   pace: Pace | null;
   entries: readonly Entry[];
   picker: ReactNode;
+}
+
+/**
+ * The first thing an empty logbook asks: where the pilot is. Everyone otherwise opens as a student
+ * starting a PPL, and a licensed pilot has to discover Profile to say otherwise.
+ */
+function FirstStep({ profile, updateProfile, onAddHours, onDone }: { profile: Profile; updateProfile: UpdateProfile; onAddHours: () => void; onDone: () => void }) {
+  const [licensed, setLicensed] = useState(false);
+  const toggle = (id: GoalId, on: boolean) =>
+    updateProfile((p) => {
+      const held = { ...p.held };
+      if (on) held[id] = { date: '' };
+      else delete held[id];
+      // On to the first thing not held yet.
+      return { ...p, held, focus: GOALS.find((g) => held[g.id] === undefined)?.id ?? p.focus };
+    });
+  return (
+    <div className="callout first-step">
+      <div>
+        <strong>Start with the hours you already have.</strong>
+        <p>Copy the totals from your paper logbook in a few lines, then log each new flight here.</p>
+      </div>
+      <button type="button" className="btn primary" onClick={onAddHours}>
+        <PlusIcon /> Add my hours
+      </button>
+      <div className="first-step-more">
+        <button type="button" className="link" onClick={onDone}>
+          I’m just starting
+        </button>
+        <button type="button" className="link" aria-expanded={licensed} onClick={() => setLicensed(!licensed)}>
+          I already hold a licence
+        </button>
+      </div>
+      {licensed && (
+        <fieldset className="first-step-held">
+          <legend>Tick what you hold</legend>
+          {GOALS.map((g) => (
+            <label key={g.id} className="toggle">
+              <input type="checkbox" checked={profile.held[g.id] !== undefined} onChange={(e) => toggle(g.id, e.target.checked)} />
+              <span>{g.name}</span>
+            </label>
+          ))}
+          <button type="button" className="btn small" onClick={onDone}>
+            Done
+          </button>
+        </fieldset>
+      )}
+    </div>
+  );
 }
 
 /** The hours are what a student comes to see; the standard's own order is prerequisites first. */
@@ -133,7 +171,8 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
             Transport Canada ·{' '}
             <a href={STANDARD_421_URL} target="_blank" rel="noreferrer">
               Standard {goal.cite}
-            </a>
+            </a>{' '}
+            · current to {STANDARD_CURRENT}, checked nightly
           </p>
         </div>
         {r.held && (
@@ -349,7 +388,11 @@ function ReqRow({ r, goalId, profile, updateProfile, stays, pin }: RowProps) {
           {req.kind === 'info' && <p className="info-value">{r.value}</p>}
           {r.credited && <p className="credit">{r.credited}</p>}
           {r.hint && <p className="hint-text">{r.hint}</p>}
-          {req.note && <p className="note">{req.note}</p>}
+          {req.note && (
+            <p className="note">
+              {req.reading && <span className="reading">Our reading. Ask your school.</span>} {req.note}
+            </p>
+          )}
         </div>
       </div>
       {r.children.some(stays) && (
@@ -505,6 +548,7 @@ function MilestoneControls({ r, updateProfile }: { r: ReqResult; updateProfile: 
         </label>
       )}
       {r.scoreLow && <span className="warn-text">Pass mark is {minScore}%.</span>}
+      {minScore !== undefined && rec.score === undefined && <span className="hint">Enter your overall mark so the app can check it.</span>}
     </div>
   );
 }

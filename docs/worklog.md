@@ -859,12 +859,23 @@ to open, months with their totals, search, filters, plain words, and Delete in t
 screens (was 65); "crosswind" finds its 9 lines; the table on a desktop clips no route; axe finds nothing
 on a tablet or in dark on a desktop; nothing spills sideways at 320 px.
 
+## Phase 28: first run and trust (2026-11-08)
+
+The audit's fifth batch (D49): a picture of the product on the welcome, both choices on a phone's first
+screen, an empty logbook asking where the pilot is, how current the rules are beside them, our readings
+labelled, the columns explained, account actions confirmed, a password that can be shown.
+
+**Checked.** 10 new tests. In Edge on a phone: Create profile ends at 643 px and Continue without a profile
+at 780, on an 844 px screen; axe finds nothing on the welcome or the first step; nothing spills sideways at
+320 px.
+
 ## Where things stand
 
-- 244 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
+- 254 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
   21, offline changes 5, server API 42, the standard's watcher 8, first visit, guest, cost to go,
   finish date, next flight, expiry, password reset, confirm links and feedback 28, the form and
-  notices 12, the quick form 14, Progress 9, the logbook 7, signed in 6, offline on the screen 5), and the API tests per
+  notices 12, the quick form 14, Progress 9, the logbook 7, first run and trust 10, signed in 6,
+  offline on the screen 5), and the API tests per
   database also run against a Postgres server through `pg` in CI.
 - Typecheck clean on both configs; `npm audit` clean.
 - Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.

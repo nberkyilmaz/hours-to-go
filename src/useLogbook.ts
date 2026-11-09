@@ -39,6 +39,9 @@ export interface LogbookState {
   guest: Logbook;
   error: string | null;
   dismissError: () => void;
+  /** Good news worth a line: what an account action just did. */
+  notice: string | null;
+  dismissNotice: () => void;
   /** False when the browser will not let the logbook be kept on this device. */
   storageOk: boolean;
   /** False until this browser has signed in or chosen to go on without a profile. */
@@ -89,6 +92,7 @@ export function useLogbook(): LogbookState {
   const [sync, setSync] = useState<Sync>({ pending: opening?.ops.length ?? 0, offline: false });
   const [guest, setGuest] = useState<Logbook>(loadGuestLogbook);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [storageOk, setStorageOk] = useState(true);
   // A browser that signed in before the welcome screen existed has been here already.
   const [welcomed, setWelcomed] = useState(() => wasWelcomed() || wasSignedIn());
@@ -378,6 +382,8 @@ export function useLogbook(): LogbookState {
     const server = hasContent(local) ? await api.merge(local) : await api.logbook();
     if (hasContent(local)) clearGuestLogbook();
     enterAccount(user, server, []);
+    const n = local.entries.length;
+    if (n > 0) setNotice(`${n === 1 ? 'The entry' : `All ${n} entries`} from this device ${n === 1 ? 'is' : 'are'} in your new profile.`);
   };
 
   const signIn = async (email: string, password: string) => {
@@ -423,6 +429,7 @@ export function useLogbook(): LogbookState {
     const copy = copyRef.current;
     if (copy) clearCopy(copy.account.email);
     becomeGuest(false);
+    setNotice('Your profile is deleted, along with every entry in it.');
   };
 
   return {
@@ -432,6 +439,8 @@ export function useLogbook(): LogbookState {
     guest,
     error,
     dismissError: () => setError(null),
+    notice,
+    dismissNotice: () => setNotice(null),
     storageOk,
     welcomed,
     skipWelcome,

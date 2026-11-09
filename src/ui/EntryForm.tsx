@@ -519,6 +519,25 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
 
           {quickView}
           {!quick && whereFields}
+          {!quick && !forward && !ftd && (
+            <details className="glossary">
+              <summary>What the columns mean</summary>
+              <dl>
+                <dt>Dual</dt>
+                <dd>Flying with an instructor teaching you.</dd>
+                <dt>PIC</dt>
+                <dd>Pilot-in-command: you’re in charge, alone or with others aboard. Solo time goes here, with the tick below.</dd>
+                <dt>Actual IMC</dt>
+                <dd>Flown on instruments in real cloud.</dd>
+                <dt>Hood</dt>
+                <dd>Flown on instruments with your view outside blocked.</dd>
+                <dt>FTD</dt>
+                <dd>A flight training device: a simulator on the ground. It isn’t flight time.</dd>
+                <dt>IFR approaches</dt>
+                <dd>Instrument approaches you flew.</dd>
+              </dl>
+            </details>
+          )}
 
           {quick ? null : ftd ? (
             <section className="form-section">

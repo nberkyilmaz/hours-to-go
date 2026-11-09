@@ -114,7 +114,7 @@ government form. The batches, with its finding numbers:
   achievements (F16), one goal switcher (F17), the price's sample rates said out loud (F14).
 - ~~**D. A logbook that scales.**~~ Done (D48): compact rows, month headers, search and filter (F10,
   and feature 7 above), plain words on the rows (F15).
-- **E. First run and trust** (about a week): show the product before asking for a password (F11), ask
+- ~~**E. First run and trust.**~~ Done (D49): show the product before asking for a password (F11), ask
   who the pilot is (F12), explain the terms (F15), put the trust details by the numbers (F18), and
   say what happened after account actions (F24).
 - **F. Finish** (2 to 3 days): legibility in sun (F22), and one visual pass across it all (F23).

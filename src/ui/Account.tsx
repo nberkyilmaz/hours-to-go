@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { ApiError, type Account } from '../api';
 import type { LogbookState } from '../useLogbook';
 import { useSlow } from './useSlow';
+import { exportLogbook } from './export';
 
 const describe = (err: unknown) => (err instanceof ApiError ? err.message : 'Something went wrong. Try again.');
 
@@ -290,7 +291,10 @@ function DeleteProfile({ lb, onClose }: { lb: LogbookState; onClose: () => void 
 
   return (
     <form className="danger-zone" onSubmit={remove}>
-      <p>This permanently deletes your profile and every entry in it. Export your logbook first if you want a copy.</p>
+      <p>This permanently deletes your profile and every entry in it.</p>
+      <button type="button" className="link" onClick={() => exportLogbook(lb.book)}>
+        Export a copy of your logbook first
+      </button>
       <div className="field">
         <label htmlFor="delete-password">Password</label>
         <input id="delete-password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />

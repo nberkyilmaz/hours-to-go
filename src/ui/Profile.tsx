@@ -1,13 +1,13 @@
 import { useRef, useState, type FormEvent } from 'react';
 import { ApiError, api } from '../api';
-import { today } from '../model/entry';
 import { hasContent, parseLogbook, type Logbook } from '../model/store';
 import { GOALS, STANDARD_421_URL } from '../rules/goals';
 import type { LogbookState } from '../useLogbook';
 import { SignedIn } from './Account';
 import { Feedback } from './Feedback';
+import { exportLogbook } from './export';
 import { MedicalFields } from './Medical';
-import { PRIVACY_URL } from './links';
+import { PRIVACY_URL, STANDARD_CURRENT } from './links';
 import { useSlow, useWake } from './useSlow';
 
 export function ProfileView({ lb }: { lb: LogbookState }) {
@@ -81,7 +81,7 @@ export function ProfileView({ lb }: { lb: LogbookState }) {
           <a href={STANDARD_421_URL} target="_blank" rel="noreferrer">
             CAR Standard 421
           </a>{' '}
-          (text current to NSA 2025-008). This app is a study and planning aid, not an official record: your certified personal log and
+          (text current to {STANDARD_CURRENT}, checked against Transport Canada’s page every night). This app is a study and planning aid, not an official record: your certified personal log and
           Transport Canada decide what counts. Check anything that matters with your flight training unit.
         </p>
         <p>
@@ -114,6 +114,7 @@ export function AuthForm({ lb, tab: givenTab, onTabChange }: AuthFormProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   /** Where a reset link was asked for, once it has been. */
   const [sentTo, setSentTo] = useState<string | null>(null);
   const slow = useSlow(busy);
@@ -132,6 +133,9 @@ export function AuthForm({ lb, tab: givenTab, onTabChange }: AuthFormProps) {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) return setError('Enter your email address, like you@example.com.');
+    if (tab !== 'forgot' && password === '') return setError('Enter a password.');
+    if (tab === 'signup' && password.length < 8) return setError('Use at least 8 characters for your password.');
     setBusy(true);
     try {
       if (tab === 'forgot') {
@@ -181,7 +185,7 @@ export function AuthForm({ lb, tab: givenTab, onTabChange }: AuthFormProps) {
           </button>
         </div>
       ) : (
-        <form className="auth" onSubmit={submit} onFocus={wake}>
+        <form className="auth" onSubmit={submit} onFocus={wake} noValidate>
           {tab === 'forgot' && <p className="hint">Enter the email for your profile, and we’ll send you a link to choose a new password.</p>}
           <div className="field">
             <label htmlFor="auth-email">Email</label>
@@ -189,17 +193,22 @@ export function AuthForm({ lb, tab: givenTab, onTabChange }: AuthFormProps) {
           </div>
           {tab !== 'forgot' && (
             <div className="field">
-              <label htmlFor="auth-password">Password</label>
+              <span className="label-row">
+                <label htmlFor="auth-password">Password</label>
+                <button type="button" className="link" onClick={() => setShowPassword(!showPassword)} aria-pressed={showPassword}>
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
+              </span>
               <input
                 id="auth-password"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 autoComplete={tab === 'signup' ? 'new-password' : 'current-password'}
                 minLength={tab === 'signup' ? 8 : undefined}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-              {tab === 'signup' && <p className="hint">At least 8 characters.</p>}
+              {tab === 'signup' && <p className="hint auth-length">At least 8 characters.</p>}
             </div>
           )}
           {error && (
@@ -209,17 +218,17 @@ export function AuthForm({ lb, tab: givenTab, onTabChange }: AuthFormProps) {
           )}
           {tab === 'signup' && local && <p className="hint">Everything you’ve logged on this device moves into your new profile.</p>}
           {tab === 'signin' && local && <p className="hint">After you sign in you can add what’s on this device to your profile.</p>}
-          {tab === 'signup' && (
-            <p className="hint">
-              Creating a profile means you agree to the <a href={PRIVACY_URL}>privacy and terms</a>.
+          {slow && (
+            <p className="hint" role="status">
+              The server is waking up. If nobody has used Hours to Go for a while, this takes up to a minute.
             </p>
           )}
           <button type="submit" className="btn primary" disabled={busy}>
             {busy ? 'One moment…' : SUBMIT[tab]}
           </button>
-          {slow && (
-            <p className="hint" role="status">
-              The server is waking up. If nobody has used Hours to Go for a while, this takes up to a minute.
+          {tab === 'signup' && (
+            <p className="hint">
+              Creating a profile means you agree to the <a href={PRIVACY_URL}>privacy and terms</a>.
             </p>
           )}
           {tab === 'signin' && (
@@ -242,16 +251,6 @@ function DataSection({ lb }: { lb: LogbookState }) {
   const file = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const exportBook = () => {
-    const blob = new Blob([JSON.stringify(lb.book, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `hours-to-go-${today()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
   const importBook = async (f: File) => {
     let parsed: Logbook | null = null;
     try {
@@ -272,7 +271,7 @@ function DataSection({ lb }: { lb: LogbookState }) {
       <h2 id="data-title">Your data</h2>
       <p className="muted">Download a copy any time. Importing adds entries from a file and never deletes anything.</p>
       <div className="row">
-        <button type="button" className="btn" onClick={exportBook}>
+        <button type="button" className="btn" onClick={() => exportLogbook(lb.book)}>
           Export logbook
         </button>
         <button type="button" className="btn" onClick={() => file.current?.click()}>
