@@ -40,6 +40,7 @@ const app = await buildApp({
   appUrl,
   feedbackTo,
   alertTo: feedbackTo,
+  remindersKey: process.env.REMINDERS_KEY,
 });
 
 await app.listen({

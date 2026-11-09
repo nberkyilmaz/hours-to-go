@@ -172,6 +172,22 @@ Notifications must send "Watching" to email, which is the default for your own r
 try it, **Actions → Standard 421 → Run workflow**. GitHub pauses it after 60 days with no
 activity in the repository, and emails when it does; **Enable** on the same page starts it again.
 
+### 10. Reminder emails
+
+Until this is done, the switch on the Profile tab says reminders "aren't available yet", and the
+daily workflow does nothing.
+
+1. Make a key, in any terminal, and keep it to the next two steps:
+   `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`
+2. Render → `hours-to-go-api` → **Environment**: add `REMINDERS_KEY` with that value, and save.
+3. GitHub → this repository → **Settings → Secrets and variables → Actions → New repository
+   secret**, name `REMINDERS_KEY`, the same value.
+4. **Actions → Reminders → Run workflow.** It should go green, and its log ends with how many
+   profiles it checked and how many emails it sent.
+
+A failed run emails you. Like the check of the standard, GitHub pauses it after 60 days with no
+activity in the repository. If the key is ever changed, change it in both places.
+
 ---
 
 ## What "free" costs you

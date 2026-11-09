@@ -36,6 +36,11 @@ export function hashToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
 }
 
+/** Whether two secrets match, without the time taken giving away how much of one was right. */
+export function sameSecret(a: string, b: string): boolean {
+  return timingSafeEqual(Buffer.from(hashToken(a)), Buffer.from(hashToken(b)));
+}
+
 /** Counts failed sign-ins per key in a sliding window, in memory. Enough for one server process. */
 export class Throttle {
   private hits = new Map<string, number[]>();

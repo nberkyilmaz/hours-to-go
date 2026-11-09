@@ -6,9 +6,10 @@ import fastifyStatic from '@fastify/static';
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify';
 import { validateEntry } from '../src/model/entry';
 import { parseEntry, parseLogbook, parseProfile } from '../src/model/store';
-import { Throttle, hashPassword, hashToken, newToken, verifyPassword } from './auth';
+import { Throttle, hashPassword, hashToken, newToken, sameSecret, verifyPassword } from './auth';
 import { Store, type Account, type User } from './db';
 import { alertMail, confirmMail, feedbackMail, resetMail, type SendMail } from './mail';
+import { sendReminders } from './reminders';
 
 export interface AppOptions {
   /** A `postgres://` URL, or for PGlite a folder or `memory://`. See `Store.open`. */
@@ -35,6 +36,8 @@ export interface AppOptions {
   feedbackTo?: string | undefined;
   /** Where an email goes when something fails that the pilot didn't cause. Without it, failures are only logged. */
   alertTo?: string | undefined;
+  /** What the daily run must present to send reminders. Without it, reminders can't be turned on. */
+  remindersKey?: string | undefined;
 }
 
 const COOKIE = 'htg_session';
@@ -217,7 +220,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     if (opts.sendMail && opts.appUrl && !linksBlocked(user.id)) {
       void sendEmailLink(user, user.email).catch((err: unknown) => failed(err, 'confirmation email not sent'));
     }
-    return { user: { email: user.email, confirmed: false, pendingEmail: null } satisfies Account };
+    return { user: { email: user.email, confirmed: false, pendingEmail: null, reminders: false } satisfies Account };
   });
 
   app.post('/api/auth/login', async (req, reply) => {
@@ -351,6 +354,34 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     if (!(await passwordChecked(req, reply, String(body.password ?? '')))) return reply;
     await store.setPassword(req.user!.id, await hashPassword(next), hashToken(req.cookies[COOKIE]!));
     return reply.code(204).send();
+  });
+
+  app.put('/api/account/reminders', { preHandler: requireUser }, async (req, reply) => {
+    const on = bodyOf(req).on === true;
+    if (on) {
+      if (!opts.sendMail || !opts.appUrl || !opts.remindersKey) return reply.code(503).send({ error: 'Email reminders aren’t available yet.' });
+      if (!req.user!.confirmed) return reply.code(400).send({ error: 'Confirm your email first, so the reminders can reach you.' });
+    }
+    await store.setReminders(req.user!.id, on ? newToken().token : null);
+    return { user: await accountOf(req.user!.id) };
+  });
+
+  // The link in each reminder opens the app, which posts this, so a mail scanner following the link can't.
+  app.post('/api/reminders/off', async (req, reply) => {
+    const token = String(bodyOf(req).token ?? '');
+    if (!token || !(await store.stopReminders(token))) {
+      return reply.code(400).send({ error: 'This link didn’t work. You can turn reminders off on the Profile tab.' });
+    }
+    return reply.code(204).send();
+  });
+
+  // Called once a day by a GitHub Actions run, since the free server sleeps (D53).
+  app.post('/api/reminders/run', async (req, reply) => {
+    const { sendMail, appUrl, remindersKey } = opts;
+    if (!sendMail || !appUrl || !remindersKey) return reply.code(503).send({ error: 'Reminders aren’t set up.' });
+    const [scheme, key] = String(req.headers.authorization ?? '').split(' ');
+    if (scheme !== 'Bearer' || !key || !sameSecret(key, remindersKey)) return reply.code(401).send({ error: 'Not allowed.' });
+    return sendReminders(store, sendMail, appUrl, failed);
   });
 
   // --- Logbook ---------------------------------------------------------------

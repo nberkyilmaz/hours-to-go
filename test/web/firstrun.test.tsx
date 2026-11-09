@@ -5,7 +5,7 @@ import { emptyLogbook, loadGuestLogbook, rememberWelcomed, saveGuestLogbook } fr
 import { line } from './fixtures';
 
 const reply = (status: number, body: unknown) => ({ ok: status < 400, status, json: async () => body });
-const user = { email: 'student@example.com', confirmed: true, pendingEmail: null };
+const user = { email: 'student@example.com', confirmed: true, pendingEmail: null, reminders: false };
 
 beforeEach(() => {
   localStorage.clear();

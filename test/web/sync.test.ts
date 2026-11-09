@@ -4,7 +4,7 @@ import { emptyLogbook } from '../../src/model/store';
 import { applyChanges, applyOps, clearCopy, lastAccount, loadCopy, profileChanges, saveCopy, type AccountCopy } from '../../src/model/sync';
 import { line, profile } from './fixtures';
 
-const account = { email: 'student@example.com', confirmed: true, pendingEmail: null };
+const account = { email: 'student@example.com', confirmed: true, pendingEmail: null, reminders: false };
 
 describe('a profile change', () => {
   it('is the fields that changed, and the items of a set one by one', () => {

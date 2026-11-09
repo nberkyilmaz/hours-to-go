@@ -11,6 +11,7 @@ import { LogbookView } from './ui/Logbook';
 import { ProfileView } from './ui/Profile';
 import { ProgressView } from './ui/Progress';
 import { ResetPassword } from './ui/ResetPassword';
+import { StopReminders } from './ui/StopReminders';
 import { Welcome } from './ui/Welcome';
 import { useLogbook, type Sync } from './useLogbook';
 
@@ -22,14 +23,14 @@ const TABS: { id: Tab; label: string; Icon: () => JSX.Element }[] = [
   { id: 'profile', label: 'Profile', Icon: UserIcon },
 ];
 
-/** An emailed link: to reset a password, or to confirm an address. It opens the page at `#reset=…` or `#confirm=…`. */
+/** An emailed link: to reset a password, confirm an address, or stop reminders. It opens the page at `#reset=…`, `#confirm=…` or `#stop=…`. */
 interface EmailedLink {
-  kind: 'reset' | 'confirm';
+  kind: 'reset' | 'confirm' | 'stop';
   token: string;
 }
 
 function linkInUrl(): EmailedLink | null {
-  const found = /^#(reset|confirm)=([\w-]+)$/.exec(window.location.hash);
+  const found = /^#(reset|confirm|stop)=([\w-]+)$/.exec(window.location.hash);
   return found ? { kind: found[1] as EmailedLink['kind'], token: found[2]! } : null;
 }
 
@@ -225,6 +226,7 @@ export function App() {
 
   if (link?.kind === 'reset') return <ResetPassword token={link.token} lb={lb} onDone={() => setLink(null)} />;
   if (link?.kind === 'confirm') return <ConfirmEmail token={link.token} lb={lb} onDone={() => setLink(null)} />;
+  if (link?.kind === 'stop') return <StopReminders token={link.token} lb={lb} onDone={() => setLink(null)} />;
   if (lb.mode.kind === 'loading') return <Loading />;
   if (welcoming) return <Welcome lb={lb} />;
 
