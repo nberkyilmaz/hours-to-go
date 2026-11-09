@@ -13,6 +13,7 @@ import { MedicalFields } from './Medical';
 import { NextFlightCard } from './NextFlight';
 import { CheckIcon, LockIcon, PlusIcon } from './icons';
 import { STANDARD_CURRENT } from './links';
+import { keepUnits } from './text';
 
 type UpdateProfile = (fn: (p: Profile) => Profile) => unknown;
 
@@ -274,9 +275,9 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
 }
 
 function shortfall(r: ReqResult): string {
-  if (r.req.kind === 'time') return `${r.req.label}: ${formatHoursUp(r.need - r.have)} h to go`;
+  if (r.req.kind === 'time') return keepUnits(`${r.req.label}: ${formatHoursUp(r.need - r.have)} h to go`);
   if (r.req.kind === 'count') return `${r.req.label}: ${r.need - r.have} to go`;
-  return r.req.label;
+  return keepUnits(r.req.label);
 }
 
 function Gate({ gate: g }: { gate: GateResult }) {
@@ -363,9 +364,9 @@ function ReqRow({ r, goalId, profile, updateProfile, stays, pin }: RowProps) {
         <div className="req-body">
           <div className="req-label">
             {req.kind === 'milestone' ? (
-              <label htmlFor={fieldId}>{req.label}</label>
+              <label htmlFor={fieldId}>{keepUnits(req.label)}</label>
             ) : (
-              <span>{req.label}</span>
+              <span>{keepUnits(req.label)}</span>
             )}{' '}
             <span className="cite">{req.cite}</span>
             <span className="sr-only">{r.met ? ' (met)' : ' (not met)'}</span>
@@ -390,7 +391,7 @@ function ReqRow({ r, goalId, profile, updateProfile, stays, pin }: RowProps) {
           {r.hint && <p className="hint-text">{r.hint}</p>}
           {req.note && (
             <p className="note">
-              {req.reading && <span className="reading">Our reading. Ask your school.</span>} {req.note}
+              {req.reading && <span className="reading">Our reading. Ask your school.</span>} {keepUnits(req.note)}
             </p>
           )}
         </div>

@@ -85,7 +85,7 @@ The owner wants every one of these. Roughly in order of value:
     standard says so, the medical to its valid-to date, and the flight test needs its 30-day letter
     (D44).
 14. **Cost per month at your pace.** The pace and the price both exist: "about $790 a month".
-15. **Small fixes.** "45 h" splitting across lines, wherever a number and its unit can part.
+15. ~~**Small fixes.**~~ Done: "45 h" no longer splits across lines (D50).
 
 **The order from here** (agreed with the owner on 2026-11-08, who wants all of it): email reminders
 (3), "log again" (6), search and filter (7), cost per month (14), currency and recency (4), CSV (8),
@@ -117,7 +117,7 @@ government form. The batches, with its finding numbers:
 - ~~**E. First run and trust.**~~ Done (D49): show the product before asking for a password (F11), ask
   who the pilot is (F12), explain the terms (F15), put the trust details by the numbers (F18), and
   say what happened after account actions (F24).
-- **F. Finish** (2 to 3 days): legibility in sun (F22), and one visual pass across it all (F23).
+- ~~**F. Finish.**~~ Done (D50): legibility in sun (F22), and a visual pass across it all (F23).
 
 A and B come before the trial with students. These collide with recorded decisions, so each needs
 its decision updated when it's built: F1 with D6 and D10, F5 with D18, F11 with D27.
