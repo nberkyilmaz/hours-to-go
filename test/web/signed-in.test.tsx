@@ -43,7 +43,7 @@ afterEach(() => {
 });
 
 describe('signed in', () => {
-  it('saves to the profile, not to this browser', async () => {
+  it('saves to the profile, not to the guest logbook', async () => {
     render(<App />);
     expect(await screen.findByRole('button', { name: 'Saved to your profile' })).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Working on'), { target: { value: 'cpl' } });
@@ -51,14 +51,16 @@ describe('signed in', () => {
     expect(localStorage.getItem('hours-to-go/v1')).toBeNull();
   });
 
-  it('shows a change at once, and puts the server copy back if the save fails', async () => {
+  it('shows a change at once, and keeps it on this device when the save can’t get through', async () => {
     render(<App />);
     const picker = (await screen.findByLabelText('Working on')) as HTMLSelectElement;
     failSaves = true;
     fireEvent.change(picker, { target: { value: 'ifr3' } });
     expect(picker.value).toBe('ifr3');
-    expect(await screen.findByText(/Your last change was not saved/)).toBeTruthy();
-    await waitFor(() => expect((screen.getByLabelText('Working on') as HTMLSelectElement).value).toBe('ppl'));
+    // offline.test.tsx follows it to the server, and a change the server refuses back out.
+    expect(await screen.findByRole('button', { name: 'Offline. 1 change kept on this device' })).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect((screen.getByLabelText('Working on') as HTMLSelectElement).value).toBe('ifr3');
   });
 
   it('sends feedback with the profile’s address to reply to, without asking for one', async () => {

@@ -4,13 +4,13 @@ import { hasContent } from './model/store';
 import { ConfirmBanner } from './ui/Account';
 import { ConfirmEmail } from './ui/ConfirmEmail';
 import { EntryForm, type FormLayout, type Suggestions } from './ui/EntryForm';
-import { BookIcon, CloudCheckIcon, Mark, ProgressIcon, UserIcon } from './ui/icons';
+import { BookIcon, CloudCheckIcon, CloudOffIcon, CloudUpIcon, Mark, ProgressIcon, UserIcon } from './ui/icons';
 import { LogbookView } from './ui/Logbook';
 import { ProfileView } from './ui/Profile';
 import { ProgressView } from './ui/Progress';
 import { ResetPassword } from './ui/ResetPassword';
 import { Welcome } from './ui/Welcome';
-import { useLogbook } from './useLogbook';
+import { useLogbook, type Sync } from './useLogbook';
 
 type Tab = 'progress' | 'log' | 'profile';
 
@@ -49,6 +49,36 @@ function Loading() {
       <span className="loading-title">Loading your logbook…</span>
       {slow && <span>If nobody has opened Hours to Go for a while, its server takes up to a minute to wake up.</span>}
     </div>
+  );
+}
+
+const changes = (n: number) => (n === 1 ? '1 change' : `${n} changes`);
+
+/**
+ * Signed in: whether the profile has everything (D41). On a phone it says only "Saved", "Saving…"
+ * or "Offline", so the name keeps to one line; the label still says all of it.
+ */
+function SaveState({ sync, onClick }: { sync: Sync; onClick: () => void }) {
+  if (sync.offline) {
+    const label = sync.pending > 0 ? `Offline. ${changes(sync.pending)} kept on this device` : 'Offline';
+    return (
+      <button type="button" className="save-state is-offline" aria-label={label} onClick={onClick}>
+        {/* No wider than "Saved to your profile", so going offline doesn't move the top bar. */}
+        <CloudOffIcon /> Offline<span className="save-more">{sync.pending > 0 ? ` · ${sync.pending} to save` : ''}</span>
+      </button>
+    );
+  }
+  if (sync.pending > 0) {
+    return (
+      <button type="button" className="save-state is-saving" aria-label="Saving to your profile" onClick={onClick}>
+        <CloudUpIcon /> Saving<span className="save-more"> to your profile</span>…
+      </button>
+    );
+  }
+  return (
+    <button type="button" className="save-state" aria-label="Saved to your profile" onClick={onClick}>
+      <CloudCheckIcon /> Saved<span className="save-more"> to your profile</span>
+    </button>
   );
 }
 
@@ -128,10 +158,7 @@ export function App() {
           ))}
         </nav>
         {mode.kind === 'account' ? (
-          // On a phone it says only "Saved", so the name keeps to one line; the label still says all of it.
-          <button type="button" className="save-state" aria-label="Saved to your profile" onClick={() => setTab('profile')}>
-            <CloudCheckIcon /> Saved<span className="save-more"> to your profile</span>
-          </button>
+          <SaveState sync={lb.sync} onClick={() => setTab('profile')} />
         ) : (
           <div className="topbar-end">
             <span className="save-state is-local">Saved on this device only</span>
@@ -157,6 +184,19 @@ export function App() {
         {mode.kind === 'guest' && !lb.storageOk && (
           <div className="banner warn">This browser isn’t letting the app save. Create a profile, or export your logbook so you don’t lose it.</div>
         )}
+        {mode.kind === 'account' && lb.sync.offline && lb.sync.pending > 0 && (
+          <div className="banner" role="status">
+            You’re offline.{' '}
+            {lb.sync.pending === 1 ? 'Your change is kept on this device and goes' : `Your ${lb.sync.pending} changes are kept on this device and go`}{' '}
+            to your profile when you’re back online.
+          </div>
+        )}
+        {mode.kind === 'account' && !lb.storageOk && (
+          <div className="banner warn">
+            This browser isn’t letting the app keep changes on this device. They go straight to your profile, so keep the app open until
+            it says Saved.
+          </div>
+        )}
         {mode.kind === 'guest' && !mode.offline && hasContent(book) && !hideGuestNudge && tab !== 'profile' && (
           <div className="banner">
             <span>Your logbook is only on this device. Create a free profile so you don’t lose it and can use it on your phone too.</span>
@@ -170,7 +210,8 @@ export function App() {
             </span>
           </div>
         )}
-        {mode.kind === 'account' && !mode.confirmed && !mode.pendingEmail && !hideConfirm && tab !== 'profile' && (
+        {/* Its link can't be sent offline, so it waits for the connection too. */}
+        {mode.kind === 'account' && !mode.confirmed && !mode.pendingEmail && !hideConfirm && !lb.sync.offline && tab !== 'profile' && (
           <ConfirmBanner lb={lb} email={mode.email} onLater={() => setHideConfirm(true)} />
         )}
         {strandedCount > 0 && !hideStranded && (

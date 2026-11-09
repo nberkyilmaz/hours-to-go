@@ -21,22 +21,26 @@ hours-to-go/
 │   ├── App.tsx                 welcome or app, masthead and tabs, banners, which entry form is open
 │   ├── api.ts                  fetch wrapper; VITE_API prefix; ApiError(status 0 = unreachable)
 │   ├── vite-env.d.ts           types for import.meta.env
-│   ├── useLogbook.ts           where the logbook lives (guest or profile), the save queue, sign in/out
+│   ├── useLogbook.ts           where the logbook lives (guest or profile), sending what waits, sign in/out
+│   ├── sw.js                   the service worker: keeps the app on the device (D41); the build fills in its files
 │   ├── styles.css              all styles; tokens on :root (the glass-cockpit look, D21), dark mode,
 │   │                           phone rules at max-width 720px
 │   ├── model/
 │   │   ├── entry.ts            a logbook line: columns, Breakdown, derive(), validation, after-PPL part
 │   │   ├── profile.ts          goals held, medical, milestones, training start dates, focus,
 │   │   │                           the school's rates and the sample ones (D39)
-│   │   └── store.ts            parsing (and converting old lines), merging, guest localStorage
+│   │   ├── store.ts            parsing (and converting old lines), merging, guest localStorage
+│   │   └── sync.ts             signed in: changes waiting for the server, and the copy on this device (D41)
 │   ├── rules/
 │   │   ├── goals.ts            the Standard 421 catalogue: every requirement with its paragraph,
 │   │   │                           and each goal's plan of the least time left to pay for
 │   │   ├── evaluate.ts         turns a logbook + profile into progress per goal
-│   │   └── cost.ts             prices a plan at the school's rates; money formatting (D39)
+│   │   ├── cost.ts             prices a plan at the school's rates; money formatting (D39)
+│   │   └── pace.ts             the time logged a week lately, and when a goal's time left is flown (D40)
 │   └── ui/
 │       ├── Progress.tsx        goal detail, gates, requirement rows, milestone tick-offs, goal cards
 │       ├── Cost.tsx            the price beside the hours, how it is worked out, the rates form
+│       ├── Finish.tsx          when the goal's minimum is flown at the pilot's pace
 │       ├── Welcome.tsx         a first visit: what the app is, the sign-up form, go on without (D27)
 │       ├── Logbook.tsx         empty state, totals tiles, column totals, by-type table, entry list/cards
 │       ├── EntryForm.tsx       the flight / FTD / paper-totals form and its questions
@@ -166,13 +170,22 @@ gates use the same conditions and add `passed` once their exams are passed.
 5. Works out the goal's `plan`: the least time left to pay for, in minutes, as `{ dual, sim, solo }`.
    Each goal's `cost.plan` gets `left(id)`, what a requirement still needs, and whether the pilot
    uses a simulator (a simulator rate is set). A goal that isn't priced has `cost.unpriced`, the
-   reason shown instead, and a null plan.
+   reason shown instead, and a null plan. A goal with a quoted average (the PPL's 65 h) also gets
+   `toAverage`: the flying past the plan to reach it, while short of it.
 
 **The price** (`cost.ts`). `priceOf(plan, rates)` bills each kind of time in tenths of an hour,
 rounded up: dual at the aeroplane plus the instructor, simulator at its rate plus the instructor,
 solo at the aeroplane. Tax goes on the subtotal. It also returns what one more hour of each adds
-with tax. `about()` rounds the headline to $100 ($10 under $1,000). `Cost.tsx` hides the price for
-a goal held, credited or complete, or with nothing left to pay for.
+with tax. `about()` rounds an estimate to $100 ($10 under $1,000), and `atLeast()` rounds the
+headline down the same way. `Cost.tsx` hides the price for a goal held, credited or complete, or
+with nothing left to pay for. For the PPL the card adds the price at the 65 h average, and while
+the rates are the sample ones, a link that opens the panel at them.
+
+**The finish date** (`pace.ts`). `paceOf(entries, today)` is the flight and FTD time logged a week
+over the last 8 weeks, from flights logged one by one: after the latest paper totals, or from the
+first flight, over 14 days at least, with two flights at least; else null. `finishOn(minutes, pace,
+today)` is the day that much more is flown, or null past five years. `Finish.tsx` takes the plan's
+time left (D4's figure for a goal with no plan) and shows the month.
 
 ## API (`server/app.ts`)
 
@@ -246,9 +259,17 @@ delete all its email and reset links.
 
 - On load, only if this browser was signed in last time (`wasSignedIn()`, localStorage
   `hours-to-go/signed-in`): `GET /api/me`. 200 means profile mode (load `/api/logbook`); 401 means
-  guest; anything else means guest with an "offline" banner. Without the flag the app starts as a
-  guest at once and calls nothing (D26). Entering a profile sets the flag; signing out, deleting
-  the profile or a 401 clears it.
+  guest; anything else means this device's copy of the profile, marked offline, or guest with an
+  "offline" banner if it has none. With a copy the app opens on it at once and all this happens
+  behind it (D41). Without the flag the app starts as a guest at once and calls nothing (D26).
+  Entering a profile sets the flag; signing out, deleting the profile or a 401 clears it.
+- Signed in, `copyRef` is `{ account, server, ops }` (`model/sync.ts`), saved to localStorage on
+  every change. What shows is `applyOps(server, ops)`. A change is added to `ops` and `flush()` runs:
+  one run at a time, it sends `ops` from the oldest, each leaving once the server has it, and first
+  fetches the server's copy if `stale` (after any failure, so changes land on the newest). Unreachable
+  or a 5xx stops it with `sync.offline` set; it runs again on `online`, on coming back to the app,
+  every 30 s and on the next change. A 4xx drops that change and says so; a 401 signs out and leaves
+  the copy for signing in again if anything is waiting.
 - A page opened at `#reset=<token>` shows `ResetPassword` before anything else, and takes the
   token out of the address bar; `#confirm=<token>` does the same with `ConfirmEmail`. A
   `hashchange` does the same, for a link pasted into a tab that already has the app open.
@@ -293,5 +314,7 @@ delete all its email and reset links.
 
 The manifest and icons let the app be added to a home screen (standalone display). The
 manifest's `start_url`, `scope` and icon paths are relative to the manifest, so the installed app
-opens at `/hours-to-go/` when published and at `/` locally. There is no service worker, so it needs
-a connection to load; a signed-out device keeps working from localStorage once loaded.
+opens at `/hours-to-go/` when published and at `/` locally. A service worker (`src/sw.js`, built
+pages only) keeps the app on the device, so it opens with no connection (D41). Pages come from the
+network if it answers within 4 s, else from the copy; built files from the copy, as their names
+change with their content. It ignores the API.
