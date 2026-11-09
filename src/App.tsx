@@ -357,7 +357,6 @@ export function App() {
             entries={book.entries}
             onNew={startEntry}
             onEdit={editEntry}
-            onDelete={deleteEntry}
           />
         )}
         {tab === 'profile' && <ProfileView lb={lb} />}
@@ -391,6 +390,7 @@ export function App() {
           suggestions={suggestions}
           pplDate={book.profile.held.ppl?.date}
           onSave={saveEntry}
+          onDelete={draft.isNew ? undefined : () => deleteEntry(draft.entry)}
           onClose={closeDraft}
         />
       )}

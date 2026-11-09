@@ -850,12 +850,21 @@ with the guest notice, and the first bar is at 1,225 px (was 2,592); axe finds n
 desktop; nothing spills sideways at 320 px. The audit asked for under two screens; the rest of the length
 is requirements genuinely still open.
 
+## Phase 27: a logbook that scales (2026-11-08)
+
+The audit's fourth batch (D48), which also delivers the roadmap's search and filter: two-line rows you tap
+to open, months with their totals, search, filters, plain words, and Delete in the form.
+
+**Checked.** 7 new tests. In Edge with 340 flights: a row is 66 px on a phone (was 157), and the list is 28
+screens (was 65); "crosswind" finds its 9 lines; the table on a desktop clips no route; axe finds nothing
+on a tablet or in dark on a desktop; nothing spills sideways at 320 px.
+
 ## Where things stand
 
-- 237 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
+- 244 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
   21, offline changes 5, server API 42, the standard's watcher 8, first visit, guest, cost to go,
   finish date, next flight, expiry, password reset, confirm links and feedback 28, the form and
-  notices 12, the quick form 14, Progress 9, signed in 6, offline on the screen 5), and the API tests per
+  notices 12, the quick form 14, Progress 9, the logbook 7, signed in 6, offline on the screen 5), and the API tests per
   database also run against a Postgres server through `pg` in CI.
 - Typecheck clean on both configs; `npm audit` clean.
 - Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.

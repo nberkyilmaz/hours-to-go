@@ -1,4 +1,4 @@
-import { useMemo, type CSSProperties } from 'react';
+import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   COLUMN_LABEL,
   COUNT_COLUMNS,
@@ -11,6 +11,7 @@ import {
   type Derived,
   type Entry,
 } from '../model/entry';
+import { LOG_FILTERS, byMonth, matches, shortDate, type LogFilter } from '../model/search';
 import type { FormLayout } from './EntryForm';
 import { BookIcon, PlusIcon } from './icons';
 
@@ -18,7 +19,6 @@ interface Props {
   entries: readonly Entry[];
   onNew: (layout: FormLayout) => void;
   onEdit: (entry: Entry) => void;
-  onDelete: (entry: Entry) => void;
 }
 
 type Sums = Record<Column, number> & Pick<Derived, 'total' | 'dual' | 'pic' | 'copilot' | 'night' | 'xcPic' | 'inst'>;
@@ -50,7 +50,12 @@ interface ListColumn {
   value: (e: Entry, d: Derived) => string;
 }
 
-export function LogbookView({ entries, onNew, onEdit, onDelete }: Props) {
+/** Enough flights that finding one needs help. */
+const SEARCH_FROM = 6;
+
+export function LogbookView({ entries, onNew, onEdit }: Props) {
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<LogFilter>('all');
   const sums = useMemo(() => addUp(entries), [entries]);
   const sorted = useMemo(
     () => [...entries].sort((a, b) => (a.date === b.date ? Number(a.forward) - Number(b.forward) : a.date < b.date ? 1 : -1)),
@@ -80,12 +85,22 @@ export function LogbookView({ entries, onNew, onEdit, onDelete }: Props) {
       { key: 'ldg', label: 'Ldg D/N', value: (e) => (e.dayLandings || e.nightLandings ? `${e.dayLandings}/${e.nightLandings}` : '') },
     ] satisfies ListColumn[]
   ).filter((c) => entries.some((e) => c.value(e, derive(e)) !== ''));
-  const gridStyle = { '--log-cols': `92px minmax(120px, 1.4fr) minmax(120px, 1.1fr) repeat(${listColumns.length}, 52px) 64px 92px` } as CSSProperties;
+  const gridStyle = { '--log-cols': `92px minmax(120px, 1.4fr) minmax(120px, 1.1fr) repeat(${listColumns.length}, 52px) 64px` } as CSSProperties;
 
-  const tiles: [string, string][] = [
+  const months = byMonth(sorted.filter((e) => matches(e, query, filter)));
+  const showing = months.reduce((n, m) => n + m.entries.length, 0);
+  const tile = ([label, value]: [string, string]) => (
+    <div key={label} className="tile">
+      <dt>{label}</dt>
+      <dd>{value}</dd>
+    </div>
+  );
+  const mainTiles: [string, string][] = [
     ['Grand total', formatHours(sums.total)],
     ['PIC', formatHours(sums.pic)],
     ['Dual', formatHours(sums.dual)],
+  ];
+  const moreTiles: [string, string][] = [
     ['PIC cross-country', formatHours(sums.xcPic)],
     ['Night', formatHours(sums.night)],
     ['Actual + hood', formatHours(sums.inst)],
@@ -124,29 +139,11 @@ export function LogbookView({ entries, onNew, onEdit, onDelete }: Props) {
   return (
     <div className="stack">
       <h1 className="sr-only">Logbook</h1>
-      <div className="log-actions">
-        <button type="button" className="btn primary" onClick={() => onNew('flight')}>
-          <PlusIcon /> Log a flight
-        </button>
-        <button type="button" className="btn" onClick={() => onNew('ftd')}>
-          Log FTD session
-        </button>
-        <button type="button" className="btn" onClick={() => onNew('forward')}>
-          Add paper logbook totals
-        </button>
-      </div>
-
-      <dl className="tiles">
-        {tiles.map(([label, value]) => (
-          <div key={label} className="tile">
-            <dt>{label}</dt>
-            <dd>{value}</dd>
-          </div>
-        ))}
-      </dl>
+      <dl className="tiles tiles-main">{mainTiles.map(tile)}</dl>
 
       <details className="card fold">
-        <summary>Every column, laid out like your paper logbook</summary>
+        <summary>All totals, by column and aircraft type</summary>
+        <dl className="tiles tiles-more">{moreTiles.map(tile)}</dl>
         <div className="paper-totals">
           {LOG_GROUPS.filter((g) => g.columns.some((c) => sums[c] > 0)).map((g) => (
             <div key={g.title} className="paper-group">
@@ -166,10 +163,7 @@ export function LogbookView({ entries, onNew, onEdit, onDelete }: Props) {
             <p>{formatHours(sums.total)}</p>
           </div>
         </div>
-      </details>
-
-      <details className="card fold">
-        <summary>By aircraft type</summary>
+        <h3 className="fold-title">By aircraft type</h3>
         <div className="table-scroll">
           <table className="type-table">
             <thead>
@@ -198,6 +192,33 @@ export function LogbookView({ entries, onNew, onEdit, onDelete }: Props) {
         </div>
       </details>
 
+      <div className="log-actions">
+        <button type="button" className="link" onClick={() => onNew('ftd')}>
+          Log FTD session
+        </button>
+        <button type="button" className="link" onClick={() => onNew('forward')}>
+          Add paper logbook totals
+        </button>
+      </div>
+
+      {sorted.length >= SEARCH_FROM && (
+        <div className="log-find">
+          <input type="search" aria-label="Search your logbook" placeholder="Search aircraft, airports, remarks" value={query} onChange={(e) => setQuery(e.target.value)} />
+          <div className="choices" role="group" aria-label="Show">
+            {LOG_FILTERS.map((f) => (
+              <button key={f.id} type="button" className={`choice${filter === f.id ? ' is-on' : ''}`} aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}>
+                {f.label}
+              </button>
+            ))}
+          </div>
+          {(query.trim() !== '' || filter !== 'all') && (
+            <p className="hint" role="status">
+              {showing} of {sorted.length} {sorted.length === 1 ? 'entry' : 'entries'}
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="card log" style={gridStyle}>
         <div className="log-row log-head" aria-hidden="true">
           <span>Date</span>
@@ -209,43 +230,56 @@ export function LogbookView({ entries, onNew, onEdit, onDelete }: Props) {
             </span>
           ))}
           <span className="num">Total</span>
-          <span />
         </div>
         <ul aria-label="Logbook entries">
-          {sorted.map((e) => {
-            const d = derive(e);
-            return (
-              <li key={e.id} className="log-row">
-                <span className="c-date">{e.date}</span>
-                <span className="c-aircraft">
-                  {[e.aircraft, e.registration].filter(Boolean).join(' · ') ||
-                    (e.forward ? 'All types' : <span className="muted">Aircraft not entered</span>)}
-                  {e.forward && <span className="badge">Brought forward</span>}
-                  {e.solo && <span className="badge">Solo</span>}
-                  {d.multi > 0 && <span className="badge">ME</span>}
-                </span>
-                <span className="c-route">{e.from || e.to ? `${e.from || '—'} → ${e.to || '—'}` : ''}</span>
-                <span className="c-figures">
-                  {listColumns.map((c) => (
-                    <span key={c.key} className="num" data-label={c.label}>
-                      {c.value(e, d)}
-                    </span>
-                  ))}
-                </span>
-                <span className="num c-total">{d.total ? formatHours(d.total) : `${formatHours(e.ftd)} FTD`}</span>
-                <span className="c-actions">
-                  <button type="button" className="link" onClick={() => onEdit(e)} aria-label={`Edit the ${e.date} entry`}>
-                    Edit
-                  </button>
-                  <button type="button" className="link danger" onClick={() => onDelete(e)} aria-label={`Delete the ${e.date} entry`}>
-                    Delete
-                  </button>
-                </span>
-              </li>
-            );
-          })}
+          {months.map((m) => (
+            <MonthRows key={m.key} label={m.label} minutes={m.minutes}>
+              {m.entries.map((e) => {
+                const d = derive(e);
+                const landings = e.dayLandings + e.nightLandings;
+                return (
+                  <li key={e.id} className="log-entry">
+                    <button type="button" className="log-row" onClick={() => onEdit(e)} aria-label={`Edit the ${e.date} entry`}>
+                      <span className="c-date">{shortDate(e.date)}</span>
+                      <span className="c-aircraft">
+                        {[e.aircraft, e.registration].filter(Boolean).join(' ') || (e.forward ? 'All types' : <span className="muted">Aircraft not entered</span>)}
+                        {e.forward && <span className="badge">Brought forward</span>}
+                        {e.solo && <span className="badge">Solo</span>}
+                        {d.multi > 0 && <span className="badge">ME</span>}
+                      </span>
+                      <span className="c-sub">
+                        <span className="c-route">{e.from || e.to ? `${e.from || '—'} → ${e.to || '—'}` : ''}</span>
+                        <span className="c-figures">
+                          {listColumns.map((c) => (
+                            <span key={c.key} className="num" data-label={c.label}>
+                              {c.value(e, d)}
+                            </span>
+                          ))}
+                        </span>
+                        {landings > 0 && <span className="c-landings">{landings === 1 ? '1 landing' : `${landings} landings`}</span>}
+                      </span>
+                      <span className="num c-total">{d.total ? formatHours(d.total) : `${formatHours(e.ftd)} FTD`}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </MonthRows>
+          ))}
         </ul>
+        {months.length === 0 && <p className="log-none">Nothing matches that.</p>}
       </div>
     </div>
+  );
+}
+
+function MonthRows({ label, minutes, children }: { label: string; minutes: number; children: ReactNode }) {
+  return (
+    <>
+      <li className="log-month">
+        <h2>{label}</h2>
+        {minutes > 0 && <span>{formatHours(minutes)} h</span>}
+      </li>
+      {children}
+    </>
   );
 }

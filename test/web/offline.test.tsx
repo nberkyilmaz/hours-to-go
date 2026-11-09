@@ -79,7 +79,7 @@ describe('signed in with no connection', () => {
     // Shown, kept, and waiting: nothing reverted, nothing lost.
     expect(await screen.findByRole('button', { name: 'Offline. 1 change kept on this device' })).toBeTruthy();
     expect(screen.getByText(/You’re offline/).textContent).toMatch(/Your change is kept on this device/);
-    expect(screen.getByRole('list', { name: 'Logbook entries' }).children).toHaveLength(1);
+    expect(screen.getByRole('list', { name: 'Logbook entries' }).querySelectorAll('.log-entry')).toHaveLength(1);
     expect(loadCopy()?.ops).toHaveLength(1);
     expect(screen.queryByRole('alert')).toBeNull();
 

@@ -53,7 +53,7 @@ describe('the app as a guest', () => {
     cleanup();
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: /^Logbook/ }));
-    expect(screen.getByRole('list', { name: 'Logbook entries' }).children).toHaveLength(1);
+    expect(screen.getByRole('list', { name: 'Logbook entries' }).querySelectorAll('.log-entry')).toHaveLength(1);
   });
 
   it('will not save cross-country time longer than the flight it is part of', async () => {

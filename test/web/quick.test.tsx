@@ -157,7 +157,8 @@ describe('logging a flight', () => {
     seed(usualFlight());
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: /^Logbook/ }));
-    fireEvent.click(screen.getByRole('button', { name: /^Delete/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Edit/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete this entry' }));
     await waitFor(() => expect(loadGuestLogbook().entries).toHaveLength(0));
     fireEvent.click(within(screen.getByRole('status')).getByRole('button', { name: 'Undo' }));
     await waitFor(() => expect(loadGuestLogbook().entries).toHaveLength(1));

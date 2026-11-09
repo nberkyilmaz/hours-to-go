@@ -161,7 +161,7 @@ describe('the logbook', () => {
     saveGuestLogbook({ ...emptyLogbook(), entries: [line('2026-10-01', { seDayDual: 1.2 })] });
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: /^Logbook/ }));
-    const row = screen.getByRole('list', { name: 'Logbook entries' }).firstElementChild as HTMLElement;
+    const row = screen.getByRole('list', { name: 'Logbook entries' }).querySelector('.log-entry') as HTMLElement;
     expect([...row.querySelectorAll('[data-label]')].map((c) => c.getAttribute('data-label'))).toEqual(['Dual']);
   });
 });
