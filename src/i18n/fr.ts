@@ -353,6 +353,16 @@ const RAW: Record<string, string> = {
   'then {leg}': 'ensuite : {leg}',
   'then your application': 'ensuite : votre demande',
 
+  // ---- Cards to share ----
+  'Share my progress': 'Partager mes progrès',
+  Share: 'Partager',
+  'Couldn’t make the picture.': 'Impossible de créer l’image.',
+  'I earned my {goal}': 'J’ai obtenu ma {goal}',
+  'Every {goal} requirement met': 'Toutes les exigences de ma {goal} sont satisfaites',
+  'On the way to my {goal}': 'En route vers ma {goal}',
+  'My first solo': 'Mon premier solo',
+  'Halfway to my {goal}': 'À mi-chemin de ma {goal}',
+
   // ---- Importing a spreadsheet ----
   'What this file would add': 'Ce que ce fichier ajouterait',
   '1 line': '1 ligne',

@@ -983,6 +983,15 @@ on the others, by what's been ticked.
 Only the current leg is named. Five labels wouldn't fit a phone, least of all in French, and the Progress screen was
 slimmed down on purpose (F5). A screen reader gets every leg and its count.
 
+### D61. Cards to share
+"Share my progress" on Progress makes a square picture: the ring, the goal, and the hours. A first solo, the halfway
+point and the last requirement offer one right after the flight is logged, and most flights don't, since a button on
+every one would mean nothing. A licence held gets its own.
+
+It's drawn on a canvas in the browser and goes to the phone's share sheet, or downloads where there isn't one. Nothing
+is uploaded, so the app has no part in where it ends up. The card says nothing the pilot didn't choose to show: no
+name, no aircraft, no registration, no airport.
+
 ## Process
 
 ### D22. Check the UI in a real browser, at phone size, before calling it done

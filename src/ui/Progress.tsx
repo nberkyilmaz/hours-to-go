@@ -11,6 +11,7 @@ import { CurrencyCard } from './Currency';
 import { Finish } from './Finish';
 import { Ring } from './Ring';
 import { Route } from './Route';
+import { shareCard, type CardFacts } from './card';
 import { MedicalFields } from './Medical';
 import { NextFlightCard } from './NextFlight';
 import { CheckIcon, LockIcon, PlusIcon } from './icons';
@@ -148,6 +149,45 @@ const hoursFirst = (sections: readonly SectionResult[]) => [...sections.filter((
 /** Nothing left to do in it. An info row is a figure to read, not something to finish. */
 const isDone = (r: ReqResult): boolean => r.req.kind !== 'info' && r.met && r.children.every(isDone);
 
+/** What the card says about a goal: held, finished, or how far along. Null with nothing to show yet. */
+function factsOf(r: GoalResult, progress: GoalProgress): CardFacts | null {
+  const goal = shortName(r.goal.short);
+  if (r.held) return { headline: t('I earned my {goal}', { goal }), detail: r.held.date ? dateText(r.held.date) : t(r.goal.name), percent: null };
+  if (r.complete) return { headline: t('Every {goal} requirement met', { goal }), detail: dateText(today()), percent: 100 };
+  if (r.credited || progress.percent === 0) return null;
+  return {
+    headline: t('On the way to my {goal}', { goal }),
+    detail: t('{have} of {need} h', { have: formatHours(progress.flown), need: formatHours(progress.need) }),
+    percent: progress.percent,
+  };
+}
+
+function ShareProgress({ result, progress }: { result: GoalResult; progress: GoalProgress }) {
+  const [failed, setFailed] = useState(false);
+  const facts = factsOf(result, progress);
+  if (!facts) return null;
+  return (
+    <p className="share-progress">
+      <button
+        type="button"
+        className="link"
+        onClick={() => {
+          setFailed(false);
+          shareCard(facts).catch(() => setFailed(true));
+        }}
+      >
+        {t('Share my progress')}
+      </button>
+      {failed && (
+        <span className="field-error" role="alert">
+          {' '}
+          {t('Couldn’t make the picture.')}
+        </span>
+      )}
+    </p>
+  );
+}
+
 function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries, picker, onFly }: DetailProps) {
   const { goal } = r;
   const holding = GOALS.filter((g) => g.id !== goal.id && profile.held[g.id] !== undefined);
@@ -225,6 +265,7 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
         </div>
       )}
       <Route result={r} />
+      <ShareProgress result={r} progress={progress} />
       {r.complete && !r.held && !r.credited && (
         <div className="banner ok goal-complete">
           <span>

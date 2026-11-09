@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { blankEntry, derive, formatHours, formatHoursUp, isFtdOnly, newId, today, type Entry } from './model/entry';
+import { blankEntry, dateText, derive, formatHours, formatHoursUp, isFtdOnly, newId, today, type Entry } from './model/entry';
 import { hasContent, isSnoozed, snooze } from './model/store';
 import { ConfirmBanner } from './ui/Account';
 import { ConfirmEmail } from './ui/ConfirmEmail';
@@ -16,7 +16,8 @@ import { Shared } from './ui/Shared';
 import { StopReminders } from './ui/StopReminders';
 import { Welcome } from './ui/Welcome';
 import { useLogbook, type Sync } from './useLogbook';
-import { dateFormat, t } from './i18n';
+import { dateFormat, shortName, t } from './i18n';
+import { shareCard, type CardFacts } from './ui/card';
 import { clearClock, clockHours, clockMinutes, clockStart, startClock } from './model/clock';
 
 type Tab = 'progress' | 'log' | 'profile';
@@ -93,6 +94,8 @@ interface Toast {
   text: JSX.Element;
   undo: () => void;
   progress: boolean;
+  /** A flight worth a picture: the first solo, half way, or the last requirement. */
+  card?: CardFacts | undefined;
 }
 
 const TOAST_MS = 8000;
@@ -107,7 +110,12 @@ function Toast({ toast, onUndo, onProgress, onDone }: { toast: Toast; onUndo: ()
     <div className="toast" role="status">
       <p>{toast.text}</p>
       <span className="toast-actions">
-        {toast.progress && (
+        {toast.card && (
+          <button type="button" className="link" onClick={() => void shareCard(toast.card!).catch(() => undefined)}>
+            {t('Share')}
+          </button>
+        )}
+        {toast.progress && !toast.card && (
           <button type="button" className="link" onClick={onProgress}>
             {t('See progress')}
           </button>
@@ -118,6 +126,16 @@ function Toast({ toast, onUndo, onProgress, onDone }: { toast: Toast; onUndo: ()
       </span>
     </div>
   );
+}
+
+/** A flight worth a picture of its own (D61). Most aren't, and a button on every one would mean nothing. */
+function momentCard(moment: NonNullable<ReturnType<typeof momentOf>>, short: string): CardFacts | null {
+  const goal = shortName(short);
+  const detail = dateText(today());
+  if (moment.complete) return { headline: t('Every {goal} requirement met', { goal }), detail, percent: 100 };
+  if (moment.firstSolo) return { headline: t('My first solo'), detail, percent: null };
+  if (moment.halfway) return { headline: t('Halfway to my {goal}', { goal }), detail, percent: null };
+  return null;
 }
 
 /** Past this, it was more likely left running than flown. */
@@ -228,7 +246,9 @@ export function App() {
     if (ok && draft?.clockTime) stopClock();
     if (ok && isNew) {
       const d = derive(entry);
+      const card = moment && momentCard(moment, goalById(lb.book.profile.focus).short);
       setToast({
+        card: card ?? undefined,
         text: (
           <>
             <strong>{formatHours(d.total || entry.ftd)}{' '}{t('h logged.')}</strong>
