@@ -943,6 +943,16 @@ figures leave the server, never logbook lines, marks or dates.
 had no registration, remark, airport, date or email in it. The link survived a reload, stopped working the moment the
 pilot stopped sharing, and axe finds nothing on either screen.
 
+## Phase 36: checked on the live site (2026-11-09)
+
+With #15 to #26 merged, CI and the Pages deploy passed on `main`, and the API answers on its new routes, so its two
+database steps ran. In Edge on a phone, as a guest on the real site: the welcome, logging a flight, log again, the
+ring, Current to fly, printing, both ways of the spreadsheet, dead instructor and reminder links, and opening with no
+connection all worked. Nothing signed in: that needs a real account on the production database.
+
+**Problem found:** the print screen had no main landmark, which a scan of the whole page shows and the earlier scan of
+just its contents couldn't. Fixed. The only other thing axe reported was the toast's text during its 0.22 s fade-in.
+
 ## Where things stand
 
 - 348 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
