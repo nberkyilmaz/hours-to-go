@@ -2150,6 +2150,74 @@ button.log-row:hover {
   min-width: 0;
 }
 
+/* "sur 45,0 h" stays together: alone on a line, the unit reads like a mistake. */
+.hero-figure small {
+  white-space: nowrap;
+}
+
+/* ---- The route (D60) ------------------------------------------------- */
+
+.route {
+  margin-top: 14px;
+}
+
+.route-line {
+  display: flex;
+  align-items: center;
+  height: 28px;
+}
+
+.route-fix {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--muted);
+  border-radius: 50%;
+  background: var(--surface);
+}
+
+.route-fix.is-done {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+/* The destination: a fix inside a ring, as a chart marks an aerodrome. */
+.route-end {
+  width: 16px;
+  height: 16px;
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 2px var(--surface), inset 0 0 0 6px var(--accent);
+}
+
+.route-leg {
+  position: relative;
+  flex: 1 1 0;
+  height: 0;
+  border-top: 2px dashed var(--muted);
+}
+
+.route-flown {
+  position: absolute;
+  top: -2px;
+  left: 0;
+  height: 2px;
+  background: var(--accent);
+}
+
+.route-plane {
+  position: absolute;
+  top: -11px;
+  display: flex;
+  color: var(--accent);
+  transform: translateX(-50%);
+}
+
+.route-now {
+  margin: 2px 0 0;
+  font-size: 15px;
+}
+
 /* ---- The flight clock (D59) ------------------------------------------ */
 
 .flight-clock span:first-child {
