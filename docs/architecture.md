@@ -33,6 +33,7 @@ hours-to-go/
 │   │   ├── store.ts            parsing (and converting old lines), merging, guest localStorage
 │   │   ├── quick.ts            the quick form's choices, and which paper columns they fill (D46)
 │   │   ├── search.ts           finding a flight, and the logbook by month (D48)
+│   │   ├── csv.ts              the logbook as a spreadsheet, out and in (D54)
 │   │   └── sync.ts             signed in: changes waiting for the server, and the copy on this device (D41)
 │   ├── rules/
 │   │   ├── goals.ts            the Standard 421 catalogue: every requirement with its paragraph,

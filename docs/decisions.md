@@ -872,6 +872,28 @@ doesn't fit is still unsent the next day.
 can't turn reminders off by accident. The token is stored as it is, not hashed, because it goes in every email and
 all it can do is stop them.
 
+### D54. A spreadsheet out, and a pilot's own spreadsheet in
+"Export for a spreadsheet" on the Profile tab writes a CSV, in hours, oldest first, with a byte-order mark so Excel
+reads accents. The JSON file stays the full backup: a CSV can't carry the profile or the answers on paper totals, so
+those come back with their questions open.
+
+**It doesn't guess.** Hours to Go has 17 time columns and a spreadsheet often has "Dual", "PIC" and "Night". Reading
+"Dual" as single-engine day would count hours toward the wrong requirement and look right doing it. So a heading has
+to say which column it is ("Single-engine day PIC", or "SE day PIC"). Other columns are listed as not used. For the
+same reason a date has to start with the year: 03/04/2026 could be March or April. A file with no usable heading is
+turned down with a sentence saying why.
+
+**Nothing goes in until the pilot has seen it.** A preview gives the number of lines, the hours, the dates, and each
+row that can't be added and why, so a column in minutes shows up as an absurd total before it's in the logbook. Rows
+are held to the same rules as the form.
+
+**Importing twice doesn't double it.** A row uses its Id if it has one. Without one, its id is a hash of the line, and
+a second identical line in the file gets its own, so two identical circuits stay two.
+
+Text that a spreadsheet would run as a formula gets a leading apostrophe, removed again on the way back in. Excel in
+French Canada saves with semicolons and decimal commas, which import reads. Export is still comma-separated, which
+that Excel may open as one column; French (roadmap 11) is the time to look at it.
+
 ## Process
 
 ### D22. Check the UI in a real browser, at phone size, before calling it done
