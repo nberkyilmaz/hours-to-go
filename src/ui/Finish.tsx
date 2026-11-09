@@ -1,8 +1,9 @@
+import { useState } from 'react';
 import { formatHours, today } from '../model/entry';
 import { about, money, type Cost } from '../rules/cost';
 import type { GoalResult } from '../rules/evaluate';
-import { WINDOW_DAYS, dayText, finishOn, monthText, type Pace } from '../rules/pace';
-import { t } from '../i18n';
+import { WINDOW_DAYS, dayText, finishOn, monthText, monthsBetween, type Pace } from '../rules/pace';
+import { decimal, t } from '../i18n';
 
 interface Props {
   result: GoalResult;
@@ -14,6 +15,46 @@ interface Props {
 }
 
 const WEEKS_A_MONTH = 52 / 12;
+const SLOWEST = 0.5;
+const FASTEST = 15;
+/** Where the slider starts for someone with no pace yet: a lesson or two a week. */
+const USUAL_HOURS = 2;
+
+const hoursWord = (hours: number) => t('{n} h a week', { n: decimal(String(hours)) });
+
+function compared(at: string, usual: string): string {
+  const months = monthsBetween(usual, at);
+  if (months === 0) return t('About the same as your pace.');
+  if (months === -1) return t('1 month sooner than your pace.');
+  if (months === 1) return t('1 month later than your pace.');
+  return months < 0 ? t('{n} months sooner than your pace.', { n: -months }) : t('{n} months later than your pace.', { n: months });
+}
+
+/** Moves the same sum the finish date does, at a pace the pilot picks (D58): nothing here is saved. */
+function WhatIf({ minutes, pace, cost }: { minutes: number; pace: Pace | null; cost: Cost | null }) {
+  const start = pace ? Math.min(FASTEST, Math.max(SLOWEST, Math.round(pace.perWeek / 30) / 2)) : USUAL_HOURS;
+  const [hours, setHours] = useState(start);
+  const now = today();
+  const perWeek = hours * 60;
+  const at = finishOn(minutes, { perWeek, since: now, whole: true }, now);
+  const usual = pace ? finishOn(minutes, pace, now) : null;
+  const monthly = cost ? (cost.total / minutes) * perWeek * WEEKS_A_MONTH : null;
+  return (
+    <details className="what-if">
+      <summary>{t('What if you flew more or less?')}</summary>
+      <label className="what-if-pace">
+        <span>{t('Hours a week')}</span>
+        <input type="range" min={SLOWEST} max={FASTEST} step={0.5} value={hours} aria-valuetext={hoursWord(hours)} onChange={(e) => setHours(Number(e.target.value))} />
+        <strong>{hoursWord(hours)}</strong>
+      </label>
+      <p aria-live="polite">
+        <strong>{at ? t('Around {month}', { month: monthText(at, now) }) : t('More than 5 years away')}</strong>
+        {monthly !== null && monthly > 0 && <> · {t('about {price} a month', { price: money(about(monthly)) })}</>}
+      </p>
+      {at && usual && <p className="hint">{compared(at, usual)}</p>}
+    </details>
+  );
+}
 
 /**
  * When the pilot reaches the goal's minimum at their pace, under the hours and the price (D40). The
@@ -24,7 +65,14 @@ export function Finish({ result: r, pace, logged, cost }: Props) {
   const minutes = r.plan ? r.plan.dual + r.plan.sim + r.plan.solo : r.minutesToGo;
   if (minutes <= 0) return null;
   const weeks = WINDOW_DAYS / 7;
-  if (!pace) return logged ? <p className="pace hint">{t('A finish date needs two flights logged in the last')}{' '}{weeks}{' '}{t('weeks.')}</p> : null;
+  if (!pace) {
+    return (
+      <>
+        {logged && <p className="pace hint">{t('A finish date needs two flights logged in the last')}{' '}{weeks}{' '}{t('weeks.')}</p>}
+        <WhatIf minutes={minutes} pace={null} cost={cost} />
+      </>
+    );
+  }
 
   const now = today();
   const at = finishOn(minutes, pace, now);
@@ -52,6 +100,7 @@ export function Finish({ result: r, pace, logged, cost }: Props) {
       <p className="hint">
         {t('From the flights and FTD sessions you logged')}{' '}{pace.whole ? t('in the last {weeks} weeks', { weeks }) : t('since {date}', { date: dayText(pace.since) })}.
       </p>
+      <WhatIf minutes={minutes} pace={pace} cost={cost} />
     </div>
   );
 }

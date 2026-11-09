@@ -957,6 +957,12 @@ placeholder is lost, or if text on a screen doesn't go through `t`.
 
 The nightly check of the standard still reads the English page, which is the one the rules were written from.
 
+### D58. What if you flew more or less
+Under the finish date, a folded slider from half an hour to 15 hours a week. It starts at the pilot's own pace, or at 2
+hours a week for someone with none yet, and gives the month they'd finish, what that pace costs a month, and how many
+months sooner or later that is. It uses the same sum as the finish date, so the two can't disagree, and it saves
+nothing: it's for thinking about a budget or a deadline, not a setting.
+
 ## Process
 
 ### D22. Check the UI in a real browser, at phone size, before calling it done
