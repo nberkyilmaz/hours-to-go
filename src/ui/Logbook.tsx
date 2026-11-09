@@ -199,6 +199,9 @@ export function LogbookView({ entries, onNew, onEdit }: Props) {
         <button type="button" className="link" onClick={() => onNew('forward')}>
           Add paper logbook totals
         </button>
+        <a className="link" href="#print">
+          Print or save as PDF
+        </a>
       </div>
 
       {sorted.length >= SEARCH_FROM && (
