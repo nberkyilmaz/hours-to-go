@@ -7,8 +7,10 @@ import type { FastifyInstance } from 'fastify';
 import pg from 'pg';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildApp } from '../../server/app';
-import { hashPassword } from '../../server/auth';
+import { Throttle, hashPassword } from '../../server/auth';
+import type { Store } from '../../server/db';
 import type { Mail } from '../../server/mail';
+import { sendReminders } from '../../server/reminders';
 import { addDays, blankEntry, today } from '../../src/model/entry';
 import { blankProfile } from '../../src/model/profile';
 
@@ -91,6 +93,112 @@ describe.each(DATABASES)('on $name', ({ url }) => {
   afterEach(async () => {
     vi.useRealTimers();
     await app.close();
+  });
+
+  describe('a hostile request', () => {
+    const login = (email: string, password: string, headers: Record<string, string> = {}) =>
+      app.inject({ method: 'POST', url: '/api/auth/login', payload: { email, password }, headers });
+
+    it('can’t tie up the server with a very long address', async () => {
+      const email = `a@${'.'.repeat(40_000)}@`;
+      const started = Date.now();
+      const res = await app.inject({ method: 'POST', url: '/api/auth/signup', payload: { email, password: 'correct horse' } });
+      expect(res.statusCode).toBe(400);
+      expect(Date.now() - started).toBeLessThan(500);
+    });
+
+    it('can’t send a huge body, except a whole logbook', async () => {
+      const big = 'x'.repeat(70 * 1024);
+      expect((await login(big, 'correct horse')).statusCode).toBe(413);
+      const { cookies } = await signUp();
+      const entries = Array.from({ length: 400 }, (_, i) => ({ ...anEntry(), id: `f${i}`, remarks: 'r'.repeat(190) }));
+      const merged = await app.inject({ method: 'POST', url: '/api/logbook/merge', cookies, payload: { version: 2, entries, profile: blankProfile() } });
+      expect(merged.statusCode).toBe(200);
+      expect(merged.json().entries).toHaveLength(400);
+    });
+
+    it('is refused for an address too long to be anyone’s, without counting it', async () => {
+      const res = await login(`${'a'.repeat(300)}@example.com`, 'nope nope');
+      expect(res.statusCode).toBe(401);
+    });
+
+    it('can’t dodge the limit on wrong passwords by claiming another network', async () => {
+      await signUp();
+      let last = 0;
+      for (let i = 0; i < 11; i++) last = (await login('student@example.com', 'wrong password', { 'x-forwarded-for': `203.0.113.${i}` })).statusCode;
+      expect(last).toBe(429);
+    });
+
+    it('counts each network Cloudflare names on its own', async () => {
+      await signUp();
+      for (let i = 0; i < 10; i++) await login('student@example.com', 'wrong password', { 'cf-connecting-ip': '198.51.100.1' });
+      expect((await login('student@example.com', 'wrong password', { 'cf-connecting-ip': '198.51.100.1' })).statusCode).toBe(429);
+      expect((await login('student@example.com', 'wrong password', { 'cf-connecting-ip': '198.51.100.2' })).statusCode).toBe(401);
+    });
+
+    it('stops guessing one profile’s password from many networks, until the pilot resets it', async () => {
+      await signUp();
+      for (let i = 0; i < 50; i++) await login('student@example.com', 'wrong password', { 'cf-connecting-ip': `198.51.100.${i}` });
+      expect((await login('student@example.com', 'correct horse', { 'cf-connecting-ip': '192.0.2.1' })).statusCode).toBe(429);
+      await app.inject({ method: 'POST', url: '/api/auth/forgot', payload: { email: 'student@example.com' } });
+      await vi.waitFor(() => expect(sent).toHaveLength(1));
+      await app.inject({ method: 'POST', url: '/api/auth/reset', payload: { token: tokenIn(sent[0]!, 'reset'), password: 'a whole new password' } });
+      expect((await login('student@example.com', 'a whole new password', { 'cf-connecting-ip': '192.0.2.1' })).statusCode).toBe(200);
+    }, 30_000);
+
+    const askToMove = async (cookies: Record<string, string>) => {
+      await app.inject({ method: 'POST', url: '/api/account/email', cookies, payload: { email: 'intruder@example.com', password: 'correct horse' } });
+      await vi.waitFor(() => expect(sent.some((m) => m.to === 'intruder@example.com')).toBe(true));
+      return tokenIn(sent.find((m) => m.to === 'intruder@example.com')!, 'confirm');
+    };
+    const open = (token: string) => app.inject({ method: 'POST', url: '/api/auth/confirm', payload: { token } });
+
+    it('can’t carry a profile off with a change of address after the password is reset', async () => {
+      const { cookies } = await signUp();
+      const token = await askToMove(cookies);
+      await app.inject({ method: 'POST', url: '/api/auth/forgot', payload: { email: 'student@example.com' } });
+      await vi.waitFor(() => expect(sent.some((m) => m.to === 'student@example.com')).toBe(true));
+      await app.inject({ method: 'POST', url: '/api/auth/reset', payload: { token: tokenIn(sent.find((m) => m.to === 'student@example.com')!, 'reset'), password: 'a whole new password' } });
+      expect((await open(token)).statusCode).toBe(400);
+      expect((await login('student@example.com', 'a whole new password')).statusCode).toBe(200);
+    });
+
+    it('can’t either after the pilot changes the password', async () => {
+      const { cookies } = await signUp();
+      const token = await askToMove(cookies);
+      await app.inject({ method: 'POST', url: '/api/account/password', cookies, payload: { password: 'correct horse', newPassword: 'a whole new password' } });
+      expect((await open(token)).statusCode).toBe(400);
+    });
+
+    it('tells the old address when a profile moves, in the pilot’s language, without saying so to the page', async () => {
+      const { cookies } = await signUp();
+      const token = await askToMove(cookies);
+      sent = [];
+      const res = await app.inject({ method: 'POST', url: '/api/auth/confirm', payload: { token, lang: 'fr' } });
+      expect(res.statusCode).toBe(200);
+      expect(res.json()).toEqual({ email: 'intruder@example.com', changed: true });
+      await vi.waitFor(() => expect(sent).toHaveLength(1));
+      expect(sent[0]!.to).toBe('student@example.com');
+      expect(sent[0]!.subject).toBe('L’adresse courriel de votre profil Hours to Go a été changée');
+      expect(sent[0]!.text).toContain('intruder@example.com');
+      expect(sent[0]!.text).toContain(OWNER);
+    });
+
+    it('doesn’t tell anyone when an address is only being confirmed', async () => {
+      const { confirmation } = await signUp();
+      await open(tokenIn(confirmation, 'confirm'));
+      await new Promise((r) => setTimeout(r, 20));
+      expect(sent).toHaveLength(0);
+    });
+
+    it('can’t save a date that isn’t on the calendar', async () => {
+      const { cookies } = await signUp();
+      const profile = { ...blankProfile(), medical: 'cat3', medicalUntil: '2026-02-30', milestones: { 'letter-ppaer': { date: '2026-13-45' } } };
+      const res = await app.inject({ method: 'PUT', url: '/api/profile', cookies, payload: profile });
+      expect(res.json().medicalUntil).toBe('');
+      expect(res.json().milestones['letter-ppaer'].date).toBe('');
+      expect((await app.inject({ method: 'PUT', url: '/api/entries/bad', cookies, payload: { ...anEntry(), id: 'bad', date: '2026-02-30' } })).statusCode).toBe(400);
+    });
   });
 
   describe('emails in French', () => {
@@ -729,6 +837,45 @@ describe.each(DATABASES)('a database made before migrations, on $name', ({ url }
     }
     // PGlite takes a second or two to open a folder, and this opens one three times.
   }, 30_000);
+});
+
+describe('the memory the limits use', () => {
+  it('stays bounded however many different keys arrive', () => {
+    const limit = new Throttle(5, 60_000);
+    for (let i = 0; i < 12_000; i++) limit.fail(`key-${i}`, 1_000);
+    expect(limit.size).toBeLessThanOrEqual(10_000);
+  });
+
+  it('forgets expired keys first', () => {
+    const limit = new Throttle(5, 60_000);
+    for (let i = 0; i < 10_000; i++) limit.fail(`old-${i}`, 1_000);
+    limit.fail('new', 120_000);
+    expect(limit.size).toBe(1);
+  });
+});
+
+describe('one pilot’s record that can’t be worked out', () => {
+  it('doesn’t cost everyone else their reminder', async () => {
+    const mails: Mail[] = [];
+    const errors: string[] = [];
+    const book = { version: 2, entries: [], profile: { ...blankProfile(), medical: 'cat3', medicalUntil: addDays(today(), 7) } };
+    const store = {
+      reminderRecipients: async () => [
+        { id: 'broken', email: 'broken@example.com', stop: 's1', lang: 'en' },
+        { id: 'fine', email: 'fine@example.com', stop: 's2', lang: 'en' },
+      ],
+      getLogbook: async (id: string) => {
+        if (id === 'broken') throw new RangeError('Invalid time value');
+        return book;
+      },
+      sentReminders: async () => new Set<string>(),
+      markReminders: async () => undefined,
+    } as unknown as Store;
+    const run = await sendReminders(store, async (m) => void mails.push(m), APP_URL, (_e, what) => errors.push(what));
+    expect(mails.map((m) => m.to)).toEqual(['fine@example.com']);
+    expect(run).toMatchObject({ checked: 2, sent: 1, failed: 1 });
+    expect(errors).toEqual(['reminders not worked out']);
+  });
 });
 
 describe('a server that can’t send email', () => {

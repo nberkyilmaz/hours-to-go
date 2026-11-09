@@ -24,15 +24,21 @@ export async function sendReminders(
 ): Promise<ReminderRun> {
   const recipients = await store.reminderRecipients();
   const work = [];
+  let sent = 0;
+  let failed = 0;
   for (const r of recipients) {
-    const book = await store.getLogbook(r.id);
-    const { items, marks } = toSend(comingUp(book.entries, book.profile, today), await store.sentReminders(r.id));
-    if (items.length > 0) work.push({ ...r, items, marks });
+    // One pilot's record that can't be worked out shouldn't cost everyone else their reminder.
+    try {
+      const book = await store.getLogbook(r.id);
+      const { items, marks } = toSend(comingUp(book.entries, book.profile, today), await store.sentReminders(r.id));
+      if (items.length > 0) work.push({ ...r, items, marks });
+    } catch (err) {
+      failed++;
+      onError(err, 'reminders not worked out');
+    }
   }
   work.sort((a, b) => a.items[0]!.daysLeft - b.items[0]!.daysLeft);
 
-  let sent = 0;
-  let failed = 0;
   for (const w of work.slice(0, PER_RUN)) {
     const stop = new URL(appUrl);
     stop.hash = `stop=${w.stop}`;

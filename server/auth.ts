@@ -42,6 +42,9 @@ export function sameSecret(a: string, b: string): boolean {
 }
 
 /** Counts failed sign-ins per key in a sliding window, in memory. Enough for one server process. */
+/** Enough for a busy day; past it the expired keys go, and then the oldest, so a flood of new keys can't use up the memory. */
+const MOST_KEYS = 10_000;
+
 export class Throttle {
   private hits = new Map<string, number[]>();
 
@@ -56,10 +59,23 @@ export class Throttle {
 
   fail(key: string, now = Date.now()): void {
     this.hits.set(key, [...this.recent(key, now), now]);
+    if (this.hits.size > MOST_KEYS) this.sweep(now);
   }
 
   clear(key: string): void {
     this.hits.delete(key);
+  }
+
+  get size(): number {
+    return this.hits.size;
+  }
+
+  private sweep(now: number): void {
+    for (const key of this.hits.keys()) this.recent(key, now);
+    for (const key of this.hits.keys()) {
+      if (this.hits.size <= MOST_KEYS) return;
+      this.hits.delete(key);
+    }
   }
 
   private recent(key: string, now: number): number[] {

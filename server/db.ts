@@ -21,7 +21,7 @@ export interface Account {
 }
 
 /** What spending an emailed link did: confirmed the profile's address, or moved the profile to a new one. */
-export type EmailLinkResult = { email: string; changed: boolean } | 'taken' | null;
+export type EmailLinkResult = { email: string; changed: boolean; previous?: string } | 'taken' | null;
 
 interface UserRow {
   id: string;
@@ -291,9 +291,10 @@ export class Store {
 
   /**
    * Spends a reset link on a new password. The link is deleted as it is read, so it works once;
-   * the profile's other links go too, and so does every session, so a device signed in by
-   * whoever knew the old password is signed out. The link reached the profile's inbox, so the
-   * address is confirmed too. Null when the link is unknown or expired.
+   * the profile's other links go too, and so does every session and any change of address still
+   * waiting, so whoever knew the old password is out and can't take the profile with them. The
+   * link reached the profile's inbox, so the address is confirmed too. Null when the link is
+   * unknown or expired.
    */
   resetPassword(tokenHash: string, passwordHash: string, now: number): Promise<User | null> {
     return this.db.transaction(async (q) => {
@@ -308,6 +309,7 @@ export class Store {
       ]);
       await q('delete from password_resets where user_id = $1', [spent.user_id]);
       await q('delete from sessions where user_id = $1', [spent.user_id]);
+      await q('delete from email_links where user_id = $1 and email <> (select email from users where id = $1)', [spent.user_id]);
       const [user] = await q<User>(`select ${USER_COLUMNS} from users where id = $1`, [spent.user_id]);
       return user ? { id: user.id, email: user.email, confirmed: user.confirmed } : null;
     });
@@ -315,13 +317,14 @@ export class Store {
 
   /**
    * A new password, from a pilot who knows the old one. Every other device is signed out, as
-   * after a reset, and any reset link still waiting in the inbox stops working.
+   * after a reset, and any reset link or change of address still waiting stops working.
    */
   setPassword(userId: string, passwordHash: string, keepSession: string): Promise<void> {
     return this.db.transaction(async (q) => {
       await q('update users set password_hash = $2 where id = $1', [userId, passwordHash]);
       await q('delete from sessions where user_id = $1 and token_hash <> $2', [userId, keepSession]);
       await q('delete from password_resets where user_id = $1', [userId]);
+      await q('delete from email_links where user_id = $1 and email <> (select email from users where id = $1)', [userId]);
     });
   }
 
@@ -370,7 +373,7 @@ export class Store {
       await q('update users set email = $2, email_confirmed_at = now() where id = $1', [link.user_id, link.email]);
       await q('delete from email_links where user_id = $1', [link.user_id]);
       await q('delete from password_resets where user_id = $1', [link.user_id]);
-      return { email: link.email, changed: true };
+      return { email: link.email, changed: true, previous: user.email };
     });
   }
 

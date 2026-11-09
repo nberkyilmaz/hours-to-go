@@ -11,7 +11,7 @@ import { parseEntry, parseLogbook, parseProfile } from '../src/model/store';
 import { sharedProgress } from '../src/rules/shared';
 import { Throttle, hashPassword, hashToken, newToken, sameSecret, verifyPassword } from './auth';
 import { Store, type Account, type User } from './db';
-import { alertMail, confirmMail, feedbackMail, resetMail, type SendMail } from './mail';
+import { alertMail, confirmMail, emailChangedMail, feedbackMail, resetMail, type SendMail } from './mail';
 import { sendReminders } from './reminders';
 
 export interface AppOptions {
@@ -51,11 +51,19 @@ const FEEDBACK_MAX = 4000;
 const SHARE_DAYS = 30;
 const SHARE_NAME_MAX = 80;
 const ALERTS_PER_HOUR = 5;
-const EMAIL =/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_EMAIL = 254;
+const MAX_PASSWORD = 200;
+/** Plenty for anything but a whole logbook arriving at once, which has its own limit. */
+const BODY_LIMIT = 64 * 1024;
+const LOGBOOK_LIMIT = 5 * 1024 * 1024;
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Length first: the pattern slows badly on a very long string, and the server has one thread to give. */
+const isEmail = (email: string) => email.length <= MAX_EMAIL && EMAIL.test(email);
 
 function passwordProblem(password: string): string | null {
   if (password.length < 8) return 'Use a password of at least 8 characters.';
-  if (password.length > 200) return 'That password is too long.';
+  if (password.length > MAX_PASSWORD) return 'That password is too long.';
   return null;
 }
 
@@ -71,11 +79,23 @@ const bodyOf = (req: FastifyRequest): Record<string, unknown> =>
 /** The language to email this pilot in: the app says which it's showing them. */
 const langOf = (req: FastifyRequest): Lang => (bodyOf(req).lang === 'fr' ? 'fr' : 'en');
 
+/**
+ * Who's asking, for the limits. Cloudflare is in front of Render, sets this header itself, and refuses a request that
+ * brings its own. X-Forwarded-For starts with whatever the client wrote, so it says nothing. Without the header it's
+ * the connection's address: at worst everyone counts as one network, and the limits get tighter.
+ */
+function ipOf(req: FastifyRequest): string {
+  const ip = req.headers['cf-connecting-ip'];
+  return typeof ip === 'string' && ip ? ip : req.ip;
+}
+
 export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
-  const app = Fastify({ logger: opts.logger ?? false, bodyLimit: 5 * 1024 * 1024, trustProxy: true });
+  const app = Fastify({ logger: opts.logger ?? false, bodyLimit: BODY_LIMIT });
   // Logged, not alerted: Neon closes idle connections as a matter of course, and the pool reconnects.
   const store = await Store.open(opts.database, (err) => app.log.error(err, 'database connection dropped'));
   const throttle = new Throttle(10, 15 * 60_000);
+  // However many networks the guesses come from. High, because a pilot can be locked out by it.
+  const loginsPerEmail = new Throttle(50, 15 * 60_000);
   // Reset emails: a few to any one address, so nobody can flood someone's inbox, and a few more
   // from any one address on the internet.
   const resetsPerEmail = new Throttle(3, 60 * 60_000);
@@ -219,11 +239,11 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     const body = bodyOf(req);
     const email = String(body.email ?? '').trim().toLowerCase();
     const password = String(body.password ?? '');
-    if (!EMAIL.test(email) || email.length > 254) return reply.code(400).send({ error: 'Enter a valid email address.' });
+    if (!isEmail(email)) return reply.code(400).send({ error: 'Enter a valid email address.' });
     const problem = passwordProblem(password);
     if (problem) return reply.code(400).send({ error: problem });
-    if (signupsPerIp.blocked(req.ip)) return reply.code(429).send({ error: 'Too many profiles created from this network. Try again in an hour.' });
-    signupsPerIp.fail(req.ip);
+    if (signupsPerIp.blocked(ipOf(req))) return reply.code(429).send({ error: 'Too many profiles created from this network. Try again in an hour.' });
+    signupsPerIp.fail(ipOf(req));
     const user = await store.createUser(email, await hashPassword(password));
     if (!user) return reply.code(409).send({ error: 'An account with that email already exists. Sign in instead.' });
     await startSession(reply, user);
@@ -237,12 +257,15 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     const body = bodyOf(req);
     const email = String(body.email ?? '').trim().toLowerCase();
     const password = String(body.password ?? '');
-    const key = `${req.ip}|${email}`;
-    if (throttle.blocked(key)) return reply.code(429).send({ error: 'Too many attempts. Try again in 15 minutes.' });
+    // Longer than any profile's, so it's refused before being kept as a key or hashed.
+    if (email.length > MAX_EMAIL || password.length > MAX_PASSWORD) return reply.code(401).send({ error: 'Email or password is incorrect.' });
+    const key = `${ipOf(req)}|${email}`;
+    if (throttle.blocked(key) || loginsPerEmail.blocked(email)) return reply.code(429).send({ error: 'Too many attempts. Try again in 15 minutes.' });
     const found = await store.findUserByEmail(email);
     const ok = found !== null && (await verifyPassword(password, found.passwordHash));
     if (!found || !ok) {
       throttle.fail(key);
+      loginsPerEmail.fail(email);
       return reply.code(401).send({ error: 'Email or password is incorrect.' });
     }
     throttle.clear(key);
@@ -257,12 +280,12 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     const { sendMail, appUrl } = opts;
     if (!sendMail || !appUrl) return reply.code(503).send({ error: 'Resetting a password by email isn’t available yet.' });
     const email = String(bodyOf(req).email ?? '').trim().toLowerCase();
-    if (!EMAIL.test(email) || email.length > 254) return reply.code(400).send({ error: 'Enter a valid email address.' });
-    if (resetsPerEmail.blocked(email) || resetsPerIp.blocked(req.ip)) {
+    if (!isEmail(email)) return reply.code(400).send({ error: 'Enter a valid email address.' });
+    if (resetsPerEmail.blocked(email) || resetsPerIp.blocked(ipOf(req))) {
       return reply.code(429).send({ error: 'Too many reset emails asked for. Try again in an hour.' });
     }
     resetsPerEmail.fail(email);
-    resetsPerIp.fail(req.ip);
+    resetsPerIp.fail(ipOf(req));
     void (async () => {
       const user = await store.findUserByEmail(email);
       if (!user) return;
@@ -282,20 +305,21 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     const password = String(body.password ?? '');
     const problem = passwordProblem(password);
     if (problem) return reply.code(400).send({ error: problem });
-    const key = `reset|${req.ip}`;
+    const key = `reset|${ipOf(req)}`;
     if (throttle.blocked(key)) return reply.code(429).send({ error: 'Too many attempts. Try again in 15 minutes.' });
     const user = await store.resetPassword(hashToken(token), await hashPassword(password), Date.now());
     if (!user) {
       throttle.fail(key);
       return reply.code(400).send({ error: 'This link has expired or has already been used. Ask for a new one.' });
     }
+    loginsPerEmail.clear(user.email);
     await startSession(reply, user);
     return { user: await accountOf(user.id) };
   });
 
   // Opened from an emailed link, on whatever browser the email app picks: no session needed.
   app.post('/api/auth/confirm', async (req, reply) => {
-    const key = `confirm|${req.ip}`;
+    const key = `confirm|${ipOf(req)}`;
     if (throttle.blocked(key)) return reply.code(429).send({ error: 'Too many attempts. Try again in 15 minutes.' });
     const result = await store.spendEmailLink(hashToken(String(bodyOf(req).token ?? '')), Date.now());
     if (result === null) {
@@ -305,7 +329,12 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     if (result === 'taken') {
       return reply.code(409).send({ error: 'Another profile has started using that email since, so your profile keeps its old one.' });
     }
-    return result;
+    const { previous, ...answer } = result;
+    // In case it wasn't the pilot who moved the profile: the old address is the one they still read.
+    if (previous && opts.sendMail) {
+      void opts.sendMail(emailChangedMail(previous, answer.email, opts.feedbackTo, langOf(req))).catch((err: unknown) => failed(err, 'email change notice not sent'));
+    }
+    return answer;
   });
 
   app.post('/api/auth/logout', async (req, reply) => {
@@ -342,7 +371,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   app.post('/api/account/email', { preHandler: requireUser }, async (req, reply) => {
     const body = bodyOf(req);
     const email = String(body.email ?? '').trim().toLowerCase();
-    if (!EMAIL.test(email) || email.length > 254) return reply.code(400).send({ error: 'Enter a valid email address.' });
+    if (!isEmail(email)) return reply.code(400).send({ error: 'Enter a valid email address.' });
     if (email === req.user!.email) return reply.code(400).send({ error: 'That’s already your email.' });
     if (!(await passwordChecked(req, reply, String(body.password ?? '')))) return reply;
     if (await store.findUserByEmail(email)) return reply.code(409).send({ error: 'Another profile already uses that email.' });
@@ -398,11 +427,11 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
 
   // No sign-in: the link is the permission. Only the figures in `sharedProgress` leave here (D56).
   app.post('/api/shared', async (req, reply) => {
-    if (sharedPerIp.blocked(req.ip)) return reply.code(429).send({ error: 'Too many attempts. Try again later.' });
+    if (sharedPerIp.blocked(ipOf(req))) return reply.code(429).send({ error: 'Too many attempts. Try again later.' });
     const token = String(bodyOf(req).token ?? '');
     const link = token ? await store.sharedBy(hashToken(token), Date.now()) : null;
     if (!link) {
-      sharedPerIp.fail(req.ip);
+      sharedPerIp.fail(ipOf(req));
       return reply.code(404).send({ error: 'This link has expired or been turned off. Ask for a new one.' });
     }
     const book = await store.getLogbook(link.userId);
@@ -452,7 +481,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     return profile;
   });
 
-  app.post('/api/logbook/merge', { preHandler: requireUser }, async (req, reply) => {
+  app.post('/api/logbook/merge', { preHandler: requireUser, bodyLimit: LOGBOOK_LIMIT }, async (req, reply) => {
     const incoming = parseLogbook(req.body);
     if (!incoming) return reply.code(400).send({ error: 'That is not a Hours to Go logbook.' });
     incoming.entries = incoming.entries.filter((e) => Object.keys(validateEntry(e)).length === 0);
@@ -472,13 +501,13 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     if (!message) return reply.code(400).send({ error: 'Write a message first.' });
     if (message.length > FEEDBACK_MAX) return reply.code(400).send({ error: 'That message is too long. Keep it under 4,000 characters.' });
     const from = req.user?.email ?? (String(body.email ?? '').trim().toLowerCase() || null);
-    if (from !== null && (!EMAIL.test(from) || from.length > 254)) {
+    if (from !== null && !isEmail(from)) {
       return reply.code(400).send({ error: 'Enter a valid email address, or leave it empty.' });
     }
-    if (feedbackPerIp.blocked(req.ip) || feedbackPerDay.blocked('all')) {
+    if (feedbackPerIp.blocked(ipOf(req)) || feedbackPerDay.blocked('all')) {
       return reply.code(429).send({ error: 'Too many messages sent. Try again later.' });
     }
-    feedbackPerIp.fail(req.ip);
+    feedbackPerIp.fail(ipOf(req));
     feedbackPerDay.fail('all');
     const browser = String(req.headers['user-agent'] ?? '').slice(0, 300);
     try {

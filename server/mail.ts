@@ -101,6 +101,18 @@ ${button(appLink, tr('Open Hours to Go'))}
 
 const HTML_ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 /** A pilot's own words go into the HTML as text, never as markup. */
+/** To the address a profile has just left, in case that wasn't the pilot's doing. */
+export function emailChangedMail(to: string, now: string, contact: string | undefined, language: Lang = 'en'): Mail {
+  const tr = translator(language);
+  const what = tr('The Hours to Go profile that used this email address now uses {email}.', { email: now });
+  const fine = tr('If that was you, there’s nothing to do.');
+  const help = contact ? ` ${tr('If it wasn’t you, write to {contact} right away.', { contact })}` : '';
+  const text = [what, '', `${fine}${help}`].join('\n');
+  const html = page(`<p style="margin:0 0 16px">${escapeHtml(what)}</p>
+<p style="margin:0">${escapeHtml(`${fine}${help}`)}</p>`);
+  return { to, subject: tr('Your Hours to Go email was changed'), text, html };
+}
+
 const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]!);
 
 /**
