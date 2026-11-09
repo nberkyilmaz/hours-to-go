@@ -2150,6 +2150,13 @@ button.log-row:hover {
   min-width: 0;
 }
 
+/* ---- The flight clock (D59) ------------------------------------------ */
+
+.flight-clock span:first-child {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
 /* ---- What if (D58) --------------------------------------------------- */
 
 .what-if {

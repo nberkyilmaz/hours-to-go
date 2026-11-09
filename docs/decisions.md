@@ -963,6 +963,17 @@ hours a week for someone with none yet, and gives the month they'd finish, what 
 months sooner or later that is. It uses the same sum as the finish date, so the two can't disagree, and it saves
 nothing: it's for thinking about a budget or a deadline, not a setting.
 
+### D59. The flight clock
+"Flying now? Start the clock" on the flight form, or a home-screen shortcut, and Landed when you're down. The form
+opens with the time in tenths of an hour and the date the flight started.
+
+Only the moment it started is stored, on this device, so it runs on with the app closed, the phone asleep or no
+signal, and there's nothing to keep ticking. The bar is on every tab. Nothing stops until the flight is saved, so
+cancelling the form doesn't lose the time. Past 12 hours it asks whether it was forgotten.
+
+It measures what the pilot starts and stops. Whether that's air time or engine time is theirs to decide, and the form
+lets them change it, so the app doesn't claim to know.
+
 ## Process
 
 ### D22. Check the UI in a real browser, at phone size, before calling it done

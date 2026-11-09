@@ -50,6 +50,10 @@ interface Props {
   onDelete?: (() => void) | undefined;
   /** Only for a flight or session already logged: starts a new one from it. */
   onLogAgain?: (() => void) | undefined;
+  /** The time from the flight clock, already in the pilot's own decimals. */
+  clockTime?: string | undefined;
+  /** Only for a new flight with no clock running: starts one instead. */
+  onStartClock?: (() => void) | undefined;
 }
 
 type ColumnText = Record<Column, string>;
@@ -88,7 +92,7 @@ const TITLE: Record<FormLayout, { add: string; edit: string; discard: string }> 
 /** Reads a box; null when it isn't a number of the right kind. */
 const readCount = (s: string) => (s.trim() === '' ? 0 : /^\d+$/.test(s.trim()) ? Number(s.trim()) : null);
 
-export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave, onClose, onDelete, onLogAgain }: Props) {
+export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave, onClose, onDelete, onLogAgain, clockTime, onStartClock }: Props) {
   const legacy = initial.forward && !initial.breakdown;
   const b0 = initial.breakdown ?? blankBreakdown();
   const [entry, setEntry] = useState<Entry>(initial);
@@ -98,7 +102,8 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
     const flown = quickFrom(initial);
     if (!isNew) return flown;
     // A new line can start already filled in: flown again, or the suggested next flight.
-    return flown ? { ...flown, landings: flown.landings || 1 } : blankQuick();
+    const first = flown ? { ...flown, landings: flown.landings || 1 } : blankQuick();
+    return clockTime ? { ...first, time: clockTime } : first;
   });
   const [showWhere, setShowWhere] = useState((!initial.aircraft && !initial.registration) || (quick?.xc === true && !initial.to));
   const [text, setText] = useState<ColumnText>(() => ({ ...columnText(initial), ...(quick && isNew ? quickText(quick) : {}) }));
@@ -501,6 +506,11 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
         </div>
       </div>
       {remarks}
+      {onStartClock && (
+        <button type="button" className="link quick-columns" onClick={() => leaveThen(onStartClock)}>
+          {t('Flying now? Start the clock')}
+        </button>
+      )}
       <button type="button" className="link quick-columns" onClick={() => setQuick(null)}>
         {t('Paper columns')}
       </button>

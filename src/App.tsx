@@ -16,7 +16,8 @@ import { Shared } from './ui/Shared';
 import { StopReminders } from './ui/StopReminders';
 import { Welcome } from './ui/Welcome';
 import { useLogbook, type Sync } from './useLogbook';
-import { t } from './i18n';
+import { dateFormat, t } from './i18n';
+import { clearClock, clockHours, clockMinutes, clockStart, startClock } from './model/clock';
 
 type Tab = 'progress' | 'log' | 'profile';
 
@@ -119,10 +120,41 @@ function Toast({ toast, onUndo, onProgress, onDone }: { toast: Toast; onUndo: ()
   );
 }
 
+/** Past this, it was more likely left running than flown. */
+const CLOCK_FORGOTTEN = 12 * 60;
+
+/** A flight in progress (D59). On every tab, because it's the first thing a pilot needs on landing. */
+function FlightClock({ start, onLanded, onCancel }: { start: number; onLanded: () => void; onCancel: () => void }) {
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => tick((n) => n + 1), 30_000);
+    return () => clearInterval(timer);
+  }, []);
+  const minutes = clockMinutes(start);
+  const time = dateFormat({ hour: 'numeric', minute: '2-digit' }).format(new Date(start));
+  const elapsed = `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`;
+  const forgotten = minutes > CLOCK_FORGOTTEN;
+  return (
+    <div className={`banner flight-clock${forgotten ? ' warn' : ''}`} role="timer">
+      <span>{forgotten ? t('The flight clock has been running since {time}, over 12 hours. Forgot to stop it?', { time }) : t('Flight clock: {elapsed}, since {time}', { elapsed, time })}</span>
+      <span className="row">
+        <button type="button" className="btn primary small" onClick={onLanded}>
+          {t('Landed')}
+        </button>
+        <button type="button" className="link" onClick={onCancel}>
+          {t('Cancel the clock')}
+        </button>
+      </span>
+    </div>
+  );
+}
+
 export function App() {
   const lb = useLogbook();
   const [tab, setTab] = useState<Tab>('progress');
-  const [draft, setDraft] = useState<{ entry: Entry; isNew: boolean; layout: FormLayout } | null>(null);
+  // `clockTime` is the time from the flight clock, when that's where this line came from.
+  const [draft, setDraft] = useState<{ entry: Entry; isNew: boolean; layout: FormLayout; clockTime?: string } | null>(null);
+  const [clock, setClock] = useState<number | null>(clockStart);
   const [hideGuestNudge, setHideGuestNudge] = useState(() => isSnoozed('guest-nudge'));
   const [hideStranded, setHideStranded] = useState(false);
   const [hideConfirm, setHideConfirm] = useState(() => isSnoozed('confirm-email'));
@@ -163,7 +195,7 @@ export function App() {
   }, [entries]);
 
   const closeDraft = useCallback(() => setDraft(null), []);
-  const startEntry = (layout: FormLayout, filled?: Partial<Entry>) => {
+  const startEntry = (layout: FormLayout, filled?: Partial<Entry>, clockTime?: string) => {
     const entry = blankEntry(layout === 'forward');
     const newest = [...entries].filter((e) => !e.forward).sort((a, b) => (a.date < b.date ? 1 : -1));
     // Most students fly the same aircraft from the same field, so start from the last one.
@@ -174,7 +206,15 @@ export function App() {
     if (filled) Object.assign(entry, filled);
     // A cross-country goes somewhere else, so the pilot says where.
     if (filled?.xcDayDual || filled?.xcDayPic || filled?.xcNightDual || filled?.xcNightPic) entry.to = '';
-    setDraft({ entry, isNew: true, layout });
+    setDraft({ entry, isNew: true, layout, ...(clockTime ? { clockTime } : {}) });
+  };
+  const stopClock = () => {
+    clearClock();
+    setClock(null);
+  };
+  /** Nothing is stopped yet: if the form is cancelled, the time is still there. */
+  const landed = () => {
+    if (clock !== null) startEntry('flight', { date: today(new Date(clock)) }, clockHours(clockMinutes(clock)));
   };
   /** The same flight again: students fly the same lesson many times. */
   const logAgain = (e: Entry) => setDraft({ entry: { ...e, id: newId(), date: today(), remarks: '' }, isNew: true, layout: isFtdOnly(e) ? 'ftd' : 'flight' });
@@ -185,6 +225,7 @@ export function App() {
     const isNew = draft?.isNew === true;
     const moment = isNew ? momentOf(goalById(lb.book.profile.focus), entries, entry, lb.book.profile, today()) : null;
     const ok = await lb.saveEntry(entry);
+    if (ok && draft?.clockTime) stopClock();
     if (ok && isNew) {
       const d = derive(entry);
       setToast({
@@ -221,9 +262,13 @@ export function App() {
   // The home-screen icon's "Log a flight" shortcut opens the app at #log.
   const ready = lb.mode.kind !== 'loading' && !welcoming;
   useEffect(() => {
-    if (!ready || hash !== '#log') return;
+    if (!ready || (hash !== '#log' && hash !== '#start')) return;
     window.history.replaceState(null, '', window.location.pathname + window.location.search);
     setHash('');
+    if (hash === '#start') {
+      setClock((running) => running ?? startClock());
+      return;
+    }
     startEntry('flight');
     // Only when the app has come up; startEntry reads the logbook of the moment.
   }, [ready, hash]);
@@ -365,6 +410,7 @@ export function App() {
             </button>
           </div>
         )}
+        {clock !== null && <FlightClock start={clock} onLanded={landed} onCancel={stopClock} />}
         {notices[0]}
 
         {tab === 'progress' && (
@@ -418,6 +464,8 @@ export function App() {
           onSave={saveEntry}
           onDelete={draft.isNew ? undefined : () => deleteEntry(draft.entry)}
           onLogAgain={draft.isNew || draft.entry.forward ? undefined : () => logAgain(draft.entry)}
+          clockTime={draft.clockTime}
+          onStartClock={draft.isNew && draft.layout === 'flight' && clock === null ? () => setClock(startClock()) : undefined}
           onClose={closeDraft}
         />
       )}

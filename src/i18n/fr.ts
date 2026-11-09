@@ -341,6 +341,13 @@ const RAW: Record<string, string> = {
   '{n} months sooner than your pace.': '{n} mois plus tôt qu’à votre rythme actuel.',
   '{n} months later than your pace.': '{n} mois plus tard qu’à votre rythme actuel.',
 
+  // ---- The flight clock ----
+  'Flight clock: {elapsed}, since {time}': 'Chrono de vol : {elapsed}, depuis {time}',
+  'The flight clock has been running since {time}, over 12 hours. Forgot to stop it?': 'Le chrono de vol tourne depuis {time}, soit plus de 12 heures. Avez-vous oublié de l’arrêter?',
+  Landed: 'Atterri',
+  'Cancel the clock': 'Annuler le chrono',
+  'Flying now? Start the clock': 'Vous partez? Démarrez le chrono',
+
   // ---- Importing a spreadsheet ----
   'What this file would add': 'Ce que ce fichier ajouterait',
   '1 line': '1 ligne',
