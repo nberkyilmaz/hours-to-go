@@ -976,13 +976,10 @@ It measures what the pilot starts and stops. Whether that's air time or engine t
 lets them change it, so the app doesn't claim to know.
 
 ### D60. The route
-Under the ring, the goal drawn as a flight plan: a fix for each part of the standard, a line flown so far, and an
-aircraft on the leg in progress, with its name and the next one's. The legs come from the goal's own sections, so
-nothing is written for any one licence and every goal gets one. On a leg with hours, the aircraft moves by the hours;
-on the others, by what's been ticked.
-
-Only the current leg is named. Five labels wouldn't fit a phone, least of all in French, and the Progress screen was
-slimmed down on purpose (F5). A screen reader gets every leg and its count.
+One line under the next flight, with the aircraft at the ring's own figure, the flight test marked where its hours come,
+and what's next written under it. It began as one leg for each part of the standard, in the standard's order, but
+students fly and do ground school at the same time: at 60% of the hours the aircraft sat on "Knowledge", and an unticked
+box pinned it at the start, so it looked broken beside the ring.
 
 ### D61. Cards to share
 "Share my progress" on Progress makes a square picture: the ring, the goal, and the hours. A first solo, the halfway
@@ -1021,6 +1018,16 @@ live server.
   celebrate, and they sit under their own heading in the Logbook rather than in the month they're dated.
 - **Near the end, the price says what's left** rather than a month's flying that costs more than that.
 - **A spreadsheet's own Id column counts only if this app made it.** 1, 2, 3 in two files aren't the same flights.
+
+### D64. What the first screen is for
+A fresh audit, after the features went in, counted 15 figures before anything to do, with Your next flight off the first
+screen. From the top now: the goal as a title, the ring and hours, the price, the date, then the next flight with a real
+button, and the route. The what-if and the working-out are folds below it. The citation and Share go at the end of the
+card, and "5 of 13 requirements met" heads the list it counts. This reorders D47.
+
+The goal stays a native select, laid invisibly over its title, so a phone still opens its own picker. The school's rates
+have a sheet of their own with a Done button, because they're what makes the biggest number on the screen the pilot's own
+and they used to be 1,100 px down in a fold.
 
 ## Process
 

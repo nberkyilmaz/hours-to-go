@@ -1,4 +1,4 @@
-import { useState, type RefObject } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { SAMPLE_RATES, type Profile, type Rates } from '../model/profile';
 import { about, atLeast, money, priceOf, rateText, type Cost, type CostLine } from '../rules/cost';
 import type { GoalResult } from '../rules/evaluate';
@@ -51,11 +51,32 @@ export function CostStat({ result: r, cost, profile, onRates }: StatProps) {
   );
 }
 
-/** Opens the panel at the rates, with the aeroplane's box ready to type in. */
-export function openRates(panel: HTMLDetailsElement | null) {
-  if (!panel) return;
-  panel.open = true;
-  panel.querySelector<HTMLInputElement>('#rate-aircraft')?.focus();
+/** The school's rates, on their own: they're what makes the biggest figure on the screen the pilot's own. */
+export function RatesSheet({ profile, updateProfile, onClose }: { profile: Profile; updateProfile: UpdateProfile; onClose: () => void }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const d = dialog.current;
+    if (d && typeof d.showModal === 'function') d.showModal();
+    else d?.setAttribute('open', '');
+    d?.querySelector<HTMLInputElement>('#rate-aircraft')?.focus();
+  }, []);
+  return (
+    <dialog ref={dialog} className="sheet-backdrop" aria-labelledby="rates-title" onClose={onClose}>
+      <div className="sheet">
+        <div className="sheet-head">
+          <h2 id="rates-title">{t('Your school’s rates')}</h2>
+        </div>
+        <div className="sheet-body">
+          <RatesForm rates={profile.rates ?? SAMPLE_RATES} own={profile.rates !== null} updateProfile={updateProfile} />
+        </div>
+        <div className="sheet-foot">
+          <button type="button" className="btn primary" onClick={onClose}>
+            {t('Done')}
+          </button>
+        </div>
+      </div>
+    </dialog>
+  );
 }
 
 /** The price at the hours schools quote as the average (the PPL's 65 h), while the pilot is short of them. */
@@ -75,12 +96,11 @@ interface Props {
   result: GoalResult;
   cost: Cost;
   profile: Profile;
-  updateProfile: UpdateProfile;
-  panel: RefObject<HTMLDetailsElement>;
+  onRates: () => void;
 }
 
 /** How the price is worked out, and where the pilot puts their school's rates. */
-export function CostDetail({ result: r, cost, profile, updateProfile, panel }: Props) {
+export function CostDetail({ result: r, cost, profile, onRates }: Props) {
   const pricing = r.goal.cost;
   if (!('plan' in pricing)) return null;
   const rates = profile.rates ?? SAMPLE_RATES;
@@ -89,7 +109,7 @@ export function CostDetail({ result: r, cost, profile, updateProfile, panel }: P
   const typical = typicalOf(r, cost);
 
   return (
-    <details className="cost" ref={panel}>
+    <details className="cost">
       <summary>
         {t('How the cost is worked out')}{' '}
         <span className="muted">{own ? t('· your school’s rates') : t('· sample rates')}</span>
@@ -137,8 +157,9 @@ export function CostDetail({ result: r, cost, profile, updateProfile, panel }: P
         </p>
       )}
       <p className="note">{t('Not counted: ground school, briefings, exam and flight test fees, your medical and your licence.')}</p>
-
-      <RatesForm rates={rates} own={own} updateProfile={updateProfile} />
+      <button type="button" className="link" onClick={onRates}>
+        {t('Change the rates')}
+      </button>
     </details>
   );
 }
@@ -154,7 +175,7 @@ function RatesForm({ rates, own, updateProfile }: { rates: Rates; own: boolean; 
 
   return (
     <fieldset className="rates">
-      <legend>{t('Your school’s rates')}</legend>
+      <legend className="sr-only">{t('Your school’s rates')}</legend>
       {!own && (
         <p className="hint">
           {t('Until you change them, these are sample rates:')}{' '}{rateText(SAMPLE_RATES.aircraft)}{' '}{t('an hour for a Cessna 172 with fuel, as Ontario clubs charge,')}{' '}{rateText(SAMPLE_RATES.instructor)}{' '}{t('for the instructor and')}{' '}{SAMPLE_RATES.tax}{t('% tax.')}

@@ -320,16 +320,12 @@ const RAW: Record<string, string> = {
   // ---- Finish date ----
   'A finish date needs two flights logged in the last': 'Une date de fin prévue exige deux vols inscrits au cours des',
   'weeks.': 'dernières semaines.',
-  'At your pace,': 'À votre rythme,',
-  'h a week,': 'h par semaine,',
-  'you’ll reach the minimum around': 'vous atteindrez le minimum vers',
-  ', and the': ', et la moyenne de',
-  'h average around': 'h vers',
-  'the minimum is more than 5 years away.': 'le minimum est à plus de 5 ans.',
-  'That’s about {price} to finish.': 'C’est environ {price} pour terminer.',
+  'Minimum around {month}': 'Minimum vers {month}',
+  'at your pace, {n} h a week': 'à votre rythme, {n} h par semaine',
+  '{hours} h average: around {month}': 'moyenne de {hours} h : vers {month}',
+  '{done} of {total} requirements met': '{done} sur {total} exigences satisfaites',
+  'Change the rates': 'Modifier les tarifs',
   'about {price} to finish': 'environ {price} pour terminer',
-  'That’s about': 'C’est environ',
-  'a month at this pace.': 'par mois à ce rythme.',
   'From the flights and FTD sessions you logged': 'D’après les vols et les séances FTD inscrits',
   'in the last {weeks} weeks': 'au cours des {weeks} dernières semaines',
   'since {date}': 'depuis le {date}',
@@ -356,9 +352,9 @@ const RAW: Record<string, string> = {
   'Flying now? Start the clock': 'Vous partez? Démarrez le chrono',
 
   // ---- The route ----
-  'Your route to the {goal}. {legs}.': 'Votre route vers la {goal}. {legs}.',
-  'then {leg}': 'ensuite : {leg}',
-  'then your application': 'ensuite : votre demande',
+  'Your route to the {goal}: {percent} of the way.': 'Votre route vers la {goal} : {percent} du chemin.',
+  'Next:': 'Prochaine étape :',
+  'Flight test': 'Test en vol',
 
   // ---- Cards to share ----
   'Share my progress': 'Partager mes progrès',
@@ -522,7 +518,6 @@ const RAW: Record<string, string> = {
   'All hours flown': 'Toutes les heures sont faites',
   'No minimum hours': 'Aucun minimum d’heures',
   'at least {hours} h to go': 'au moins {hours} h à faire',
-  'requirements met': 'exigences satisfaites',
   Every: 'Toutes les exigences de la',
   'requirement is met.': 'sont satisfaites.',
   'Time to send in your application.': 'Il est temps d’envoyer votre demande.',

@@ -4,49 +4,45 @@ import { App } from '../../src/App';
 import { emptyLogbook, rememberWelcomed, saveGuestLogbook } from '../../src/model/store';
 import { evaluateGoal } from '../../src/rules/evaluate';
 import { GOALS, goalById } from '../../src/rules/goals';
+import { goalProgress } from '../../src/rules/progress';
 import { routeOf } from '../../src/rules/route';
 import { line, profile } from './fixtures';
 
 const TODAY = '2026-11-08';
 const ppl = goalById('ppl');
-const legs = (entries = [] as ReturnType<typeof line>[], p = profile()) => routeOf(evaluateGoal(ppl, entries, p, TODAY));
+const plan = (entries = [] as ReturnType<typeof line>[], p = profile(), goal = ppl) => routeOf(evaluateGoal(goal, entries, p, TODAY), goalProgress(goal, entries, p, TODAY));
 
 describe('the route', () => {
-  it('has a leg for each part of the standard', () => {
-    expect(legs()!.map((l) => l.title)).toEqual(['Prerequisites', 'Knowledge', 'Experience', 'Skill']);
+  it('sits at the ring’s own figure, whatever is ticked', () => {
+    const flown = [line('2026-10-01', { seDayDual: 9 })];
+    expect(plan(flown)!.percent).toBe(goalProgress(ppl, flown, profile(), TODAY).percent);
+    expect(plan(flown, profile({ medical: 'cat3' }))!.percent).toBe(plan(flown)!.percent);
   });
 
   it('can be drawn for every goal', () => {
-    for (const goal of GOALS) {
-      const route = routeOf(evaluateGoal(goal, [], profile(), TODAY));
-      expect(route, goal.id).not.toBeNull();
-      expect(route!.length, goal.id).toBeGreaterThan(0);
-    }
+    for (const goal of GOALS) expect(plan([], profile(), goal), goal.id).not.toBeNull();
   });
 
-  it('counts what’s been done on a leg', () => {
-    const [prerequisites] = legs([], profile({ medical: 'cat3' }))!;
-    expect(prerequisites).toMatchObject({ done: 1, total: 1, part: 1, complete: true });
+  it('marks the flight test where its hours come', () => {
+    expect(plan()!.fixes).toEqual([{ at: 35 / 45, passed: false }]);
   });
 
-  it('moves along an experience leg by the hours flown, not by what’s finished', () => {
-    const experience = legs([line('2026-10-01', { seDayDual: 9 })])!.find((l) => l.title === 'Experience')!;
-    expect(experience.done).toBe(0);
-    expect(experience.part).toBeGreaterThan(0);
-    expect(experience.part).toBeLessThan(1);
+  it('fills in the flight test once it’s ticked', () => {
+    expect(plan([], profile({ milestones: { 'test-ppl': { date: '2026-10-01' } } }))!.fixes[0]!.passed).toBe(true);
   });
 
-  it('goes by what’s ticked on a leg with no hours', () => {
-    const knowledge = legs([], profile({ milestones: { 'ground-ppl': { date: '2026-01-01' } } }))!.find((l) => l.title === 'Knowledge')!;
-    expect(knowledge.part).toBe(knowledge.done / knowledge.total);
+  it('goes on to the next step once the exam is passed', () => {
+    expect(plan()!.next!.gate.label).toBe('Write the PPAER');
+    const written = plan([], profile({ milestones: { 'exam-ppaer': { date: '2026-10-01', score: 84 } } }));
+    expect(written!.next!.gate.label).toBe('Take the flight test');
   });
 
-  it('never runs past the end of a leg', () => {
-    for (const leg of legs([line('2026-10-01', { seDayDual: 500 })])!) expect(leg.part).toBeLessThanOrEqual(1);
+  it('has no next step on a goal without any', () => {
+    expect(plan([], profile({ held: { ppl: { date: '2025-01-01' } } }), goalById('night'))!.next).toBeNull();
   });
 
   it('isn’t drawn for a goal already held', () => {
-    expect(legs([], profile({ held: { ppl: { date: '2026-01-01' } } }))).toBeNull();
+    expect(plan([], profile({ held: { ppl: { date: '2026-01-01' } } }))).toBeNull();
   });
 });
 
@@ -62,20 +58,19 @@ describe('on Progress', () => {
     vi.unstubAllGlobals();
   });
 
-  it('names the leg being flown and the one after it', async () => {
+  it('says what’s next', async () => {
     saveGuestLogbook({ ...emptyLogbook(), profile: profile({ medical: 'cat3' }), entries: [line('2026-10-01', { seDayDual: 9 })] });
     render(<App />);
-    const now = (await screen.findByRole('img', { name: /Your route to the PPL/ })).closest('.route')!;
-    expect(now.textContent).toContain('Knowledge');
-    expect(now.textContent).toContain('then Experience');
+    const route = (await screen.findByRole('img', { name: /Your route to the PPL/ })).closest('.route')!;
+    expect(route.textContent).toContain('Next: Write the PPAER');
+    expect(route.textContent).toContain('Flight test');
+    expect(route.textContent).toContain('45.0 h');
   });
 
-  it('reads out every leg for someone who can’t see it', async () => {
-    saveGuestLogbook({ ...emptyLogbook(), profile: profile({ medical: 'cat3' }) });
+  it('reads out how far along for someone who can’t see it', async () => {
+    saveGuestLogbook({ ...emptyLogbook(), profile: profile({ medical: 'cat3' }), entries: [line('2026-10-01', { seDayDual: 9 })] });
     render(<App />);
-    const route = await screen.findByRole('img', { name: /Your route to the PPL/ });
-    expect(route.getAttribute('aria-label')).toContain('Prerequisites: done');
-    expect(route.getAttribute('aria-label')).toMatch(/Knowledge: 0 of \d/);
+    expect((await screen.findByRole('img', { name: /Your route to the PPL/ })).getAttribute('aria-label')).toBe('Your route to the PPL: 20% of the way.');
   });
 
   it('is gone once the goal is held', async () => {

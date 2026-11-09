@@ -1025,6 +1025,14 @@ pilot's own pace until it's moved.
 
 **Checked.** A test for each. Every signed-in flow in Edge in both languages, against a throwaway server.
 
+## Phase 45: the first screen (2026-11-09)
+
+Progress now leads with what to do next (D64), and the route agrees with the ring (D60). Your next flight moved from
+894 px down the page to 543.
+
+**Checked.** Edge at phone width in both languages, at three stages of training, looked at; automated accessibility scans
+clean; every signed-in flow against a throwaway server.
+
 ## Where things stand
 
 - 454 tests pass (rules 38, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
