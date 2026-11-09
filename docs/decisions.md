@@ -712,6 +712,24 @@ welcomed: a welcome on every visit would be worse than none.
 Turned down: a dismissible banner over Progress (easy to miss on a phone, and the existing banner
 already does that once there is something to lose), and requiring a profile (guest mode stays, D16).
 
+### D45. Nothing typed is lost, and one notice at a time
+From the audit's first batch ([ux-audit.md](ux-audit.md)).
+- **The entry form is a native `<dialog>`**, opened with `showModal()`: focus stays inside and the page
+  behind is inert. Focus goes to the sheet rather than a box, so a phone doesn't raise its keyboard or
+  date wheel before anything is chosen, and it returns to the button that opened it.
+- **Leaving asks first** if anything was typed, from Cancel, Esc, a click outside or Back. Opening the
+  form adds a history entry, so Back closes the form; without it, Back left the app with the flight.
+  There is one Cancel now, at the top, away from Save.
+- **A failed save goes to the problem**: it scrolls to the first thing wrong and focuses the box, with
+  "1 thing to fix" by the Save button. The time's message moved from below Remarks to under its heading.
+- **Doubts aren't errors.** More than 8 h on one flight, or a date ahead of today, is asked about once,
+  and "Save anyway" keeps it. A long ferry flight is real; so is typing 13 for 1.3.
+- **One notice at a time**, most pressing first, and "Later" lasts two weeks.
+- **Round is worked out, square is yours to tick**, so the shape says which is which.
+
+Turned down: a draft kept in storage (the quick form in the next batch makes a typed flight short), and
+`window.confirm` for leaving (it can't say "Keep editing", and it sits badly with Back).
+
 ## Process
 
 ### D22. Check the UI in a real browser, at phone size, before calling it done

@@ -56,6 +56,29 @@ export function clearGuestLogbook(): void {
   }
 }
 
+const SNOOZE_KEY = 'hours-to-go/snoozed';
+const SNOOZE_MS = 14 * 86_400_000;
+
+function snoozes(): Record<string, number> {
+  try {
+    const x: unknown = JSON.parse(localStorage.getItem(SNOOZE_KEY) ?? '{}');
+    return typeof x === 'object' && x !== null ? (x as Record<string, number>) : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Whether "Later" was chosen for this notice in the last two weeks. */
+export const isSnoozed = (notice: string, now: number = Date.now()) => (snoozes()[notice] ?? 0) > now;
+
+export function snooze(notice: string, now: number = Date.now()): void {
+  try {
+    localStorage.setItem(SNOOZE_KEY, JSON.stringify({ ...snoozes(), [notice]: now + SNOOZE_MS }));
+  } catch {
+    // Storage is blocked; "Later" then lasts until the app is closed.
+  }
+}
+
 const SIGNED_IN_KEY = 'hours-to-go/signed-in';
 
 /**

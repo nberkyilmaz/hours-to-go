@@ -180,7 +180,7 @@ function GoalDetail({ result: r, profile, updateProfile, pace, entries }: Detail
 
       {r.sections.map((s) => (
         <div key={s.section.title} className="req-section">
-          <h3>{s.section.title}</h3>
+          <h2>{s.section.title}</h2>
           <ul className="reqs">
             {s.results.map((x) => (
               <ReqRow key={x.req.id} r={x} goalId={goal.id} profile={profile} updateProfile={updateProfile} />
@@ -444,7 +444,7 @@ function MilestoneControls({ r, updateProfile }: { r: ReqResult; updateProfile: 
             onChange={(e) => {
               const { score: _old, ...rest } = rec;
               const n = e.target.value === '' ? null : Number(e.target.value);
-              set(n === null || Number.isNaN(n) ? rest : { ...rest, score: n });
+              set(n === null || Number.isNaN(n) ? rest : { ...rest, score: Math.min(100, Math.max(0, n)) });
             }}
           />
         </label>

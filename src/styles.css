@@ -30,6 +30,9 @@
   --warn-soft: #fcf1de;
   --danger: #b91c1c;
   --danger-soft: #fcebeb;
+  --danger-ink: #ffffff;
+  /* An open requirement's ring: 3:1 against the card, as a control needs. */
+  --ring: #858d9b;
   --radius: 10px;
   --radius-input: 8px;
   --shadow: 0 1px 2px rgb(15 20 27 / 6%), 0 4px 14px rgb(15 20 27 / 5%);
@@ -60,6 +63,8 @@
     --warn-soft: #33270d;
     --danger: #f87171;
     --danger-soft: #3a1820;
+    --danger-ink: #1f0a0a;
+    --ring: #748091;
     --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 4px 14px rgb(0 0 0 / 22%);
     --shadow-lift: 0 2px 4px rgb(0 0 0 / 35%), 0 16px 36px rgb(0 0 0 / 40%);
   }
@@ -286,6 +291,10 @@ button:focus-visible {
   padding: 24px 16px 56px;
 }
 
+.main-wide {
+  max-width: 1120px;
+}
+
 .stack {
   display: flex;
   flex-direction: column;
@@ -378,10 +387,6 @@ button:focus-visible {
   .topbar > .save-state {
     margin-left: auto;
   }
-  .save-state.is-local,
-  .save-more {
-    display: none;
-  }
   /* The name stays on one line beside "Saved"; on the narrowest phones it gives way rather than wrap. */
   .brand {
     min-width: 0;
@@ -463,7 +468,7 @@ button:focus-visible {
 .btn.danger {
   background: var(--danger);
   border-color: var(--danger);
-  color: #fff;
+  color: var(--danger-ink);
 }
 
 .btn.small {
@@ -497,9 +502,10 @@ button:focus-visible {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 8px 16px;
-  margin: 0 0 16px;
-  padding: 12px 16px;
+  gap: 4px 16px;
+  margin: 0 0 12px;
+  padding: 8px 14px;
+  font-size: 15px;
   border: 1px solid var(--border);
   border-left: 3px solid var(--accent);
   border-radius: var(--radius);
@@ -984,7 +990,7 @@ button:focus-visible {
   font-size: 15px;
 }
 
-.next h3 {
+.next h2 {
   font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -1120,7 +1126,7 @@ button:focus-visible {
   margin-top: 22px;
 }
 
-.req-section h3 {
+.req-section h2 {
   font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -1163,7 +1169,7 @@ button:focus-visible {
   width: 26px;
   height: 26px;
   margin-top: 1px;
-  border: 2px solid var(--border);
+  border: 2px solid var(--ring);
   border-radius: 50%;
   color: #fff;
 }
@@ -1174,9 +1180,11 @@ button:focus-visible {
   color: var(--surface);
 }
 
+/* Round is worked out from the log; square is a box for the pilot to tick. */
 .check-dot {
   cursor: pointer;
   border-color: var(--muted);
+  border-radius: 7px;
 }
 
 .check-dot input {
@@ -1678,6 +1686,10 @@ button:focus-visible {
   .empty-actions {
     flex-direction: column;
   }
+}
+
+/* The logbook's table needs more room than a tablet or a phone on its side has. */
+@media (max-width: 1100px) {
   .log-head {
     display: none;
   }
@@ -1731,9 +1743,26 @@ button:focus-visible {
     grid-area: actions;
     justify-content: flex-start;
   }
-  .c-actions .link {
-    min-height: 36px;
+  .c-actions {
+    gap: 4px;
   }
+  .c-actions .link {
+    min-height: 44px;
+    padding: 4px 14px 4px 0;
+  }
+}
+
+/* Not enough room beside the tabs: the name stays on one line and the extra words go. */
+@media (max-width: 1000px) {
+  .save-state.is-local,
+  .save-more {
+    display: none;
+  }
+}
+
+.brand,
+.topbar .btn {
+  white-space: nowrap;
 }
 
 /* ---- Entry form ------------------------------------------------------ */
@@ -1744,8 +1773,33 @@ button:focus-visible {
   z-index: 50;
   display: grid;
   place-items: center;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
   padding: 16px;
+  border: 0;
   background: rgba(8, 12, 24, 0.5);
+  color: inherit;
+}
+
+.sheet-backdrop::backdrop {
+  background: transparent;
+}
+
+.sheet:focus {
+  outline: none;
+}
+
+.form-message {
+  flex: 1 1 100%;
+  margin: 0;
+  font-weight: 600;
+}
+
+.form-message.is-problem {
+  color: var(--danger);
 }
 
 .sheet {
@@ -2156,4 +2210,21 @@ input.narrow {
 .doc-back {
   margin-top: 40px;
   font-weight: 600;
+}
+
+/* Last, so it outranks each control's own size: a thumb needs 44 px, on the apron more than anywhere. */
+@media (max-width: 720px) {
+  .link,
+  .btn.small,
+  .toggle,
+  .choice,
+  .segmented button,
+  .inline-field input,
+  .inline-field select {
+    min-height: 44px;
+  }
+  .link {
+    display: inline-flex;
+    align-items: center;
+  }
 }

@@ -85,8 +85,7 @@ The owner wants every one of these. Roughly in order of value:
     standard says so, the medical to its valid-to date, and the flight test needs its 30-day letter
     (D44).
 14. **Cost per month at your pace.** The pace and the price both exist: "about $790 a month".
-15. **Small fixes.** "45 h" splitting across lines, wherever a number and its unit can part, and the
-    app's name wrapping on tablets between 721 and 790 px wide.
+15. **Small fixes.** "45 h" splitting across lines, wherever a number and its unit can part.
 
 **The order from here** (agreed with the owner on 2026-11-08, who wants all of it): email reminders
 (3), "log again" (6), search and filter (7), cost per month (14), currency and recency (4), CSV (8),
@@ -104,10 +103,10 @@ public. [ux-audit.md](ux-audit.md) is a full audit by a reviewer who didn't buil
 real browser on a phone. Its verdict: correct and trustworthy, but it feels like filling in a
 government form. The batches, with its finding numbers:
 
-- **A. Stop the bleeding** (3 to 4 days): errors the pilot can see (F4), a typed flight can't be lost
-  (F6), impossible numbers questioned (F7), the logbook at tablet widths (F9), one slim banner at a
-  time (F13), the dialog's keyboard behaviour (F19), contrast (F20), tap targets (F21), small
-  things (F25).
+- ~~**A. Stop the bleeding.**~~ Done (D45): errors the pilot can see (F4), a typed flight can't be
+  lost (F6), impossible numbers questioned (F7), the logbook at tablet widths (F9), one slim banner at
+  a time (F13), the dialog's keyboard behaviour (F19), contrast (F20), tap targets (F21), and the small
+  things that were quick (F25).
 - **B. The flight** (about a week): a quick form on top of the paper columns (F1), a + on every tab
   (F2), a "logged" moment with Undo (F3), the keyboard not covering Save, on real phones (F8).
 - **C. Progress at a glance** (about a week): a hero with a ring, and a short "what's left" list (F5),

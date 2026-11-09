@@ -411,5 +411,16 @@ function validateBreakdown(e: Entry, b: Breakdown, d: Derived): EntryErrors {
   return err;
 }
 
+const LONG_FLIGHT = 8 * 60;
+
+/** Allowed, but worth asking about once: one mistyped key changes every figure in the app. */
+export function doubtsAbout(e: Entry, today: string): string[] {
+  const doubts: string[] = [];
+  if (e.date > today) doubts.push('That date is in the future.');
+  const total = derive(e).total;
+  if (!e.forward && total > LONG_FLIGHT) doubts.push(`${formatHours(total)} h on one flight? Did you mean ${formatHours(Math.round(total / 10))}?`);
+  return doubts;
+}
+
 /** A line with FTD time and no flight time: a simulator session. */
 export const isFtdOnly = (e: Entry) => derive(e).total === 0 && e.ftd > 0;

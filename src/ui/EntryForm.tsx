@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import {
   AFTER_PPL_FIELDS,
   AFTER_PPL_LABEL,
@@ -10,9 +10,11 @@ import {
   asksSoloNightLandings,
   blankBreakdown,
   derive,
+  doubtsAbout,
   formatHours,
   isTimeColumn,
   parseDuration,
+  today,
   validateEntry,
   type AfterPplField,
   type Answer,
@@ -71,10 +73,10 @@ const INSTRUMENT = group('Instrument');
 const LANDINGS = group('Takeoffs & landings');
 const FTD_ONLY: ColumnGroup = { title: 'FTD session', columns: ['ftd', 'approaches'] };
 
-const TITLE: Record<FormLayout, string> = {
-  flight: 'Flight',
-  ftd: 'FTD session',
-  forward: 'Totals from your paper logbook',
+const TITLE: Record<FormLayout, { add: string; edit: string; thing: string }> = {
+  flight: { add: 'Log a flight', edit: 'Edit flight', thing: 'flight' },
+  ftd: { add: 'Log an FTD session', edit: 'Edit FTD session', thing: 'session' },
+  forward: { add: 'Totals from your paper logbook', edit: 'Totals from your paper logbook', thing: 'entry' },
 };
 
 /** Reads a box; null when it isn't a number of the right kind. */
@@ -101,14 +103,83 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
   const [errors, setErrors] = useState<EntryErrors>({});
   const [saving, setSaving] = useState(false);
   const [showMulti, setShowMulti] = useState(() => MULTI.some((g) => g.columns.some((c) => initial[c] > 0)));
-  const first = useRef<HTMLInputElement>(null);
+  // What the last Save asked about, so that saving again means "yes, keep it".
+  const [doubts, setDoubts] = useState<string[]>([]);
+  const [asking, setAsking] = useState(false);
+  // Counts the failed saves, so each one takes the pilot to what's wrong.
+  const [tried, setTried] = useState(0);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const sheet = useRef<HTMLFormElement>(null);
+  const body = useRef<HTMLDivElement>(null);
+  const inHistory = useRef(false);
+  const opener = useRef<HTMLElement | null>(null);
 
+  const typed = JSON.stringify({ entry, text, soloAnswer, soloText, soloLandings, afterAnswer, afterText });
+  const [opened] = useState(typed);
+  const changed = useRef(false);
+  changed.current = typed !== opened;
+
+  /** Leaves the form, and takes the history entry that lets Back close it with it. */
+  const leave = () => {
+    if (inHistory.current) {
+      inHistory.current = false;
+      window.history.back();
+    }
+    onClose();
+  };
+  /** Cancel, Esc, the backdrop or Back: nothing typed goes without asking. */
+  const tryClose = () => {
+    if (changed.current) setAsking(true);
+    else leave();
+  };
+
+  // A native modal: focus stays in it and the page behind is inert. Focus goes to the sheet, not a
+  // box, because a box would raise a phone's keyboard or date wheel before anything is chosen.
+  useLayoutEffect(() => {
+    const d = dialog.current;
+    if (!d) return;
+    if (!d.open) {
+      opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      if (typeof d.showModal === 'function') d.showModal();
+      else d.setAttribute('open', '');
+    }
+    sheet.current?.focus();
+  }, []);
+
+  // After the modal has gone: until then the page behind it can't take focus.
+  useEffect(() => () => opener.current?.focus(), []);
+
+  // On a phone Back is the natural way out, and without this it would leave the app with the flight.
   useEffect(() => {
-    first.current?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    if (!inHistory.current) {
+      window.history.pushState({ sheet: true }, '');
+      inHistory.current = true;
+    }
+    const onBack = () => {
+      if (!inHistory.current) return;
+      inHistory.current = false;
+      if (changed.current) {
+        window.history.pushState({ sheet: true }, '');
+        inHistory.current = true;
+        setAsking(true);
+      } else {
+        onClose();
+      }
+    };
+    window.addEventListener('popstate', onBack);
+    return () => window.removeEventListener('popstate', onBack);
   }, [onClose]);
+
+  // A failed save goes to the first thing wrong; the message can be well below the fold.
+  useEffect(() => {
+    if (tried === 0) return;
+    const wrong = body.current?.querySelector<HTMLElement>('.field-error, .has-error');
+    if (!wrong) return;
+    wrong.scrollIntoView?.({ block: 'center' });
+    const scope = wrong.closest('fieldset, .field, .form-section');
+    const box = scope?.querySelector<HTMLElement>('[aria-invalid="true"]') ?? scope?.querySelector<HTMLElement>('input, select, textarea');
+    box?.focus({ preventScroll: true });
+  }, [tried]);
 
   const set = <K extends keyof Entry>(k: K, v: Entry[K]) => setEntry((e) => ({ ...e, [k]: v }));
   const setColumn = (c: Column, v: string) => setText((t) => ({ ...t, [c]: v }));
@@ -181,12 +252,18 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
     setErrors(all);
     if (Object.keys(all).length > 0) {
       if (MULTI.some((g) => g.columns.some((c) => all[c]))) setShowMulti(true);
+      setTried((n) => n + 1);
       return;
+    }
+    const found = doubtsAbout(line, today());
+    if (found.join() !== doubts.join()) {
+      setDoubts(found);
+      if (found.length > 0) return;
     }
     setSaving(true);
     const ok = await onSave(line);
     setSaving(false);
-    if (ok) onClose();
+    if (ok) leave();
   };
 
   const groupInputs = (g: ColumnGroup) => <ColumnInputs key={g.title} group={g} text={text} errors={errors} onChange={setColumn} />;
@@ -202,24 +279,43 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
         value={soloLandings}
         onChange={(e) => setSoloLandings(e.target.value)}
         aria-invalid={errors.soloNightLandings ? true : undefined}
+        aria-describedby={errors.soloNightLandings ? 'f-solo-ldg-err' : undefined}
       />
       <p className="hint">The paper log doesn’t say which were yours alone. The night rating and the CPL each need 10 solo.</p>
     </Field>
   );
 
+  const problems = Object.keys(errors).length;
+  const stillDoubtful = doubts.length > 0 && doubts.join() === doubtsAbout(preview, today()).join();
+  const timeError = errors.time && <p className="field-error">{errors.time}</p>;
+
   return (
-    <div className="sheet-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <form className="sheet" role="dialog" aria-modal="true" aria-labelledby="entry-title" onSubmit={submit} noValidate>
-        <header className="sheet-head">
-          <h2 id="entry-title">
-            {isNew ? 'New' : 'Edit'}: {TITLE[layout]}
-          </h2>
-          <button type="button" className="link" onClick={onClose}>
+    <dialog
+      ref={dialog}
+      className="sheet-backdrop"
+      aria-labelledby="entry-title"
+      onClick={(e) => e.target === e.currentTarget && tryClose()}
+      onCancel={(e) => {
+        // Esc: the same as Cancel, and a second Esc while asking keeps typing.
+        e.preventDefault();
+        if (asking) setAsking(false);
+        else tryClose();
+      }}
+      onClose={() => {
+        // Only the browser closes it, on a repeated Esc. It stays open until the pilot has answered.
+        dialog.current?.showModal?.();
+        tryClose();
+      }}
+    >
+      <form ref={sheet} className="sheet" tabIndex={-1} onSubmit={submit} noValidate>
+        <div className="sheet-head">
+          <h2 id="entry-title">{isNew ? TITLE[layout].add : TITLE[layout].edit}</h2>
+          <button type="button" className="link" onClick={tryClose}>
             Cancel
           </button>
-        </header>
+        </div>
 
-        <div className="sheet-body">
+        <div className="sheet-body" ref={body}>
           {forward && (
             <p className="hint-box">
               Copy the “total to date” line from the last page of your paper logbook, box for box. A few questions underneath cover what the
@@ -230,7 +326,15 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
 
           <div className="grid-2">
             <Field id="f-date" label={forward ? 'Up to (date)' : 'Date'} error={errors.date}>
-              <input id="f-date" ref={first} type="date" value={entry.date} onChange={(e) => set('date', e.target.value)} required />
+              <input
+                id="f-date"
+                type="date"
+                value={entry.date}
+                onChange={(e) => set('date', e.target.value)}
+                required
+                aria-invalid={errors.date ? true : undefined}
+                aria-describedby={errors.date ? 'f-date-err' : undefined}
+              />
             </Field>
             <Field id="f-aircraft" label={ftd ? 'Device' : forward ? 'Aircraft type (blank for all types)' : 'Aircraft type'}>
               <input
@@ -249,7 +353,6 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
                 <input
                   id="f-reg"
                   list="dl-reg"
-                  placeholder="C-GABC"
                   autoComplete="off"
                   autoCapitalize="characters"
                   value={entry.registration}
@@ -257,20 +360,24 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
                 />
               </Field>
               <Field id="f-from" label="From">
-                <input id="f-from" list="dl-place" placeholder="CYSN" autoComplete="off" autoCapitalize="characters" value={entry.from} onChange={(e) => set('from', e.target.value.toUpperCase())} />
+                <input id="f-from" list="dl-place" autoComplete="off" autoCapitalize="characters" value={entry.from} onChange={(e) => set('from', e.target.value.toUpperCase())} />
               </Field>
               <Field id="f-to" label="To">
-                <input id="f-to" list="dl-place" placeholder="CYSN" autoComplete="off" autoCapitalize="characters" value={entry.to} onChange={(e) => set('to', e.target.value.toUpperCase())} />
+                <input id="f-to" list="dl-place" autoComplete="off" autoCapitalize="characters" value={entry.to} onChange={(e) => set('to', e.target.value.toUpperCase())} />
               </Field>
             </div>
           )}
 
           {ftd ? (
-            <div className="col-groups">{groupInputs(FTD_ONLY)}</div>
+            <section className="form-section">
+              <div className="col-groups">{groupInputs(FTD_ONLY)}</div>
+              {timeError}
+            </section>
           ) : (
             <>
               <section className="form-section" aria-labelledby="sec-time">
                 <h3 id="sec-time">Flight time</h3>
+                {timeError}
                 <div className="col-groups">{SINGLE.map(groupInputs)}</div>
                 {showMulti ? (
                   <div className="col-groups">{MULTI.map(groupInputs)}</div>
@@ -382,27 +489,44 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
           <Field id="f-remarks" label="Remarks">
             <textarea id="f-remarks" rows={2} value={entry.remarks} onChange={(e) => set('remarks', e.target.value)} />
           </Field>
-
-          {errors.time && (
-            <p className="field-error" role="alert">
-              {errors.time}
-            </p>
-          )}
         </div>
 
-        <footer className="sheet-foot">
-          {!ftd && (
-            <span className="line-total">
-              Flight time on this line: <strong>{formatHours(FLIGHT_COLUMNS.reduce((t, c) => t + preview[c], 0))} h</strong>
-            </span>
+        <div className="sheet-foot">
+          {asking ? (
+            <>
+              <p className="form-message" role="alert">
+                {isNew ? `Discard this ${TITLE[layout].thing}?` : 'Discard your changes?'}
+              </p>
+              <button type="button" className="btn" onClick={() => setAsking(false)}>
+                Keep editing
+              </button>
+              <button type="button" className="btn danger" onClick={leave}>
+                Discard
+              </button>
+            </>
+          ) : (
+            <>
+              {problems > 0 && (
+                <p className="form-message is-problem" role="alert">
+                  {problems === 1 ? '1 thing to fix' : `${problems} things to fix`}
+                </p>
+              )}
+              {problems === 0 && stillDoubtful && (
+                <p className="form-message" role="alert">
+                  {doubts.join(' ')}
+                </p>
+              )}
+              {!ftd && (
+                <span className="line-total">
+                  Flight time on this line: <strong>{formatHours(FLIGHT_COLUMNS.reduce((t, c) => t + preview[c], 0))} h</strong>
+                </span>
+              )}
+              <button type="submit" className="btn primary" disabled={saving}>
+                {saving ? 'Saving…' : stillDoubtful ? 'Save anyway' : 'Save'}
+              </button>
+            </>
           )}
-          <button type="button" className="btn" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="submit" className="btn primary" disabled={saving}>
-            {saving ? 'Saving…' : 'Save'}
-          </button>
-        </footer>
+        </div>
 
         <datalist id="dl-aircraft">
           {suggestions.aircraft.map((v) => (
@@ -420,7 +544,7 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
           ))}
         </datalist>
       </form>
-    </div>
+    </dialog>
   );
 }
 
@@ -494,8 +618,13 @@ function SmallInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${id}-err` : undefined}
       />
-      {error && <p className="field-error">{error}</p>}
+      {error && (
+        <p className="field-error" id={`${id}-err`}>
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -529,11 +658,19 @@ function ColumnInputs({
               value={text[c]}
               onChange={(e) => onChange(c, e.target.value)}
               aria-invalid={errors[c] ? true : undefined}
+              aria-describedby={errors[c] ? `f-${c}-err` : undefined}
             />
           </div>
         ))}
       </div>
-      {group.columns.map((c) => errors[c] && <p key={c} className="field-error">{errors[c]}</p>)}
+      {group.columns.map(
+        (c) =>
+          errors[c] && (
+            <p key={c} className="field-error" id={`f-${c}-err`}>
+              {errors[c]}
+            </p>
+          ),
+      )}
     </fieldset>
   );
 }
@@ -543,7 +680,11 @@ function Field({ id, label, error, children }: { id: string; label: string; erro
     <div className={`field${error ? ' has-error' : ''}`}>
       <label htmlFor={id}>{label}</label>
       {children}
-      {error && <p className="field-error">{error}</p>}
+      {error && (
+        <p className="field-error" id={`${id}-err`}>
+          {error}
+        </p>
+      )}
     </div>
   );
 }
