@@ -1,12 +1,13 @@
 import { useMemo, useRef } from 'react';
-import { formatHours, formatHoursUp, today, type Entry } from '../model/entry';
-import { MEDICAL_LABEL, type GoalId, type Medical, type MilestoneRecord, type Profile } from '../model/profile';
+import { dateText, formatHours, formatHoursUp, today, type Entry } from '../model/entry';
+import type { GoalId, MilestoneRecord, Profile } from '../model/profile';
 import type { Logbook } from '../model/store';
 import { evaluateGoal, type ExamResult, type GateResult, type GoalResult, type ReqResult } from '../rules/evaluate';
 import { GOALS, STANDARD_421_URL, goalById } from '../rules/goals';
 import { paceOf, type Pace } from '../rules/pace';
 import { CostDetail, CostStat, costOf, openRates } from './Cost';
 import { Finish } from './Finish';
+import { MedicalFields } from './Medical';
 import { NextFlightCard } from './NextFlight';
 import { CheckIcon, LockIcon, PlusIcon } from './icons';
 
@@ -280,11 +281,7 @@ function ReqRow({ r, goalId, profile, updateProfile }: RowProps) {
           </div>
           {(req.kind === 'time' || req.kind === 'count') && <Meter r={r} />}
           {req.kind === 'milestone' && <MilestoneControls r={r} updateProfile={updateProfile} />}
-          {req.kind === 'milestone' && r.stale && !r.credited && (
-            <p className="hint-text">
-              Dated {r.record?.date}, more than {req.maxAgeDays} days ago, so it can’t be used any more. Ask for a new one.
-            </p>
-          )}
+          <Validity r={r} />
           {r.exam && !r.exam.passed && <ExamPanel exam={r.exam} />}
           {req.kind === 'held' && r.met && <p className="credit">{r.value}</p>}
           {req.kind === 'held' && !r.met && (
@@ -296,18 +293,7 @@ function ReqRow({ r, goalId, profile, updateProfile }: RowProps) {
               Mark {goalById(req.anyOf[0]!).short} as held
             </button>
           )}
-          {req.kind === 'medical' && (
-            <label className="inline-field">
-              <span>Your medical</span>
-              <select value={profile.medical} onChange={(e) => updateProfile((p) => ({ ...p, medical: e.target.value as Medical }))}>
-                {Object.entries(MEDICAL_LABEL).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
+          {req.kind === 'medical' && <MedicalFields label="Your medical" profile={profile} updateProfile={updateProfile} />}
           {req.kind === 'info' && <p className="info-value">{r.value}</p>}
           {r.credited && <p className="credit">{r.credited}</p>}
           {r.hint && <p className="hint-text">{r.hint}</p>}
@@ -352,15 +338,35 @@ function ExamPanel({ exam }: { exam: ExamResult }) {
   );
 }
 
+const SOON_DAYS = 60;
+
+/** How long a dated item still counts, or that it has run out (D44). */
+function Validity({ r }: { r: ReqResult }) {
+  if (r.until === null || r.credited !== null) return null;
+  const until = dateText(r.until);
+  const dated = r.record?.date ? dateText(r.record.date) : '';
+  if (r.stale) {
+    if (r.req.kind === 'medical') return <p className="hint-text">Your medical ran out on {until}. Renew it for this to count.</p>;
+    if (r.req.kind === 'milestone' && r.req.validMonths !== undefined) {
+      return <p className="hint-text">Dated {dated}, more than {r.req.validMonths} months ago, so it doesn’t count any more. It has to be done again.</p>;
+    }
+    return <p className="hint-text">Dated {dated}, more than {r.req.kind === 'milestone' ? r.req.maxAgeDays : 0} days ago, so it can’t be used any more. Ask for a new one.</p>;
+  }
+  const days = (Date.parse(r.until) - Date.parse(today())) / 86_400_000;
+  if (days <= SOON_DAYS) return <p className="note"><span className="warn-text">Runs out on {until}.</span></p>;
+  return <p className="note muted">Counts until {until}.</p>;
+}
+
 function checkDetail(c: ReqResult): string {
   switch (c.req.kind) {
     case 'time':
       return c.met ? `${formatHours(c.have)} h` : `${formatHours(c.have)} of ${formatHours(c.need)} h, ${formatHoursUp(c.need - c.have)} h to go`;
     case 'medical':
+      if (c.stale && c.until) return `ran out on ${dateText(c.until)}`;
       return c.met ? '' : 'set your medical in Profile';
     case 'milestone':
       if (c.credited) return c.credited;
-      if (c.stale) return 'more than 60 days old';
+      if (c.stale && c.until) return `ran out on ${dateText(c.until)}`;
       if (c.met) return c.record?.date ? `ticked ${c.record.date}` : 'ticked';
       return 'tick it above when you have it';
     default:

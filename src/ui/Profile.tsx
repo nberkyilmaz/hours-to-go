@@ -1,12 +1,12 @@
 import { useRef, useState, type FormEvent } from 'react';
 import { ApiError, api } from '../api';
 import { today } from '../model/entry';
-import { MEDICAL_LABEL, type Medical, type Profile } from '../model/profile';
 import { hasContent, parseLogbook, type Logbook } from '../model/store';
 import { GOALS, STANDARD_421_URL } from '../rules/goals';
 import type { LogbookState } from '../useLogbook';
 import { SignedIn } from './Account';
 import { Feedback } from './Feedback';
+import { MedicalFields } from './Medical';
 import { PRIVACY_URL } from './links';
 import { useSlow, useWake } from './useSlow';
 
@@ -66,16 +66,8 @@ export function ProfileView({ lb }: { lb: LogbookState }) {
             );
           })}
         </ul>
-        <label className="inline-field">
-          <span>Medical certificate</span>
-          <select value={book.profile.medical} onChange={(e) => lb.updateProfile((p: Profile) => ({ ...p, medical: e.target.value as Medical }))}>
-            {Object.entries(MEDICAL_LABEL).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v}
-              </option>
-            ))}
-          </select>
-        </label>
+        <MedicalFields label="Medical certificate" profile={book.profile} updateProfile={lb.updateProfile} />
+        {book.profile.medical !== 'none' && <p className="hint">“Valid to” is on your medical certificate. A Category 1 can last longer for private flying, so use the date for the flying you do.</p>}
       </section>
 
       <DataSection lb={lb} />

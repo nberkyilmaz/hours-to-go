@@ -71,6 +71,8 @@ Each of these choices is also shown as a note next to the requirement in the app
   20 h dual instrument and the whole VFR OTT, and INRAT passed once counts for Group 3, Group 1 and the ATPL.
 - **ATPL (c)**: 100 h of PIC cross-country beyond the first 100 h. The standard also accepts co-pilot
   cross-country, but the personal log has no column for it, so it isn't counted.
+- **What runs out**: a written exam after 24 months, a flight test after 12 where the standard says so, the
+  medical at the valid-to date you enter. A dated item stops counting the day after (D44).
 - Lines saved by the first version of the app (one role per line) are moved into these columns when read.
 - Not modelled yet: PIC under supervision (ATPL), helicopters and other categories, Group 2,
   foreign and military credits, recency.

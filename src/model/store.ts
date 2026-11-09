@@ -122,6 +122,7 @@ export function mergeLogbooks(base: Logbook, incoming: Logbook): Logbook {
   const i = incoming.profile;
   const profile: Profile = {
     medical: b.medical !== 'none' ? b.medical : i.medical,
+    medicalUntil: b.medical !== 'none' ? b.medicalUntil : i.medicalUntil,
     held: { ...i.held, ...b.held },
     milestones: { ...i.milestones, ...b.milestones },
     trainingStart: { ...i.trainingStart, ...b.trainingStart },
@@ -239,6 +240,7 @@ export function parseProfile(x: unknown): Profile {
   const p = blankProfile();
   if (!isObject(x)) return p;
   p.medical = MEDICALS.find((m) => m === x.medical) ?? 'none';
+  if (p.medical !== 'none' && DATE.test(str(x.medicalUntil))) p.medicalUntil = str(x.medicalUntil);
   if (typeof x.focus === 'string' && isGoal(x.focus)) p.focus = x.focus;
   if (isObject(x.held)) {
     for (const [k, v] of Object.entries(x.held)) {

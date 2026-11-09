@@ -10,7 +10,7 @@
  * written in the requirement's note so it is visible in the app rather than
  * buried in code.
  */
-import { derive, type Derived, type Entry } from '../model/entry';
+import { addMonths, derive, type Derived, type Entry } from '../model/entry';
 import type { GoalId, Medical, Profile } from '../model/profile';
 
 export const STANDARD_421_URL =
@@ -61,6 +61,10 @@ export interface MilestoneReq extends Base {
   minScore?: number;
   /** Stops counting this many days after its date (a recommendation letter). */
   maxAgeDays?: number;
+  /** Stops counting this many months after its date (a written exam, a flight test). */
+  validMonths?: number;
+  /** But not once one of these is held: it has done what it was for. */
+  validUnless?: GoalId[];
 }
 
 export interface HeldReq extends Base {
@@ -190,7 +194,7 @@ const count = (id: string, label: string, need: number, have: (c: Ctx) => number
   kind: 'count', id, label, need, have, cite, ...extra,
 });
 
-const milestone = (key: string, label: string, cite: string, extra: Extra & { minScore?: number; maxAgeDays?: number } = {}): MilestoneReq => ({
+const milestone = (key: string, label: string, cite: string, extra: Extra & { minScore?: number; maxAgeDays?: number; validMonths?: number; validUnless?: GoalId[] } = {}): MilestoneReq => ({
   kind: 'milestone', id: key, key, label, cite, ...extra,
 });
 
@@ -219,11 +223,39 @@ export interface ExamCheck {
   needs: Req[];
 }
 
-/** An exam ticked off with a passing mark (or no mark entered). */
-export function passed(c: Pick<Ctx, 'profile'>, key: string, minScore: number): boolean {
+// Transport Canada: "Examinations must be written within 24 months of applying for the permit or
+// licence" (D44). An exam has done its job once what it was for is held.
+const WRITTEN_MONTHS = 24;
+const EXAM_FOR: Record<string, GoalId[]> = {
+  'exam-ppaer': ['ppl'],
+  'exam-cpaer': ['cpl'],
+  'exam-inrat': ['ifr3', 'ifr1'],
+  'exam-samra': ['atpl'],
+  'exam-saron': ['atpl'],
+  'exam-airaf': ['inst4'],
+};
+
+const writtenExam = (key: string, label: string, cite: string, minScore: number) =>
+  milestone(key, label, cite, { minScore, validMonths: WRITTEN_MONTHS, validUnless: EXAM_FOR[key] ?? [] });
+
+/** An exam ticked off with a passing mark (or no mark entered), and not yet run out. */
+export function passed(c: Pick<Ctx, 'profile' | 'today'>, key: string, minScore: number): boolean {
   const rec = c.profile.milestones[key];
-  return rec !== undefined && (rec.score === undefined || rec.score >= minScore);
+  if (rec === undefined || (rec.score !== undefined && rec.score < minScore)) return false;
+  if (rec.date === '' || (EXAM_FOR[key] ?? []).some((id) => c.profile.held[id] !== undefined)) return true;
+  return c.today <= addMonths(rec.date, WRITTEN_MONTHS);
 }
+
+/** The standard's "within the 12 months preceding the date of application". */
+const withinAYear = (...held: GoalId[]) => ({ validMonths: 12, validUnless: held });
+
+/** 421.14(3): a recommendation for the flight test, dated within the 30 days before it. */
+const testLetter = (key: string, testKey: string, cite: string) =>
+  milestone(key, 'Letter of recommendation from a flight instructor, for the flight test', cite, {
+    maxAgeDays: 30,
+    note: 'It must be dated within the 30 days before the flight test and can only be used once.',
+    credit: (c) => (c.profile.milestones[testKey] ? 'Used for the flight test you’ve passed.' : null),
+  });
 
 const letter = (key: string, from: string, exam: string, minScore: number, cite: string) =>
   milestone(key, `Letter of recommendation from ${from}, to write the ${exam}`, cite, {
@@ -235,6 +267,8 @@ const letter = (key: string, from: string, exam: string, minScore: number, cite:
 const LETTER_PPAER = letter('letter-ppaer', 'your flight school or instructor', 'PPAER', 60, '421.13(3)(a)');
 const LETTER_CPAER = letter('letter-cpaer', 'your flight school or instructor', 'CPAER', 60, '421.13(3)(a)');
 const LETTER_AIRAF = letter('letter-airaf', 'your ground school instructor', 'AIRAF', 70, '421.13(3)(b)');
+const LETTER_TEST_PPL = testLetter('letter-test-ppl', 'test-ppl', '421.14(3)(a)');
+const LETTER_TEST_CPL = testLetter('letter-test-cpl', 'test-cpl', '421.14(3)(b)');
 
 const atplExam = (key: string, name: string): ExamCheck => ({
   key,
@@ -325,7 +359,7 @@ const ppl: Goal = {
       reqs: [
         milestone('ground-ppl', '40 h private pilot ground school', '421.26(3)(a)'),
         LETTER_PPAER,
-        milestone('exam-ppaer', 'PPAER written exam: 60% overall and in each of the four subjects', '421.26(3)(b)', { minScore: 60 }),
+        writtenExam('exam-ppaer', 'PPAER written exam: 60% overall and in each of the four subjects', '421.26(3)(b)', 60),
       ],
     },
     {
@@ -354,12 +388,12 @@ const ppl: Goal = {
     {
       kind: 'skill',
       title: 'Skill',
-      reqs: [milestone('test-ppl', 'PPL flight test, within the 12 months before you apply', '421.26(5)')],
+      reqs: [LETTER_TEST_PPL, milestone('test-ppl', 'PPL flight test, within the 12 months before you apply', '421.26(5)', withinAYear('ppl'))],
     },
   ],
   gates: [
     writeGate('Write the PPAER', 'exam-ppaer'),
-    { label: 'Take the flight test', cite: '421.14(4)(a)', needs: [time('gate-ppl-test', '35 of the 45 h of flight training', 35, pplTraining, '421.14(4)(a)')] },
+    { label: 'Take the flight test', cite: '421.14(4)(a)', needs: [time('gate-ppl-test', '35 of the 45 h of flight training', 35, pplTraining, '421.14(4)(a)'), LETTER_TEST_PPL] },
   ],
   cost: {
     // Schools' own estimates at the minimum put the hours past 17 dual and 12 solo with an
@@ -410,7 +444,7 @@ const night: Goal = {
     {
       kind: 'skill',
       title: 'Skill',
-      reqs: [milestone('test-night', 'Qualifying flight with a TC inspector or qualified instructor', '421.42(1)(b)')],
+      reqs: [milestone('test-night', 'Qualifying flight with a TC inspector or qualified instructor, within the 12 months before you apply', '421.42(1)(b)', withinAYear('night'))],
     },
   ],
   gates: [],
@@ -486,7 +520,7 @@ const cpl: Goal = {
       reqs: [
         milestone('ground-cpl', '80 h commercial pilot ground school', '421.30(3)(a)'),
         LETTER_CPAER,
-        milestone('exam-cpaer', 'CPAER written exam: 60% overall and in each of the four subjects', '421.30(3)(c)', { minScore: 60 }),
+        writtenExam('exam-cpaer', 'CPAER written exam: 60% overall and in each of the four subjects', '421.30(3)(c)', 60),
       ],
     },
     {
@@ -537,7 +571,8 @@ const cpl: Goal = {
     {
       kind: 'skill',
       title: 'Skill',
-      reqs: [milestone('test-cpl', 'CPL flight test, within the 12 months before you apply', '421.30(5)(a)', {
+      reqs: [LETTER_TEST_CPL, milestone('test-cpl', 'CPL flight test, within the 12 months before you apply', '421.30(5)(a)', {
+        ...withinAYear('cpl'),
         note: 'Without the night time the licence is restricted to day flying (421.30(6)).',
       })],
     },
@@ -549,7 +584,8 @@ const cpl: Goal = {
       cite: '421.14(3)(b), (4)(c)',
       needs: [
         time('gate-cpl-test', '150 h flight time (75% of 200 h)', 150, (c) => sum(c.all, 'total'), '421.14(4)(c)'),
-        milestone('exam-cpaer', 'CPAER passed', '421.14(3)(b)', { minScore: 60 }),
+        writtenExam('exam-cpaer', 'CPAER passed', '421.14(3)(b)', 60),
+        LETTER_TEST_CPL,
       ],
     },
   ],
@@ -625,7 +661,7 @@ function instrument(group: 1 | 3): Goal {
       {
         kind: 'knowledge',
         title: 'Knowledge',
-        reqs: [milestone('exam-inrat', 'INRAT written exam: 70% or better', '421.46(2)(a)', { minScore: 70 })],
+        reqs: [writtenExam('exam-inrat', 'INRAT written exam: 70% or better', '421.46(2)(a)', 70)],
       },
       {
         kind: 'experience',
@@ -704,7 +740,7 @@ const instructor4: Goal = {
       reqs: [
         milestone('ground-inst4', '25 h instructor ground school, started after passing the CPL exam and flight test', '421.69(1)(b), (2)(a)'),
         LETTER_AIRAF,
-        milestone('exam-airaf', 'AIRAF written exam: 70% or better', '421.69(2)(b)', { minScore: 70 }),
+        writtenExam('exam-airaf', 'AIRAF written exam: 70% or better', '421.69(2)(b)', 70),
       ],
     },
     {
@@ -752,9 +788,9 @@ const atpl: Goal = {
       kind: 'knowledge',
       title: 'Knowledge',
       reqs: [
-        milestone('exam-samra', 'SAMRA written exam: 70% or better', '421.34(3)(a)', { minScore: 70 }),
-        milestone('exam-saron', 'SARON written exam: 70% or better', '421.34(3)(b)', { minScore: 70 }),
-        milestone('exam-inrat', 'INRAT written exam: 70% or better', '421.34(3)(c)', { minScore: 70 }),
+        writtenExam('exam-samra', 'SAMRA written exam: 70% or better', '421.34(3)(a)', 70),
+        writtenExam('exam-saron', 'SARON written exam: 70% or better', '421.34(3)(b)', 70),
+        writtenExam('exam-inrat', 'INRAT written exam: 70% or better', '421.34(3)(c)', 70),
       ],
     },
     {
@@ -784,7 +820,7 @@ const atpl: Goal = {
     {
       kind: 'skill',
       title: 'Skill',
-      reqs: [milestone('test-atpl', 'Flight test to the Group 1 instrument standard in a two-crew multi-engine aeroplane, or an IFR PPC', '421.34(5)')],
+      reqs: [milestone('test-atpl', 'Flight test to the Group 1 instrument standard in a two-crew multi-engine aeroplane, or an IFR PPC, within the 12 months before you apply', '421.34(5)', withinAYear('atpl'))],
     },
   ],
   gates: [

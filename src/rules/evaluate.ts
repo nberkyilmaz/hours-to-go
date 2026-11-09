@@ -1,6 +1,6 @@
-import { afterPplPart, today as todayDate, type Entry } from '../model/entry';
+import { addDays, addMonths, afterPplPart, today as todayDate, type Entry } from '../model/entry';
 import { SAMPLE_RATES, type MilestoneRecord, type Profile } from '../model/profile';
-import { examCheck, goalById, passed, type Ctx, type Gate, type Goal, type Plan, type Req, type Section } from './goals';
+import { examCheck, goalById, passed, type Ctx, type Gate, type Goal, type MilestoneReq, type Plan, type Req, type Section } from './goals';
 
 export interface ReqResult {
   req: Req;
@@ -17,7 +17,9 @@ export interface ReqResult {
   value: string | null;
   /** While unmet: time in the log that may belong here but isn't counted. */
   hint: string | null;
-  /** A dated item (a recommendation letter) that is too old to count any more. */
+  /** The last day this still counts, when it has a limit and a date to count from (D44). */
+  until: string | null;
+  /** Past that day, so it doesn't count any more. */
   stale: boolean;
   /** For a written exam: whether Transport Canada would let you write it yet. */
   exam: ExamResult | null;
@@ -109,7 +111,11 @@ function scopedEntries(entries: readonly Entry[], goal: Goal, scope: ScopeInfo |
   return { entries: [], note: null };
 }
 
-const daysSince = (date: string, today: string) => Math.floor((Date.parse(today) - Date.parse(date)) / 86_400_000);
+function lastDay(req: MilestoneReq, date: string, c: Ctx): string | null {
+  if (date === '' || req.validUnless?.some((id) => c.profile.held[id] !== undefined)) return null;
+  if (req.validMonths !== undefined) return addMonths(date, req.validMonths);
+  return req.maxAgeDays !== undefined ? addDays(date, req.maxAgeDays) : null;
+}
 
 /**
  * `goal` is the goal's own context. A section outside the training window
@@ -129,6 +135,7 @@ function evalReq(req: Req, c: Ctx, goal: Ctx = c): ReqResult {
     scoreLow: false,
     value: null,
     hint: null,
+    until: null,
     stale: false,
     exam: null,
     children,
@@ -147,7 +154,8 @@ function evalReq(req: Req, c: Ctx, goal: Ctx = c): ReqResult {
     case 'milestone': {
       const record = c.profile.milestones[req.key] ?? null;
       const scoreLow = record?.score !== undefined && req.minScore !== undefined && record.score < req.minScore;
-      const stale = record !== null && req.maxAgeDays !== undefined && record.date !== '' && daysSince(record.date, c.today) > req.maxAgeDays;
+      const until = record ? lastDay(req, record.date, c) : null;
+      const stale = until !== null && c.today > until;
       const check = examCheck(req.key);
       const exam: ExamResult | null = check
         ? (() => {
@@ -155,7 +163,7 @@ function evalReq(req: Req, c: Ctx, goal: Ctx = c): ReqResult {
             return { name: check.name, ready: checks.every((r) => r.met), passed: passed(c, check.key, check.minScore), checks };
           })()
         : null;
-      return { ...base, record, scoreLow, stale, exam, met: credited !== null || (record !== null && !scoreLow && !stale) };
+      return { ...base, record, scoreLow, until, stale, exam, met: credited !== null || (record !== null && !scoreLow && !stale) };
     }
     case 'held': {
       const id = req.anyOf.find((g) => c.profile.held[g] !== undefined);
@@ -163,8 +171,12 @@ function evalReq(req: Req, c: Ctx, goal: Ctx = c): ReqResult {
       const date = c.profile.held[id]?.date;
       return { ...base, met: true, value: `You hold the ${goalById(id).name}${date ? `, since ${date}` : ''}.` };
     }
-    case 'medical':
-      return { ...base, met: req.anyOf.includes(c.profile.medical) };
+    case 'medical': {
+      const right = req.anyOf.includes(c.profile.medical);
+      const until = right && c.profile.medicalUntil !== '' ? c.profile.medicalUntil : null;
+      const stale = until !== null && c.today > until;
+      return { ...base, until, stale, met: right && !stale };
+    }
     case 'info':
       return { ...base, met: true, value: req.value(c) };
   }

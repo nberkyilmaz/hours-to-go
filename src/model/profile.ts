@@ -37,6 +37,8 @@ export const SAMPLE_RATES: Rates = { aircraft: 220, instructor: 90, sim: null, t
 
 export interface Profile {
   medical: Medical;
+  /** The "valid to" date on the medical certificate; empty until entered (D44). */
+  medicalUntil: string;
   /** Licences and ratings already held. The date may be blank when the pilot does not have it handy. */
   held: Partial<Record<GoalId, { date: string }>>;
   milestones: Record<string, MilestoneRecord>;
@@ -49,5 +51,5 @@ export interface Profile {
 }
 
 export function blankProfile(): Profile {
-  return { medical: 'none', held: {}, milestones: {}, trainingStart: {}, focus: 'ppl', rates: null };
+  return { medical: 'none', medicalUntil: '', held: {}, milestones: {}, trainingStart: {}, focus: 'ppl', rates: null };
 }

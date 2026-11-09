@@ -177,7 +177,9 @@ gates use the same conditions and add `passed` once their exams are passed.
 5. Works out the goal's `plan`: the least time left to pay for, in minutes, as `{ dual, sim, solo }`.
    Each goal's `cost.plan` gets `left(id)`, what a requirement still needs, and whether the pilot
    uses a simulator (a simulator rate is set). A goal that isn't priced has `cost.unpriced`, the
-   reason shown instead, and a null plan. A goal with a quoted average (the PPL's 65 h) also gets
+   reason shown instead, and a null plan. A dated item with a limit (`maxAgeDays`, `validMonths`, or
+   the medical's `medicalUntil`) gets `until`, its last day, and `stale` once past it, which is not
+   met; `validUnless` lifts the limit once what it was for is held (D44). A goal with a quoted average (the PPL's 65 h) also gets
    `toAverage`: the flying past the plan to reach it, while short of it.
 
 **The price** (`cost.ts`). `priceOf(plan, rates)` bills each kind of time in tenths of an hour,

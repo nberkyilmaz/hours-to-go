@@ -59,7 +59,7 @@ The owner wants every one of these. Roughly in order of value:
 2. ~~**Finish date.**~~ Done: "At your pace, 1.3 h a week, you'll reach the minimum around June
    2027", from the flights and FTD sessions of the last 8 weeks, for the time the price is for
    (D40).
-3. **Email reminders**, opted into: medical expiry (needs the expiry date in the profile), the
+3. **Email reminders**, opted into: medical expiry (the date is in the profile now, D44), the
    recommendation letter's 60 days, written exam results expiring before the flight test, IFR
    renewal. Render's free server sleeps, so a daily GitHub Actions run would wake it to send them.
 4. **Currency and recency** (401.05) for licensed pilots: 5 takeoffs and landings in 6 months to
@@ -79,12 +79,29 @@ The owner wants every one of these. Roughly in order of value:
     flight schools.
 11. **French.** Quebec trains a large share of Canada's pilots, and Transport Canada publishes in
     both languages.
+12. ~~**Next flight.**~~ Done: which flight counts toward the most of what is left, tried against
+    the real rules, with a note that the instructor decides (D43).
+13. ~~**Expiry checks.**~~ Done: a written exam counts for 24 months, a flight test for 12 where the
+    standard says so, the medical to its valid-to date, and the flight test needs its 30-day letter
+    (D44).
+14. **Cost per month at your pace.** The pace and the price both exist: "about $790 a month".
+15. **Small fixes.** "45 h" splitting across lines, wherever a number and its unit can part, and the
+    app's name wrapping on tablets between 721 and 790 px wide.
+
+**The order from here** (agreed with the owner on 2026-11-08, who wants all of it): email reminders
+(3), "log again" (6), search and filter (7), cost per month (14), currency and recency (4), CSV (8),
+print or PDF (9), a read-only link for an instructor (10), then French (11). The small fixes go in
+with whatever touches them.
 
 Also wanted some day, if pilots ask: PIC under supervision for the ATPL; Group 2 and Group 4
 instrument ratings, helicopters; other authorities (a second `goals` file and an authority setting
 in the profile); instructor sign-off on milestones (today the pilot ticks them).
-12. ~~**Next flight.**~~ Done: which flight counts toward the most of what is left, tried against
-    the real rules, with a note that the instructor decides (D43).
+
+### UI and UX
+
+The owner isn't happy with how it looks and feels yet, and wants it much better before going
+public. A full audit of the experience comes first, by someone who didn't build it, measured in
+a real browser on a phone. What it finds is the work list for this section.
 
 ### 4. Going public
 
@@ -119,6 +136,9 @@ These are interpretations the app shows in its notes; the owner's FTU can settle
   everything after the PPL issue date counts.)
 - For the cost to go (D39): are the hours past the PPL's 17 h dual and 12 h solo mostly dual, and
   does the school charge GST/HST on CPL and IFR training up to the minimum hours?
+- For expiry (D44): once an instrument rating is held, does the INRAT still have to be within 24
+  months for the ATPL? (App: no.) Do the IFR, VFR OTT and Class 4 flight tests have a 12-month limit?
+  (App: no, as the standard states none.)
 - For the next flight (D43): does the order it assumes match the school's: nothing suggested before
   the first solo, solo cross-country after 3 h of dual cross-country, solo night after 5 h of dual
   at night? And can a PPL student's hood time on a dual cross-country count toward both?
@@ -132,8 +152,9 @@ The logbook-photo import was dropped by the owner (decision D24); pilots type th
 - Paper totals can't show which landings were solo; the form asks only for night landings, because
   that is all the rules need.
 - Co-pilot cross-country isn't a column, so the ATPL's co-pilot alternative isn't counted.
-- Age, medical expiry, written-exam validity windows and flight-test 12-month windows aren't checked.
-  The exam checklist asks for the right medical category but not its expiry date.
+- Age isn't checked. A dated item with no date can't be checked. The app keeps one valid-to date for
+  the medical, though a Category 1 lasts longer for private flying (CAR 404.04), so the pilot enters
+  the date for the flying they do (D44).
 - Resend's free plan sends 100 emails a day. Links to confirm an address are capped at 50 a day
   so reset links keep room; past that, a new profile's link waits for "Send a new link".
 - The limits on sign-ins, sign-ups, reset and confirm emails, and feedback are in memory, so they
