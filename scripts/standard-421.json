@@ -1,0 +1,782 @@
+{
+ "source": "Transport Canada, Standard 421 of the Canadian Aviation Regulations, https://tc.canada.ca/en/corporate-services/acts-regulations/list-regulations/canadian-aviation-regulations-sor-96-433/standards/standard-421-flight-crew-permits-licences-ratings-canadian-aviation-regulations-cars. The sections this app cites, kept only to notice when they change.",
+ "dateModified": "2026-08-20",
+ "sections": {
+  "421.13": {
+   "title": "421.13 Examination Prerequisites",
+   "parts": {
+    "1": [
+     "(1) For admission to a written examination required for the issue of a permit, licence or rating an applicant shall have met the medical standards for the issue of the permit, licence or rating and shall produce proof of medical fitness in one of the following forms:",
+     "(a) a Medical Certificate in the appropriate medical category;",
+     "(b) in the case of a Student Pilot Permit - Aeroplane, Pilot Permit - Ultra-light Aeroplane or Pilot Licence - Glider, a Civil Aviation Medical Declaration (Form 26-0297);",
+     "(c) a temporary Medical Certificate in the appropriate medical category; or",
+     "(d) a Medical Examination Report assessed to the appropriate medical category by the Regional Aviation Medical Officer.",
+     "(effective 2025/12/17 - NSA 2025-008)"
+    ],
+    "2": [
+     "(2) For admission to a written examination, proof of identification shall be required in the form of a permit, licence or other official document bearing the signature and photograph of the candidate.",
+     "(amended 2005/12/01)"
+    ],
+    "3": [
+     "(3) To be eligible to write the examination required for the issue of a permit, licence or rating, the candidate shall produce the following letter of recommendation dated within 60 days prior to the date of the written examination:",
+     "(amended 2005/12/01)",
+     "(a) an applicant for a Pilot Permit - Gyroplane, Private Pilot Licence, or Commercial Pilot Licence shall provide a letter of recommendation from the Flight Training Unit or from the flight instructor who is responsible for the training of the applicant, stating that the applicant has completed the ground school instruction, and has reached a sufficient level of knowledge to write the examination;",
+     "(amended 2000/09/01)",
+     "(b) an applicant for a Class 4 Instructor Rating shall provide a letter of recommendation from the applicant’s ground training instructor stating that the applicant has completed the ground school instruction, and has reached a sufficient level of knowledge to write the examination;",
+     "(amended 1998/03/23)",
+     "(c) in the case of a DND applicant, proof of having qualified to pilot wings standard;",
+     "(d) in the case of an applicant holding a licence issued by a Contracting State, the recommendation shall not be required provided the applicant is applying for the equivalent or lower Canadian licence;",
+     "(amended 2005/12/01)",
+     "(e) a letter of recommendation required under this subsection may only be used once.",
+     "(amended 2003/03/01)"
+    ],
+    "4": [
+     "(4) To be eligible to write the examination required for the issue of a permit, licence or rating, the candidate shall provide proof that the experience and training requirements set out below have been met:",
+     "(amended 1998/03/23)",
+     "(a) an applicant for a Pilot Permit - Gyroplane, Pilot Permit - Recreational-Aeroplane, or a Private Pilot Licence shall have completed 5 hours flight time in the same category of aircraft, or hold a valid Pilot Permit - Ultra-light Aeroplane;",
+     "(amended 2024/10/10)",
+     "(b) an applicant for a Class 4 Instructor Rating shall have completed twenty-five percent (25%) of the flight training requirement, and all ground school requirements;",
+     "(c) an applicant for a higher class of Instructor Rating shall have completed twenty-five percent (25%) of the flight instructor experience requirement;",
+     "(d) an applicant for an instrument rating shall have completed a minimum of 5 hours of instrument flight or ground time;",
+     "(amended 2024/10/10)",
+     "(e) an applicant for an Airline Transport Pilot Licence (Aeroplane) shall, when enrolled in an approved integrated ATP(A) course, have completed the ground school requirements and the Group 1 instrument rating flight test; and",
+     "(amended 2005/12/01)",
+     "(f) all other applicants shall have a minimum of twenty-five percent (25%) of the total flight experience for the issue of the permit, licence, or rating.",
+     "(amended 2024/10/10)"
+    ],
+    "intro": []
+   }
+  },
+  "421.14": {
+   "title": "421.14 Flight Test Prerequisites",
+   "parts": {
+    "1": [
+     "(1) For admission to the flight test for a permit, licence or rating, the applicant shall hold a valid medical certificate appropriate to the permit, licence or rating for which application is made.",
+     "(amended 2024/10/10)"
+    ],
+    "2": [
+     "(2) For admission to a flight test, proof of identification shall be required in the form of a permit, licence or other official document bearing the signature and photograph of the candidate.",
+     "(amended 2005/12/01)"
+    ],
+    "3": [
+     "(3) Except as stated in paragraphs (c) and (d) below, for admission to a flight test required for the issue of a permit, licence or rating, the candidate shall produce a recommendation dated within 30 days prior to the date of the flight test, as follows:",
+     "(amended 2005/12/01)",
+     "(a) in the case of an applicant for a Passenger Carrying Rating – Ultra-light Aeroplane, Pilot Permit - Gyroplane, Pilot Permit — Recreational — Aeroplane or Private Pilot Licence, a letter of recommendation from a qualified flight instructor certifying that the applicant meets the competency standard for issue of the Passenger Carrying Rating – Ultra-light Aeroplane, Pilot Permit - Gyroplane, Pilot Permit — Recreational — Aeroplane or Private Pilot Licence;",
+     "(amended 2012/02/19)",
+     "(b) in the case of an applicant for a Commercial Pilot Licence, who is not enrolled in an approved integrated course, proof of having successfully completed the required written examination, and a letter from a flight instructor certifying that the applicant has satisfactory knowledge of the subject area or areas in which a deficiency was indicated by the feedback letter issued by the Flight Training and Aviation Examination (FTAE) computer system and meets the competency standard for issuance of the Commercial Pilot Licence;",
+     "(amended 2006/12/14)",
+     "(c) Canadian Forces applicants who are qualified to pilot wings standard shall not be required to submit the letter referred to in paragraphs (a) and (b);",
+     "(amended 2006/12/14)",
+     "(d) holders of valid Private and Commercial Pilot Licences issued by a contracting state are not required to have the letter referred to in paragraphs (a) and (b), provided that the flight test is for the purpose of obtaining the equivalent Canadian licence;",
+     "(amended 2006/12/14)",
+     "(e) a letter of recommendation required under this subsection may only be used once.",
+     "(amended 2005/12/01)"
+    ],
+    "4": [
+     "(4) To be eligible to attempt a flight test required for the issue of a permit, licence or rating:",
+     "(a) an applicant for a Pilot Permit - Gyroplane or a Private Pilot Licence shall have completed a minimum of 35 hours of the total flying experience required for that permit or licence;",
+     "(amended 2012/02/19)",
+     "(b) an applicant for a Passenger Carrying Rating – Ultra-light Aeroplane or Pilot Permit - Recreational - Aeroplane shall have met all of the experience requirements required for the rating or permit;",
+     "(amended 2012/02/19)",
+     "(c) an applicant for a permit or licence, other than a Pilot Permit - Gyroplane, Pilot Permit - Recreational - Aeroplane or Private Pilot Licence, shall have completed a minimum of 75% of the total flying experience required for that permit or licence;",
+     "(amended 2006/12/14)",
+     "(d) except as specified in paragraph (e) below, an applicant for an instrument or instructor rating flight test shall have met all the applicable knowledge and experience requirements set out in Division XIV, Division XVIII or Division XIX of Subpart 401 for the particular rating applied for prior to the flight test;",
+     "(amended 2012/02/19)",
+     "(e) an applicant for a Flight Instructor Rating – Ultra-light Aeroplane, shall have completed a minimum of 25 hours of the total flying experience required for the rating.",
+     "(amended 2012/02/19)"
+    ],
+    "intro": []
+   }
+  },
+  "421.26": {
+   "title": "421.26 Aeroplanes - Requirements",
+   "parts": {
+    "1": [
+     "(1) Age",
+     "An applicant shall be a minimum of seventeen years of age."
+    ],
+    "2": [
+     "(2) Medical Fitness",
+     "(amended 2007/12/30)",
+     "(a) An applicant shall hold a Category 3 Medical Certificate valid for a Private Pilot Licence - Aeroplanes:",
+     "(i) where an applicant holds a Category 4 Medical Certificate for the purpose of a Student Pilot Permit, the applicant shall upgrade to a Category 3 Medical Certificate prior to making application for the Private Pilot Licence - Aeroplane.",
+     "(b) The licence is maintained by a valid Category 1 or 3 Medical Certificate.",
+     "(amended 2007/12/30)"
+    ],
+    "3": [
+     "(3) Knowledge",
+     "An applicant shall have:",
+     "(a) completed a minimum of 40 hours private pilot aeroplane ground school instruction on the following subjects:",
+     "(i) Canadian Aviation Regulations,",
+     "(ii) Aerodynamics and Theory of Flight,",
+     "(iii) Meteorology,",
+     "(iv) Airframes, Engines and Systems,",
+     "(v) Flight Instruments,",
+     "(vi) Radio and Electronic Theory,",
+     "(vii) Navigation,",
+     "(viii) Flight Operations,",
+     "(ix) Licensing Requirements, and",
+     "(x) Human Factors, including pilot decision-making; and",
+     "(b) obtained a minimum of 60% in each of the following four mandatory subject areas as well as in the overall written examination Private Pilot Licence - Aeroplane (PPAER):",
+     "(i) Air Law - regulations, rules and orders, air traffic services, practices and procedures, and licensing requirements relevant to the licence;",
+     "(ii) Navigation - navigation, radio aids and electronic theory;",
+     "(iii) Meteorology;",
+     "(iv) Aeronautics - General Knowledge - airframes, engines and systems, theory of flight, flight instruments and flight operations."
+    ],
+    "4": [
+     "(4) Experience",
+     "(a) An applicant shall have completed a minimum of 45 hours private pilot flight training in aeroplanes under the direction and supervision of the holder of a Flight Instructor Rating - Aeroplane. A maximum 5 of the 45 hours may be conducted on an approved aeroplane simulator or flight training device.",
+     "(amended 1998/09/01)",
+     "(b) The flight training shall include a minimum of:",
+     "(i) 17 hours dual instruction flight time, including a minimum of 3 hours cross-country flight time and 5 hours of instrument time of which a maximum of 3 hours may be instrument ground time; and",
+     "(amended 1998/09/01)",
+     "(ii) 12 hours solo flight time, including 5 hours cross-country flight time with a flight of a minimum of 150 nautical miles which shall include 2 full stop landings at points other than the point of departure."
+    ],
+    "5": [
+     "(5) Skill",
+     "Within the 12 months preceding the date of application for the licence, an applicant, while demonstrating the ability to perform as pilot in command of an aeroplane, shall successfully complete a flight test, of an aeroplane in accordance with Schedule 3 “Flight Test for the Issuance of a Private Pilot Licence – Aeroplane” of Standard 428 - Conduct of Flight Tests.",
+     "(amended 2012/02/19)",
+     "(effective 2025/12/17 – NSA 2025-008)"
+    ],
+    "6": [
+     "(6) Credits",
+     "(a) Knowledge",
+     "(i) An applicant who holds a Pilot Permit - Gyroplane or a private or higher type pilot licence for helicopters may, when applying for the issue of Private Pilot Licence - Aeroplane have the 40 hour ground instruction requirement reduced to 20 hours.",
+     "(ii) An applicant who holds a Pilot Permit - Gyroplane or a private or higher type pilot licence for helicopters shall in lieu of completing the written examination PPAER obtain a minimum of 60% in the written examination Private Pilot Aeroplane Rating - Alternate Category (PARAC).",
+     "(b) Experience",
+     "(i) The total flight time must include a minimum of 30 hours in aeroplanes.",
+     "(ii) Where an applicant holds a pilot permit or licence in another aircraft category flight time credits shall be claimed as follows:",
+     "(amended 1998/03/23)",
+     "(A) Helicopter and Gyroplane",
+     "(I) a maximum of 15 hours towards the total flight time; and",
+     "(II) a maximum of 4 hours solo flight time, 2 hours of which shall be credited to solo cross-country flight time.",
+     "(B) Glider",
+     "A maximum of 5 hours pilot-in-command flight time towards the total flight time.",
+     "(C) Three Axis Ultra-light Aeroplane",
+     "A maximum of 10 hours pilot-in-command flight time towards the total flight time.",
+     "(D) Instrument Flight Time",
+     "An applicant who holds a private or higher type licence in another category shall be credited with instrument flight time acquired in the other category towards meeting the instrument experience requirements provided that the instrument flight time acquired in the other category is not credited towards the 17 hours of dual instruction flight time or the 12 hours solo flight time."
+    ],
+    "7": [
+     "(7) Credits for DND Applicants",
+     "(a) Active and retired Canadian Forces personnel who have qualified to pilot aeroplane wings standard or who have successfully completed the Basic Flying Training course of approximately 120 hours shall be considered to have met the ground school instruction requirement, the written examination requirement, the course requirement and the skill requirement provided that:",
+     "(amended 2003/03/01)",
+     "(i) the applicant has met the flight time requirements specified in subsection (4) of which a minimum of 10 hours flight time in aeroplanes has been acquired in the 12 months preceding the date of application, and",
+     "(amended 2003/03/01)",
+     "(ii) the applicant obtains a minimum of 90% in the written examination Student Pilot Permit or Private Pilot Licence for Foreign and Military Applicants, Air Regulations (PSTAR).",
+     "(amended 2003/03/01)",
+     "(b) A person who has undergone aeroplane pilot flight training in the Canadian Forces may be credited military dual and solo aeroplane flight time and aeroplane ground school time towards the knowledge and experience requirements for the issue of a Private Pilot Licence - Aeroplane.",
+     "(amended 2003/03/01)"
+    ],
+    "8": [
+     "(8) Licence Issued On the Basis of Foreign Licence",
+     "(amended 1999/03/01)",
+     "(a) An applicant who is the holder of a Private or higher pilot licence -aeroplane issued by a Contracting State shall be considered:",
+     "(amended 1999/03/01)",
+     "(i) to have met the ground school instruction requirement; and",
+     "(amended 1999/03/01)",
+     "(ii) to have met the written examination requirement and the flight test requirement, provided that the foreign licence was not issued on the basis of a licence from another State, and that the applicant:",
+     "(amended 1999/03/01)",
+     "(A) has met the flight time requirements specified in subsection (4);",
+     "(amended 2000/09/01)",
+     "(B) has obtained a minimum of 90% in the written examination Student Pilot Permit or Private Pilot Licence for Foreign and Military Applicants, Aviation Regulations (PSTAR); and",
+     "(amended 2000/09/01))",
+     "(C) has completed, as pilot in command or co-pilot in aeroplanes, a minimum of 5 take-offs and 5 landings within the 6 months preceding the date of application for the Canadian licence.",
+     "(amended 1999/03/01)",
+     "(b) The licence shall be annotated by the Minister to indicate that it was issued on the basis of the foreign licence.",
+     "(amended 1999/03/01)",
+     "(c) The Minister shall remove the annotation from the licence, provided that the applicant has successfully completed:",
+     "(amended 1999/03/01)",
+     "(i) the written examination requirements (PPAER); and",
+     "(amended 1999/03/01)",
+     "(ii) the skill requirement.",
+     "(amended 1999/03/01)"
+    ],
+    "9": [
+     "(9) Credits for Foreign Applicants",
+     "(amended 1999/03/01)",
+     "(a) An applicant who holds a Private or higher pilot licence - Aeroplane issued by a contracting state and who does not wish to obtain a licence issued on the basis of the foreign licence, may be considered by the Minister to have met the ground school instruction requirement.",
+     "(amended 1999/03/01)",
+     "(b) An applicant who holds a Private or higher pilot licence - Aeroplane issued by a contracting state other than Canada and who meets the flight time requirements specified in subsection (4) is considered to have met the experience requirements.",
+     "(amended 2000/09/01)",
+     "(c) An applicant who does not hold a Private or higher pilot licence - Aeroplane issued by a contracting state may be credited foreign dual and solo aeroplane flight training time and aeroplane ground school time towards the knowledge and experience requirements for the issue of a Private Pilot Licence - Aeroplane, if the applicant provides certification from the holder of a Flight Instructor Rating - Aeroplane that all ground and flight training exercises have been satisfactorily reviewed.",
+     "(amended 2003/03/01)"
+    ],
+    "intro": []
+   }
+  },
+  "421.30": {
+   "title": "421.30 Aeroplanes - Requirements",
+   "parts": {
+    "1": [
+     "(1) Age",
+     "An applicant shall be a minimum of eighteen years of age."
+    ],
+    "2": [
+     "(2) Medical Fitness",
+     "(amended 2007/12/30",
+     "(a) An applicant shall hold a Category 1 Medical Certificate valid for a Commercial Pilot Licence - Aeroplane.",
+     "(b) The licence holder may exercise Private Pilot Licence - Aeroplane privileges until the end of the medical period specified for the Private Pilot Licence.",
+     "(amended 2007/12/30)",
+     "(c) The licence is maintained by a valid Category 1 Medical Certificate.",
+     "(amended 2007/12/30)"
+    ],
+    "3": [
+     "(3) Knowledge",
+     "Ground School Instruction",
+     "(amended 2006/12/14)",
+     "(a) An applicant shall have completed a minimum of 80 hours commercial pilot aeroplane ground school instruction including at least the following subjects:",
+     "(amended 2006/12/14)",
+     "(i) Canadian Aviation Regulations,",
+     "(ii) aerodynamics and theory of flight,",
+     "(iii) meteorology,",
+     "(iv) airframes, engines and systems,",
+     "(v) flight instruments,",
+     "(vi) radio and electronic theory,",
+     "(vii) navigation,",
+     "(viii) flight operations,",
+     "(ix) licensing requirements, and",
+     "(x) human factors including pilot decision-making.",
+     "(b) An applicant who is a graduate from an approved integrated course shall have completed the applicable course requirements in section 426.75 of the Canadian Aviation Regulations.",
+     "(amended 2006/12/14)",
+     "Written Examination",
+     "(amended 2006/12/14)",
+     "(c) All applicants shall have obtained a minimum of 60% in each of the following four mandatory subjects areas as well as in the overall written examination Commercial Pilot Licence — Aeroplane (CPAER):",
+     "(amended 2006/12/14)",
+     "(i) Air Law - regulations, rules and orders, air traffic services, practices and procedures, and licensing requirements relevant to the licence,",
+     "(ii) Navigation - navigation, radio aids and electronic theory,",
+     "(iii) Meteorology, and",
+     "(iv) Aeronautics - General Knowledge - airframes, engines and systems, theory of flight, flight instruments and flight operations.",
+     "(d) An applicant who is a graduate from an approved integrated course shall have completed the applicable course requirements in section 426.75 of the Canadian Aviation Regulations.",
+     "(amended 2006/12/14)"
+    ],
+    "4": [
+     "(4) Experience",
+     "(a) An applicant for a commercial pilot licence — aeroplane shall",
+     "(amended 2006/12/14)",
+     "(i) have completed, subject to paragraph (b), a minimum of 200 hours flight time in aeroplanes, of which a minimum of 100 hours shall be pilot-in-command time including 20 hours cross-country pilot-in-command flight time, and",
+     "(amended 2006/12/14)",
+     "(ii) following the issuance of a private pilot licence — aeroplane by Canada or another contracting state, have completed 65 hours of commercial pilot flight training in aeroplanes consisting of a minimum of:",
+     "(amended 2006/12/14)",
+     "(A) 35 hours dual instruction flight time, under the direction and supervision of the holder of a Flight Instructor Rating — Aeroplane, including:",
+     "(amended 2006/12/14)",
+     "(I) 5 hours night, including a minimum of 2 hours of cross-country flight time;",
+     "(amended 2006/12/14)",
+     "(II) 5 hours cross-country, which may include the cross-country experience stated in subclause (I); and",
+     "(amended 2006/12/14)",
+     "(III) 20 hours of instrument flight time in addition to the experience stated in subclauses (I) and (II). A maximum 10 hours of the 20 hours may be conducted on an approved aeroplane simulator or synthetic flight training device.",
+     "(amended 2006/12/14)",
+     "(B) 30 hours solo flight time in VFR conditions including:",
+     "(amended 2006/12/14)",
+     "(I) 25 hours solo flight time emphasizing the improvement of general flying skills of the applicant which include:",
+     "(a) a cross-country flight of not less than 300 nautical miles total distance, with full stop landings at 3 different aerodromes other than initial point of departure, one of which is a straight-line distance of at least 250 nautical miles from the initial point of departure; and",
+     "(b) where the cross-country flight listed in (a) is completed on the island of Newfoundland, a cross-country flight of not less than 300 nautical miles total distance, with full stop landings at 3 different aerodromes other than initial point of departure, one of which is a straight-line distance of at least 150 nautical miles from the initial point of departure.",
+     "(II) 5 hours solo flight time by night during which a minimum of 10 takeoffs, circuits and landings were completed.",
+     "(amended 2006/12/14)",
+     "(effective 2025/12/17 – NSA 2025-008)",
+     "(b) An applicant who is a graduate from an approved integrated course shall have completed the applicable experience requirements in section 426.75 of the Canadian Aviation Regulations.",
+     "(amended 2006/12/14)"
+    ],
+    "5": [
+     "(5) Skill",
+     "(a) Within the 12 months preceding the date of application for the licence, an applicant, while demonstrating the ability to perform as PIC of an aeroplane, shall successfully complete a flight test in accordance with Schedule 4 “Flight Test for the Issuance of a Commercial Pilot Licence – Aeroplane” of Standard 428 — Conduct of Flight Tests; or",
+     "(b) Where an applicant is the graduate of an integrated course, conducted in accordance with section 426.75 of the Personnel Licensing and Training Standards, and has completed the above mentioned skill test, the application must be within 12 months of the completion date of the course as listed on the completion certificate. Proof of completion must be provided with the application.",
+     "(effective 2025/12/17 – NSA 2025-008)"
+    ],
+    "6": [
+     "(6) Restricted Licence - Daylight Flying",
+     "(a) If an applicant has not completed the night flight time requirements, the licence shall be restricted to daylight flying, however the total dual instruction flight time and solo flight time requirements for the issuance of the licence shall be met.",
+     "(amended 2006/12/14)",
+     "(b) If an applicant completes the night flight time requirements, the restriction shall be removed.",
+     "(amended 2006/12/14)",
+     "(c) If an applicant holds a pilot licence - helicopter valid for night flying, the night flight time experience may be reduced to 5 hours pilot flight time which shall include:",
+     "(amended 2006/12/14)",
+     "(i) 2 hours dual instruction night flight time,",
+     "(amended 2006/12/14)",
+     "(ii) 1 hour solo night flight time, and",
+     "(iii) 1 hour dual instruction instrument flight time.",
+     "(amended 2006/12/14)"
+    ],
+    "7": [
+     "(7) Credits",
+     "(a) Knowledge",
+     "(i) An applicant who holds a Commercial Pilot Licence - Helicopter or higher, shall, when applying for the issue of a Commercial Pilot Licence — Aeroplane, be credited with 20 hours of the 80 hour ground school instruction requirement.",
+     "(amended 2006/12/14)",
+     "(ii) An applicant who holds a Commercial Pilot Licence - Helicopter or higher, shall, in lieu of completing the written examination Commercial Pilot - Aeroplane (CPAER), obtain a minimum of 60% in the written examination Commercial Pilot Licence (Aeroplane) - Alternate Category (CARAC).",
+     "(amended 1999/03/01)",
+     "(b) Experience",
+     "(amended 2006/12/14)",
+     "If an applicant holds a pilot permit or licence in another aircraft category, flight time credits may be claimed as follows:",
+     "(i) Commercial Pilot Licence - Helicopter",
+     "If an applicant holds a Commercial Pilot Licence - Helicopter, the 200 hours total flight time in aeroplanes required by subparagraph (4)(a)(i) is considered to have been met if the applicant has completed a minimum of 100 hours pilot flight time in aeroplanes, including the 65 hours experience required by subparagraph (4)(a)(ii). In this case, it is not necessary to obtain a Private Pilot Licence — Aeroplane prior to obtaining the Commercial Pilot Licence — Aeroplane.",
+     "(amended 2006/12/14)",
+     "(ii) Private Pilot Licence - Helicopter",
+     "If an applicant holds a Private Pilot Licence — Helicopter, the following must be met:",
+     "(amended 2006/12/14)",
+     "(A) a maximum of 50 hours flight time in helicopters shall be credited towards the 200 hours total flight time requirement, and",
+     "(B) a maximum of 25 hours of pilot-in-command flight time in helicopters shall be credited towards the 100 hours pilot-in-command flight time requirement.",
+     "(iii) Pilot Licence - Glider",
+     "If an applicant holds a Pilot Licence - Glider, a maximum of 50 hours flight time in gliders shall be credited towards the 200 hours total flight time requirement but this time shall not be credited towards the 100 hour pilot-in-command flight time.",
+     "(amended 2006/12/14)",
+     "(iv) Three Axis Ultra-light Aeroplane",
+     "If an applicant holds a Pilot Permit — Ultra-light Aeroplane, a Recreational Pilot Permit — Aeroplane or a Private Pilot Licence — Aeroplane, a maximum of 25 hours pilot-in-command flight time in three axis ultra-light aeroplanes shall be credited towards the 200 hours total flight time requirement but this time shall not be credited towards the 100 hour pilot-in-command flight time.",
+     "(amended 2006/12/14)",
+     "(v) Instrument Flight Time",
+     "If an applicant holds a Pilot Licence — Helicopter category, they shall be credited with instrument flight time acquired in helicopters towards meeting the instrument flight time experience requirements provided that the applicant has acquired a minimum of 10 hours of dual instruction instrument flight time in aeroplanes.",
+     "(amended 2006/12/14)",
+     "(vi) Night Flight Time",
+     "(A) If an applicant holds a Private Pilot Licence — Aeroplane with a night rating, the total dual instruction and solo night flight time requirements are considered to have been met provided that the 35 hours dual instruction flight time and 30 hours solo flight time requirements are met.",
+     "(amended 2006/12/14)",
+     "(B) If an applicant holds a Pilot Licence — Helicopter valid for night privileges, the night flight time acquired in helicopters shall be credited towards the total dual instruction flight time and solo night flight time requirements provided that the applicant has acquired at night, in aeroplanes, a minimum of 2 hours dual instruction flight time and 1 hour solo flight time and the 35 hours dual instruction flight time and 30 hours solo flight time requirements are met.",
+     "(amended 2006/12/14)",
+     "(effective 2025/12/17 – NSA 2025-008)",
+     "(c) Experience – Same Category – Instrument Rating",
+     "(amended 2005/12/01)",
+     "An applicant who holds an instrument rating in the aeroplane category is considered to have met the 20 hours dual instrument flight requirement of subclause 421.30(4)(a)(ii)(A)(III).",
+     "(effective 2019/06/14)"
+    ],
+    "8": [
+     "(8) Credits for Canadian Forces Applicants",
+     "(amended 2006/12/14)",
+     "Active and retired Canadian Forces personnel who have qualified to pilot aeroplane wings standard are considered to have met the ground school instruction requirement, the written examination requirement, the skill requirement and the requirement to hold a Private Pilot Licence, if the applicant:",
+     "(amended 2006/12/14)",
+     "(a) has met the flight time requirements specified in paragraph (4)(a) of which a minimum of 10 hours flight time was acquired in aeroplanes in the 12 months preceding the date of application; and",
+     "(amended 2006/12/14)",
+     "(b) obtains a minimum of 60% in the written examination Commercial Pilot Licence (Aeroplane) Air Law, Air Traffic Rules and Procedures (ARPCO).",
+     "(amended 2006/12/14)"
+    ],
+    "9": [
+     "(9) Credits for Foreign Applicants",
+     "If an applicant has met the flight time requirements specified in paragraph (4)(a), the applicant who holds a commercial or higher type pilot licence in the aeroplane category, issued by a contracting state is considered to have met the ground school requirement.",
+     "(amended 2006/12/14)"
+    ],
+    "intro": [
+     "The requirements in respect of an application for a Commercial Pilot Licence — Aeroplane are the following:",
+     "(amended 2006/12/14)"
+    ]
+   }
+  },
+  "421.34": {
+   "title": "421.34 Aeroplanes - Requirements",
+   "parts": {
+    "1": [
+     "(1) Age",
+     "An applicant shall be a minimum of twenty-one years of age."
+    ],
+    "2": [
+     "(2) Medical Fitness",
+     "(amended 2007/12/30)",
+     "(a) An applicant shall hold a Category 1 Medical Certificate valid for an Airline Transport Pilot Licence - Aeroplane.",
+     "(b) The licence holder may exercise Private Pilot Licence - Aeroplane privileges until the end of the medical period specified for the Private Pilot Licence.",
+     "(amended 2007/12/30)",
+     "(c) The licence is maintained by a valid Category 1 Medical Certificate.",
+     "(amended 2007/12/30)"
+    ],
+    "3": [
+     "(3) Knowledge",
+     "An applicant shall have obtained a minimum of 70% in each of three written examinations on the following aviation subjects:",
+     "(a) Airline Transport Pilot Licence (Aeroplane) Meteorology, Radio Aids to Navigation and Flight Planning (SAMRA) including:",
+     "(i) general system of weather collection and dissemination,",
+     "(ii) weather map, weather forecast, weather abbreviations, symbols and nomenclature,",
+     "(iii) pressure systems and their association with fronts, cloud forms and icing conditions,",
+     "(iv) the movement of upper winds and their effect on aircraft operations,",
+     "(v) weather service circulars and instructions for air route meteorological service which are pertinent to aircraft operations, and",
+     "(vi) radio communication procedures relating to aircraft operation; and",
+     "(b) Airline Transport Pilot Licence (Aeroplane) Air Law, Aeroplane Operation and Navigation General (SARON) including:",
+     "(i) basic principles of air navigation such as formulae, instruments and other navigational aids which are commonly used in the navigation of aircraft,",
+     "(ii) basic principles of loading and weight distribution and their effect on flight characteristics,",
+     "(iii) Canadian Aviation Regulations, Air Traffic Rules and Procedures, Information Circulars and NOTAM, and",
+     "(iv) human factors, including pilot decision-making; and",
+     "(c) Instrument Rating (INRAT)."
+    ],
+    "4": [
+     "(4) Experience",
+     "An applicant shall have met the training requirements for the issue of a Commercial Pilot Licence - Aeroplane that is not restricted to daylight flying and completed a minimum of 1500 hours total flight time of which a minimum of 900 hours shall have been completed in aeroplanes. The total flight time shall include a minimum of:",
+     "(amended 2000/09/01)",
+     "(a) 250 hours pilot-in-command flight time in aeroplanes which shall include where applicable, a maximum of 100 hours pilot-in-command under supervision flight time completed in accordance with Section 421.11. The pilot-in-command and/or pilot-in-command under supervision flight time shall include a minimum of 100 hours cross-country flight time of which a minimum of 25 hours shall have been by night;",
+     "(b) 100 hours night flight time as pilot-in-command or as co-pilot of which a minimum of 30 hours shall have been acquired in aeroplanes;",
+     "(c) 100 additional hours cross-country flight time as pilot-in-command or 200 hours as co-pilot or any combination thereof. Flight time as pilot-in-command may be part of the 250 hours pilot-in-command flight time specified in paragraph (a); and",
+     "(amended 2005/12/01)",
+     "(effective 2025/12/17 – NSA 2025-008)",
+     "(d) 75 hours instrument flight time of which a maximum of 25 hours may have been acquired in approved instrument ground trainers and a maximum of 35 hours may have been acquired in helicopters. Instrument ground time shall not be applied toward the total 1500 hour flight time requirement."
+    ],
+    "5": [
+     "(5) Skill",
+     "(a) Within the 12 months preceding the date of application for the licence, an applicant shall demonstrate in flight or in a level C or D full flight simulator, and on the ground, familiarity with and the ability to successfully perform, as pilot-in-command of a multi-engine aeroplane (with no central thrust configuration) required to be operated with a co-pilot as defined in subsection (9), and fitted with instruments and equipment suitable for two crew IFR flight in controlled airspace:",
+     "(i) both normal and emergency flight procedures and manoeuvres appropriate to the aeroplane in which the flight test is conducted and to successfully execute all manoeuvres and procedures set forth in Division XIV for issue of a Group 1 instrument rating.",
+     "(ii) a Pilot Proficiency Check (PPC) for operations under IFR in accordance with Part VII; or",
+     "(iii) a Pilot Proficiency Check (PPC) or Pilot Competency Check (PCC) for operations under IFR in accordance with Subpart 604 conducted by a person designated by the Minister to conduct the flight test.",
+     "(b) An applicant who successfully completes a Line Operational Evaluation (LOE) and a Manoeuvres Validation (MV) from an approved Advanced Qualification Program (AQP) in accordance with Subpart 705 is deemed to have met the requirement of clause (5)(a)(ii).",
+     "(c) For issue of the Airline Transport Pilot Licence - Aeroplane, the Minister shall only endorse a Group 1 Instrument Rating on the licence.",
+     "(effective 2025/12/17 – NSA 2025-008)"
+    ],
+    "6": [
+     "(6) Annotated Licence",
+     "(a) Where the applicant has not completed the flight test in an aeroplane required to be operated with a co-pilot as specified in subsection (9), the licence shall be issued with the remark, “Skill test does not meet ICAO requirements.”",
+     "(b) Where the applicant completes the skill test in an aeroplane required to be operated with a copilot as specified in subsection (9), upon request to the Minister the remark shall be removed from the licence.",
+     "(effective 2025/12/17 – NSA 2025-008)"
+    ],
+    "7": [
+     "(7) Credits - Experience",
+     "(effective 2025/12/17 – NSA 2025-008)",
+     "(a) Glider",
+     "Where an applicant holds a Pilot Licence - Glider, a maximum of 50 hours flight time in gliders shall be credited towards the total 1500 hour flight time requirement.",
+     "(b) Three Axis Ultra-light Aeroplanes",
+     "Where an applicant holds a Pilot Permit - Ultra-light Aeroplane, a Recreational Pilot Permit – Aeroplane, a Private Pilot Licence – Aeroplane or a Commercial Pilot Licence – Aeroplane, a maximum of 50 hours flight time in three axis ultra-light aeroplanes shall be credited towards the total 1500 hour flight time requirement.",
+     "(amended 2005/06/01)"
+    ],
+    "8": [
+     "(8) Credits for DND Applicants",
+     "Active and retired Royal Canadian Air Force personnel who holds a Canadian Forces Instrument Rating (unrestricted) in a multi-engine aeroplane (Group 1) that is required to be operated with a co-pilot as defined in subsection (9), shall be deemed to have met the skill requirement.",
+     "(effective 2025/12/17 – NSA 2025-008)"
+    ],
+    "9": [
+     "(9) Required to be Operated with a Co-Pilot",
+     "For the purpose of this section an aeroplane “required to be operated with a co-pilot” means an aeroplane requiring a pilot and co-pilot as specified in the flight manual of the aircraft, or an aeroplane operated IFR with two pilots as set out in",
+     "(a) the Company Operations Manual of the holder of an Air Operator Certificate;",
+     "(b) the Operations Manual of the holder of a Private Operator Registration Document; or",
+     "(c) the Royal Canadian Air Force Flying Orders.",
+     "(effective 2025/12/17 – NSA 2025-008)"
+    ],
+    "intro": []
+   }
+  },
+  "421.38": {
+   "title": "421.38 Requirements",
+   "parts": {
+    "1": [
+     "(1) Seaplane Rating - Requirements",
+     "(a) Experience",
+     "(i) An applicant for a seaplane rating shall complete a total of 7 hours of seaplane training, including:",
+     "(amended 1998/03/23)",
+     "(A) a minimum of 5 hours dual instruction, and",
+     "(amended 1998/03/23)",
+     "(B) a minimum of 5 takeoffs and landings as sole occupant of the aeroplane, except for two crew aircraft, in which case the takeoffs and landings shall be done as pilot-in-command.",
+     "(ii) The following exercises shall be included in the seaplane training:",
+     "(A) taxiing,",
+     "(B) sailing,",
+     "(C) docking,",
+     "(D) takeoffs, and",
+     "(E) landings, and",
+     "(F) as conditions exist, operations on glassy water, rough water and in crosswind conditions.",
+     "(b) Skill",
+     "Within the 12 months preceding the date of application for a seaplane rating, an applicant shall have successfully completed a qualifying flight under the supervision of a Transport Canada Inspector or a person qualified in accordance with CAR 425.21(6) by demonstrating the level of skill specified in the Instructor Guide - Seaplane Rating (TP 12668).",
+     "(amended 2000/09/01)",
+     "(c) Credits for DND Applicants",
+     "(amended 1998/03/23)",
+     "Active and retired personnel of the Canadian Forces who are qualified to the pilot aeroplane wings standard shall be deemed to have satisfied the seaplane training requirements specified above, provided that the applicant:",
+     "(i) has completed not less then 50 hours flight time as pilot-in-command in seaplanes during the 12 months preceding the date of application for the rating, or",
+     "(ii) has met the prescribed standard of the Canadian Forces to act as pilot-in-command of seaplanes during the 24 months preceding the date of application for the rating.",
+     "(d) Credits for Foreign Applicants",
+     "(amended 1998/03/23)",
+     "The holder of a pilot licence - aeroplane category, issued by a Contracting State, shall be deemed to have met the seaplane training requirements specified above, provided that the applicant:",
+     "(i) has completed a minimum of 50 hours flight time as pilot-in-command in seaplanes during the 12 months preceding the date of application for the rating, or",
+     "(ii) has met the prescribed standards of the State concerned, to act as pilot-in-command of seaplanes during the 12 months preceding the date of application for the rating."
+    ],
+    "2": [
+     "(2) Landplane Rating - Requirements",
+     "(a) Experience",
+     "An applicant for a landplane rating shall complete the following:",
+     "(i) a total of 3 hours of landplane training including:",
+     "(A) a minimum of 2 hours dual instruction, and",
+     "(B) a minimum of 5 takeoffs and five landings as sole occupant of the aeroplane.",
+     "(ii) The following exercises shall be included in the landplane training:",
+     "(A) taxiing,",
+     "(B) landings, including crosswind landings, and",
+     "(C) takeoffs.",
+     "Active and retired personnel of the Canadian Forces who are qualified to the pilot aeroplane wings standard shall be deemed to have satisfied the landplane training requirements specified above, provided that the applicant:",
+     "(b) Credits for DND Applicants",
+     "(i) has completed not less then 50 hours flight time as pilot-in-command in landplanes during the 12 months preceding the date of application for the rating, or",
+     "(ii) has met the prescribed standard of the Canadian Forces to act as pilot-in-command of landplanes during the 24 months preceding the date of application for the rating.",
+     "(c) Credits for Foreign Applicants",
+     "The holder of a pilot licence - aeroplane category, issued by a Contracting State shall be deemed to have met the landplane training requirements specified above, provided that the applicant:",
+     "(i) has completed a minimum of 50 hours flight time as pilot-in-command in landplanes during the 12 months preceding the date of application for the rating, or",
+     "(ii) has met the prescribed standards of the State concerned, to act as pilot-in-command of landplanes during the 12 months preceding the date of application for the rating."
+    ],
+    "3": [
+     "(3) Multi-engine Class Rating - Requirements",
+     "(a) Skill",
+     "An applicant for a multi-engine class rating shall successfully complete a flight test as pilot-in-command of a multi-engine class aeroplane, in accordance with Schedule 7 “Flight Test for the Issuance of a Multi-Engine Class Rating – Aeroplane” of Standard 428 - Conduct of Flight Tests.",
+     "(amended 2012/02/19)",
+     "(b) Credits for DND Applicants",
+     "Active and retired personnel of the Canadian Forces who are qualified to the pilot aeroplane wings standard shall be considered to have satisfied the skill requirements as set forth above provided that the applicant:",
+     "(amended 1999/03/01)",
+     "(i) has acquired a minimum of 50 hours flight time as pilot-in-command in multi-engine aeroplanes during the 24 months preceding the date of application for the rating, or",
+     "(ii) has met the prescribed standards of the Canadian Forces to act as pilot-in-command of multi-engine aeroplanes during the 24 months preceding the date of application for the rating.",
+     "(c) Credits for Foreign Applicants",
+     "The holder of a pilot licence - aeroplane category, issued by a Contracting State shall be considered to have satisfied the skill requirements as set forth above, provided that the applicant:",
+     "(amended 1999/03/01)",
+     "(i) has acquired a minimum of 50 hours flight time as pilot-in-command in multi-engine aeroplanes during the 12 months preceding the date of application for the rating, or",
+     "(ii) has met the prescribed standards, of the State concerned, for issue of a multi-engine class rating during the 12 months preceding the date of application for the rating."
+    ],
+    "4": [
+     "(4) Multi-engine Centre Line Thrust Class Rating - Requirements",
+     "(amended 1999/03/01)",
+     "(a) Skill",
+     "(amended 1999/03/01)",
+     "An applicant for a multi-engine centre line thrust class rating, while demonstrating the ability to perform as pilot in command of a multi-engine line thrust class aeroplane, shall successfully complete a flight test, in accordance with Schedule 7 “Flight Test for the Issuance of a Multi-Engine Class Rating – Aeroplane” of Standard 428 — Conduct of Flight Tests.",
+     "(amended 2012/02/19)",
+     "(effective 2025/12/17 – NSA 2025-008)",
+     "(b) Credits for DND Applicants",
+     "(amended 1999/03/01)",
+     "Active and retired personnel of the Canadian Forces who are qualified to the pilot aeroplane wings standard shall be considered to have satisfied the above skill requirement, provided that the applicant",
+     "(amended 1999/03/01)",
+     "(i) has acquired a minimum of 50 hours flight time as pilot-in-command in multi-engine centre line thrust aeroplanes during the 24 months preceding the date of application for the rating, or",
+     "(amended 1999/03/01)",
+     "(ii) has met the prescribed standards of the Canadian Forces to act as pilot-in-command of multi-engine centre line thrust aeroplanes during the 24 months preceding the date of application for the rating.",
+     "(amended 1999/03/01)",
+     "(c) Credits for Foreign Applicants",
+     "(amended 1999/03/01)",
+     "The holder of a pilot licence - Aeroplane issued by a Contracting State shall be considered to have satisfied the above skill requirement, provided that the applicant",
+     "(amended 1999/03/01)",
+     "(i) has acquired a minimum of 50 hours flight time as pilot-in-command in multi-engine centre line thrust aeroplanes during the 12 months preceding the date of application for the rating, or",
+     "(amended 1999/03/01)",
+     "(ii) has met the prescribed standards of the State concerned, for issue of a multi-engine centre line thrust class rating during the 12 months preceding the date of application for the rating.",
+     "(amended 1999/03/01)"
+    ],
+    "intro": []
+   }
+  },
+  "421.42": {
+   "title": "421.42 Requirements",
+   "parts": {
+    "1": [
+     "(1) Private Pilot Licence - Aeroplane",
+     "(a) Experience",
+     "An applicant for a night rating shall have acquired in aeroplanes a minimum of 20 hours of pilot flight time which shall include a minimum of:",
+     "(i) 10 hours of night flight time including a minimum of:",
+     "(A) 5 hours dual flight time, including 2 hours of cross-country flight time,",
+     "(B) 5 hours solo flight time, including 10 takeoffs, circuits and landings, and",
+     "(ii) 10 hours dual instrument time.",
+     "(iii) Credit for a maximum of five hours of the 10 hours of dual instrument time may be given for instrument ground time, provided that the total instrument time shall be in addition to the 10 hours night flight time in subparagraph (a)(i) above.",
+     "(amended 1998/03/23)",
+     "(b) Skill",
+     "Within the 12 months preceding the date of application for a night rating, an applicant shall have successfully completed a qualifying flight under the supervision of a Transport Canada Inspector or a person qualified in accordance with subsection 425.21(4) by demonstrating the level of skill specified in the Flight Instructor Guide-Aeroplane (TP 975).",
+     "(amended 2000/09/01)",
+     "(c) Credits",
+     "An applicant who holds a licence endorsed with a night rating in one of the other aircraft categories shall have the total 20 hour pilot flight time reduced to a minimum of 5 hours in aeroplanes including a minimum of:",
+     "(i) 2 hours dual night flight time,",
+     "(ii) 1 hour solo night flight time, and",
+     "(iii) 1 hour dual instrument flight time which shall be in addition to the flight time of (i) and (ii)."
+    ],
+    "2": [
+     "(2) Private Pilot Licence - Helicopter",
+     "(a) Experience",
+     "An applicant for a night rating shall have acquired in helicopters a minimum of 20 hours of pilot flight time which shall include a minimum of:",
+     "(i) 10 hours of night flight time including a minimum of:",
+     "(A) 5 hours dual flight time, including 2 hours of cross-country flight time,",
+     "(B) 5 hours solo flight time, including 10 takeoffs, circuits and landings, and",
+     "(ii) 10 hours dual instrument time.",
+     "(iii) Credit for a maximum of 5 hours of the 10 hours of dual instrument time may be given for instrument ground time, provided the total instrument time is in addition to the 10 hours night flight time in subparagraph (a)(i) above.",
+     "(amended 1999/03/01)",
+     "(b) Skill",
+     "Within the 12 months preceding the date of application for a night rating, an applicant shall have successfully completed a qualifying flight under the supervision of a Transport Canada Inspector or a person qualified in accordance with subsection 425.21(4) by demonstrating the level of skill specified in the Flight Instructor Guide-Aeroplane (TP 975).",
+     "(amended 2000/09/01)",
+     "(c) Credits",
+     "An applicant who holds a licence endorsed with a night rating in one of the other aircraft categories shall have the total 20 hour pilot flight time reduced to a minimum of 5 hours in helicopters including a minimum of:",
+     "(i) 2 hours dual night flight time,",
+     "(ii) 1 hour solo night flight time, and",
+     "(iii) 1 hour dual instrument flight time which shall be in addition to the flight time of (i) and (ii)."
+    ],
+    "3": [
+     "(3) Pilot Permit - Gyroplane",
+     "(a) Experience",
+     "An applicant for a night rating shall have acquired in gyroplanes a minimum of 20 hours of pilot flight time which shall include a minimum of:",
+     "(i) 10 hours of night flight time including a minimum of:",
+     "(A) 5 hours dual flight time, including 2 hours of cross-country flight time,",
+     "(B) 5 hours solo flight time, including 10 takeoffs, circuits and landings, and",
+     "(ii) 10 hours dual instrument time.",
+     "(iii) Credit for a maximum of 5 hours of the 10 hours of dual instrument time may be given for instrument ground time, provided the total instrument time shall be in addition to the 10 hours night flight time in subparagraph (a)(i) above.",
+     "(amended 1999/03/01)",
+     "(b) Skill",
+     "Within the 12 months preceding the application for a night rating, an applicant shall have successfully completed a qualifying flight under the supervision of a Transport Canada Inspector or a person qualified in accordance with subsection 425.21(4).",
+     "(amended 2000/09/01)",
+     "(c) Credits",
+     "An applicant who holds a licence endorsed with a night rating in one of the other aircraft categories shall have the total 20 hour pilot flight time reduced to a minimum of 5 hours in gyroplanes including a minimum of:",
+     "(i) 2 hours dual night flight time,",
+     "(ii) 1 hour solo night flight time, and",
+     "(iii) 1 hour dual instrument flight time which shall be in addition to the flight time of (i) and (iii)."
+    ],
+    "4": [
+     "(4) Pilot Licence - Balloon",
+     "An applicant for a night rating shall have completed in balloons a minimum of:",
+     "(amended 2005/12/01)",
+     "(a) 1 dual and 1 solo ascent by night; and",
+     "(b) a minimum of 4 hours of night flight time under the direction and supervision of the holder of a Flight Instructor Rating - Balloon, endorsed for night flying and for the Balloon type."
+    ],
+    "intro": []
+   }
+  },
+  "421.44": {
+   "title": "421.44 Requirements",
+   "parts": {
+    "1": [
+     "(1) General",
+     "A VFR OTT rating may be issued for either the aeroplane or helicopter category. Once an applicant has obtained the VFR OTT privileges in one category, those privileges may also be attached to a licence held in the other category.",
+     "(amended 2000/09/01)"
+    ],
+    "2": [
+     "(2) Knowledge",
+     "An applicant for a VFR OTT rating shall acquire a standard of knowledge in accordance with the Flight Instructor Standard - VFR OTT."
+    ],
+    "3": [
+     "(3) Experience",
+     "An applicant for a VFR OTT rating shall complete a minimum of 15 hours dual instrument time of which a maximum of 5 hours may be instrument ground time. Training shall be in accordance with the Flight Instructor Standard - VFR OTT."
+    ],
+    "4": [
+     "(4) Skill",
+     "An applicant for a VFR OTT rating shall have reached the level of skill specified in the Flight Instructor Standard - VFR OTT."
+    ],
+    "5": [
+     "(5) Credits",
+     "An applicant for a VFR OTT rating who holds an instrument rating shall be considered to have met the Knowledge, Experience and Skill Requirements specified above, and shall be issued a VFR OTT rating upon request.",
+     "(amended 1999/03/01)",
+     "(effective 2025/12/17 – NSA 2025-008)"
+    ],
+    "6": [
+     "(6) Credits for DND Applicants",
+     "(amended 1999/03/01)",
+     "An applicant who holds or has held an Instrument Rating issued by the Canadian Forces shall be considered to have met the Knowledge, Experience and Skill requirements specified above.",
+     "(amended 1999/03/01)"
+    ],
+    "7": [
+     "(7) Credits for Foreign Applicants",
+     "(amended 1999/03/01)",
+     "An applicant who holds or has held an instrument rating issued by a Contracting State shall be considered to have met the Knowledge, Experience and Skill requirements specified above.",
+     "(amended 1999/03/01)"
+    ],
+    "intro": []
+   }
+  },
+  "421.46": {
+   "title": "421.46 Requirements",
+   "parts": {
+    "1": [
+     "(1) General",
+     "An instrument rating is issued for aircraft in one of the following groups:",
+     "(a) Group 1 for all aeroplanes where the flight test was conducted in a multi-engine aeroplane,",
+     "(b) Group 2 for multi-engine centre line thrust and single engine aeroplanes where the flight test was conducted in a multi-engine centre line thrust aeroplane,",
+     "(c) Group 3 for single engine aeroplanes where the flight test was conducted in a single engine aeroplane, and",
+     "(d) Group 4 for helicopters where the flight test was conducted in a helicopter."
+    ],
+    "2": [
+     "(2) Requirements",
+     "(a) Knowledge",
+     "An applicant shall have obtained a minimum of 70% on the written examination Instrument Rating (INRAT) which shall include the following subjects:",
+     "(i) Canadian Aviation Regulations;",
+     "(ii) Instrument Flight Rules and Procedures;",
+     "(iii) Meteorology;",
+     "(iv) Instruments;",
+     "(v) Radio and Radar systems; and",
+     "(vi) Navigation.",
+     "(b) Experience",
+     "An applicant shall have completed a minimum of:",
+     "(i) 50 hours of cross-country flight as pilot-in-command in aeroplanes or helicopters of which 10 hours must be in the appropriate category; and",
+     "(ii) 40 hours of instrument time of which a maximum of 20 hours may be instrument ground time. The 40 hours instrument time shall include a minimum of:",
+     "(A) 5 hours of dual instrument flight time acquired from the holder of a flight instructor rating ,",
+     "(B) 5 hours in aeroplanes where the applicant is applying for a Group 1, 2 or 3 instrument rating or in helicopters where the applicant is applying for a Group 4 instrument rating,",
+     "(C) Fifteen (15) hours of dual instrument flight time provided by a qualified person as specified in section 425.21(9); and",
+     "(amended 1998/03/23)",
+     "(D) one dual cross-country flight under simulated or actual IMC conditions of a minimum of 100 nautical miles, the flight to be conducted in accordance with an IFR flight plan to include at, two different locations, an instrument approach to minima.",
+     "(c) Skill",
+     "(i) Subject to subparagraph (ii), an applicant shall successfully complete:",
+     "(amended 2012/02/19)",
+     "(A) a flight test while demonstrating the ability to perform as pilot in command of an aeroplane or helicopter, in accordance with Schedule 8 “Flight Test for the Issuance or Renewal of an Instrument Rating” of Standard 428 — Conduct of Flight Tests, or",
+     "(amended 2012/02/19)",
+     "(B) a Pilot Proficiency Check (PPC) for operations under IFR in accordance with Part VI or Part VII , as applicable.",
+     "(amended 2012/02/19)",
+     "(ii) An applicant who successfully completes a Line Operational Evaluation (LOE) from an approved Advanced Qualification Program (AQP) is deemed to have met the requirement of clause (B).",
+     "(amended 2012/02/19)",
+     "(effective 2025/12/17 – NSA 2025-008)"
+    ],
+    "3": [
+     "(3) Credits for DND Applicants",
+     "(a) The experience requirements specified in sub-paragraph 2(b) above may be acquired under the instruction of equivalent military personnel.",
+     "(b) The flight test specified in paragraph (c) shall be deemed to have been met for Canadian Forces personnel who:",
+     "(amended 1998/09/01)",
+     "(i) have reached wings standard;",
+     "(ii) hold an unrestricted Canadian Forces instrument rating appropriate to the class and type of aircraft; and",
+     "(iii) have met the experience requirements specified in subsection 2."
+    ],
+    "4": [
+     "(4) Foreign Applicants",
+     "The experience requirements specified in subparagraph 2(b) may be acquired under the instruction of foreign instructors with qualifications equivalent to those specified in Subpart 5."
+    ],
+    "intro": []
+   }
+  },
+  "421.69": {
+   "title": "421.69 Class 4 - Aeroplane - Requirements",
+   "parts": {
+    "1": [
+     "(1) Prerequisites",
+     "(a) Before commencing flight training for the Class 4 Instructor Rating - Aeroplane, an applicant shall hold a Commercial or Airline Transport Pilot Licence - Aeroplane and have completed either:",
+     "(i) a minimum of 200 hours total time including 20 hours instrument time, of which a minimum of 10 hours shall be instrument flight time; or",
+     "(amended 2006/12/14)",
+     "(ii) the commercial pilot licence - aeroplane/instrument rating (CPL(A)/IR) integrated course.",
+     "(amended 2006/12/14)",
+     "(b) Before commencing ground school instruction for the Class 4 Instructor Rating - Aeroplane, an applicant shall have successfully completed the written examination and flight test for the Commercial Pilot Licence - Aeroplane.",
+     "(amended 2006/12/14)"
+    ],
+    "2": [
+     "(2) Knowledge",
+     "(a) An applicant shall have completed a minimum of 25 hours of Instructor Rating ground school instruction which shall include:",
+     "(i) practical application of the basic principles of learning and techniques of instruction;",
+     "(ii) preparation and use of lesson plans;",
+     "(iii) procedures for planning and presenting preparatory ground instruction, pre-flight briefings, in-flight instruction, and post-flight debriefings;",
+     "(iv) theory of flight required to teach the air exercises;",
+     "(v) aircraft flight manuals and aircraft operating limits;",
+     "(vi) presentation of pilot decision-making concepts; and",
+     "(vii) the use of the Transport Canada Flight Instructor Guide, Flight Training Manual, Canadian Aviation Regulations, Part IV and the appropriate Flight Test schedules and guides.",
+     "(amended 2012/02/19)",
+     "(b) An applicant shall obtain a minimum of 70% in the written examination Flight Instructor Rating - Aeroplane Class 4 (AIRAF)."
+    ],
+    "3": [
+     "(3) Experience",
+     "An applicant shall complete in aeroplanes a minimum of 30 hours of dual flight instruction on overall pilot proficiency and the presentation of all exercises set forth in the Flight Instructor Guide and shall include a minimum of 5 hours of training in the teaching of instrument flight skills. A maximum 5 of the 30 hours may be conducted on an approved aeroplane simulator or flight training device.",
+     "(amended 1998/09/01)"
+    ],
+    "4": [
+     "(4) Skill",
+     "An applicant, while demonstrating the ability to perform as pilot in command of an aeroplane, shall successfully complete a flight test in accordance with Schedule 9 “Flight Test for the Issuance or Renewal of a Flight Instructor Rating – Class 4 – Aeroplane” of Standard 428 — Conduct of Flight Tests.",
+     "(amended 2012/02/19)",
+     "(effective 2025/12/17 – NSA 2025-008)"
+    ],
+    "5": [
+     "(5) Credits",
+     "(a) Knowledge",
+     "(i) An applicant who holds, or has held an instructor rating for helicopters, gyroplanes, gliders, balloons or aerobatics shall be credited with 10 hours of the 25 hours ground school instruction requirement.",
+     "(amended 1999/03/01)",
+     "(ii) An applicant who holds an Airline Transport Pilot Licence - Aeroplane, or a teaching certificate issued by provincial or territorial authorities, shall be credited with 10 hours of the 25 hours' ground school instruction requirement.",
+     "(amended 1999/03/01)",
+     "(iii) An applicant who holds or has held within the preceding 24 months, a flight instructor rating - Helicopter, shall be considered to have met the written examination requirement.",
+     "(amended 2000/09/01)",
+     "(b) Experience",
+     "(i) An applicant who holds, or has held a Flight Instructor Rating - Helicopter, shall be credited with 10 hours of the 30 hours' of dual flight instruction requirement, and with the 5 hours requirement of training in the teaching of instrument flight skills.",
+     "(amended 1999/03/01)",
+     "(ii) An applicant who holds an Airline Transport Pilot Licence - Aeroplane, shall be credited with 10 hours of the 30 hours' dual flight instruction requirement.",
+     "(amended 1999/03/01)"
+    ],
+    "6": [
+     "(6) Credits for DND Applicants",
+     "(a) Knowledge",
+     "(i) An applicant who holds, or has held within the preceding 24 months, Canadian Forces Instructor Category, Helicopters for initial flight training shall be deemed to have met 10 hours of the 25 hours ground school instruction requirement.",
+     "(ii) An applicant who holds, or has held within the preceding 24 months, a Canadian Forces Qualified Flying Instructor (QFI) Category valid for training on single-engine aeroplanes shall be deemed to have met 15 hours of the 25 hours ground school instruction requirement.",
+     "(amended 2000/09/01)",
+     "(b) Experience",
+     "An applicant who holds, or has held within the preceding 24 months, a Canadian Forces Qualified Flying Instructor (QFI) Category valid for training on single-engine aeroplanes shall be credited with a maximum of 15 hours of equivalent experience towards the 30 hours of dual flight instruction.",
+     "(amended 2000/09/01)"
+    ],
+    "7": [
+     "(7) Credits for Foreign Applicants",
+     "(a) Knowledge",
+     "(i) An applicant who holds, or has held within the preceding 24 months, Flight Instructor Rating - Helicopter issued by a Contracting State shall be deemed to have met 10 hours of the 25 hours ground school instruction requirement.",
+     "(ii) An applicant who holds, or has held within the preceding 24 months a Flight Instructor Rating - Aeroplane issued by a Contracting State shall be deemed to have met 15 hours of the 25 hours ground school instruction requirement.",
+     "(b) Experience",
+     "An applicant who holds, or has held within the preceding 24 months, a Flight Instructor Rating - Aeroplane issued by a Contracting State shall be credited with a maximum of 15 hours of equivalent experience towards the 30 hours of dual flight instruction."
+    ],
+    "intro": []
+   }
+  }
+ }
+}

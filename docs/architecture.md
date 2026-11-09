@@ -6,7 +6,8 @@
 hours-to-go/
 ├── .github/workflows/
 │   ├── ci.yml                  typecheck, tests (PGlite and a Postgres server), page build, API image
-│   └── pages.yml               publishes the page (and privacy/) to GitHub Pages under /hours-to-go/
+│   ├── pages.yml               publishes the page (and privacy/) to GitHub Pages under /hours-to-go/
+│   └── standard.yml            every night: has Transport Canada changed what the rules cite? (D42)
 ├── Dockerfile                  the API image Render runs (no page in it)
 ├── render.yaml                 Render blueprint: free web service, health check, env vars
 ├── index.html                  page shell, manifest and icon links, iOS home-screen meta tags
@@ -55,6 +56,10 @@ hours-to-go/
 │       ├── useSlow.ts          useSlow: true once a request has taken 4 s, to say the server is
 │       │                           waking; useWake: wake it on a form's first focus
 │       └── icons.tsx
+├── scripts/
+│   ├── standard.ts             reads Standard 421's page, compares it with the copy, writes the alert (D42)
+│   ├── check-standard.ts       npm run standard:check and standard:update
+│   └── standard-421.json       the sections the app cites, as last checked
 ├── server/
 │   ├── main.ts                 reads env, picks the database, starts Fastify
 │   ├── app.ts                  routes, CORS, session hook, health check, static files, SPA fallback

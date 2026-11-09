@@ -703,10 +703,34 @@ airport, and the riskiest part is one logbook edited on two devices while offlin
   "Offline" in the top bar; the privacy page opened too; back online the change went by itself
   (2 lines on the server, none waiting). Light and dark, 800 and 1280 px.
 
+## Phase 20: watching the standard (2026-11-08)
+
+**Owner request.** A nightly job that compares the app's citations with Transport Canada's page
+and says when one changes.
+
+**Checked first.** The page fetches, with an honest user agent, at 371 KB. It has a heading with an
+id for each section and marks amendments in the text. The owner's note said 68 citations; walking
+`goals.ts` gives 74 distinct ones, used 126 times, so the watcher reads them from there.
+
+**Built** (D42):
+- `scripts/standard.ts`: reads the page into sections and numbered subsections, keeps the 10 sections
+  the app cites, compares them with `scripts/standard-421.json`, and writes the alert.
+- `.github/workflows/standard.yml`: every night; one issue, updated only if the page changes again.
+  It also runs on a pull request that touches the citations or the watcher, so it proves itself
+  against the real page from GitHub's machines.
+
+**Checked:**
+- 8 new tests: reading a page, a citation down to its paragraphs, a missing one reported, a change
+  and its alert, a vanished section failing loudly, and every citation in the app against the stored
+  copy. All 74 are on Transport Canada's page.
+- **Against the real page**, with a stored line altered from 45 hours to 40: the alert named
+  421.26(4), listed the seven PPL requirements resting on it, and showed the line. Restored, it says
+  no change.
+
 ## Where things stand
 
-- 166 tests pass (rules 37, cost to go 16, finish date 8, logbook model 21, offline changes 5,
-  server API 42, first visit, guest, cost to go, finish date, password reset, confirm links and
+- 174 tests pass (rules 37, cost to go 16, finish date 8, logbook model 21, offline changes 5,
+  server API 42, the standard's watcher 8, first visit, guest, cost to go, finish date, password reset, confirm links and
   feedback 26, signed in 6, offline on the screen 5), and the API tests per
   database also run against a Postgres server through `pg` in CI.
 - Typecheck clean on both configs; `npm audit` clean.

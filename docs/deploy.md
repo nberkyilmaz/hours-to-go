@@ -164,6 +164,14 @@ A failed night emails you. To restore, follow that repository's README: download
 into a new Neon branch, check it, then point Render's `DATABASE_URL` at it. If the Neon password is
 ever reset, update this secret too.
 
+### 9. The nightly check of the standard
+
+Nothing to set up: `.github/workflows/standard.yml` runs every night once it is on `main`, and
+opens an issue when a section the app cites has changed (D42). To be told, GitHub → Settings →
+Notifications must send "Watching" to email, which is the default for your own repositories. To
+try it, **Actions → Standard 421 → Run workflow**. GitHub pauses it after 60 days with no
+activity in the repository, and emails when it does; **Enable** on the same page starts it again.
+
 ---
 
 ## What "free" costs you

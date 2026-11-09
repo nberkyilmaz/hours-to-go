@@ -148,6 +148,8 @@ on every push.
   kept on the device, and go to the server in order; with no connection they wait (D41). As a guest,
   changes go to localStorage.
 - `src/sw.js`: the service worker that keeps the app on the device, so it opens with no connection.
+- `scripts/standard.ts`: every night, compares the sections of Standard 421 the app cites with Transport
+  Canada's page, and opens an issue if one has changed (D42). `npm run standard:check` does it by hand.
 - `server/`: Fastify API, scrypt password hashes, HttpOnly session cookies (90 days from the last
   visit), Postgres (Neon in production, PGlite on a laptop and in tests).
 
