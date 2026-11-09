@@ -839,12 +839,23 @@ logged. PPL: 43.7 h to go, was 45.0."; the same flight appears in the paper colu
 every width; axe finds nothing on the quick form in light or dark. The keyboard behaviour can't be
 checked without a real phone.
 
+## Phase 26: Progress at a glance (2026-11-08)
+
+The audit's third batch (D47): the ring and the hours first, one goal switcher, what's left with Done
+folded, unlocked steps on one line each, Mark as held moved out of the way, and moments for a first solo,
+half way and finishing.
+
+**Checked.** 9 new tests. In Edge, for a mid-PPL student on a phone: Progress is 3.2 screens (was 4.8)
+with the guest notice, and the first bar is at 1,225 px (was 2,592); axe finds nothing in dark on a
+desktop; nothing spills sideways at 320 px. The audit asked for under two screens; the rest of the length
+is requirements genuinely still open.
+
 ## Where things stand
 
-- 228 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
+- 237 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
   21, offline changes 5, server API 42, the standard's watcher 8, first visit, guest, cost to go,
   finish date, next flight, expiry, password reset, confirm links and feedback 28, the form and
-  notices 12, the quick form 14, signed in 6, offline on the screen 5), and the API tests per
+  notices 12, the quick form 14, Progress 9, signed in 6, offline on the screen 5), and the API tests per
   database also run against a Postgres server through `pg` in CI.
 - Typecheck clean on both configs; `npm audit` clean.
 - Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.

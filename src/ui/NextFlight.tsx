@@ -30,26 +30,27 @@ export function NextFlightCard({ result: r, entries, profile }: { result: GoalRe
       <p>
         <strong>{best.name}</strong>, {formatHours(best.minutes)} h, about {money(about(best.price))}
       </p>
-      <p>
-        It counts toward {n === 1 ? '1 requirement' : `${n} requirements`} you still need:
-      </p>
-      <ul className="next-counts">
-        {best.counts.map((c) => (
-          <li key={c.id}>
-            <span>{c.label}</span>
-            <span className="next-left">
-              {amount(c, c.before)} → {c.after === 0 ? 'done' : `${amount(c, c.after)} to go`}
-            </span>
-          </li>
+      <details className="next-why">
+        <summary>It counts toward {n === 1 ? '1 requirement' : `${n} requirements`} you still need</summary>
+        <ul className="next-counts">
+          {best.counts.map((c) => (
+            <li key={c.id}>
+              <span>{c.label}</span>
+              <span className="next-left">
+                {amount(c, c.before)} → {c.after === 0 ? 'done' : `${amount(c, c.after)} to go`}
+              </span>
+            </li>
+          ))}
+        </ul>
+        {best.couldBe.map((label) => (
+          <p className="note" key={label}>
+            This flight could also be one you still need: {label}.
+          </p>
         ))}
-      </ul>
-      {best.couldBe.map((label) => (
-        <p className="note" key={label}>
-          This flight could also be one you still need: {label}.
-        </p>
-      ))}
-      {others.length > 0 && <p className="note">Also useful: {others.map((f) => f.name).join(' · ')}.</p>}
-      <p className="hint">A suggestion from the standard’s minimums, at your usual flight length. Your instructor decides what you fly next and when you’re ready for it.</p>
+        {others.length > 0 && <p className="note">Also useful: {others.map((f) => f.name).join(' · ')}.</p>}
+        <p className="note">Worked out from the standard’s minimums, at your usual flight length.</p>
+      </details>
+      <p className="hint">A suggestion. Your instructor decides what you fly next and when you’re ready for it.</p>
     </section>
   );
 }

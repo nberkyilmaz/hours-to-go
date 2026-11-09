@@ -1,10 +1,11 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { dateText, formatHours, formatHoursUp, today, type Entry } from '../model/entry';
 import type { GoalId, MilestoneRecord, Profile } from '../model/profile';
 import type { Logbook } from '../model/store';
-import { evaluateGoal, type ExamResult, type GateResult, type GoalResult, type ReqResult } from '../rules/evaluate';
+import { evaluateGoal, flatten, type ExamResult, type GateResult, type GoalResult, type ReqResult, type SectionResult } from '../rules/evaluate';
 import { GOALS, STANDARD_421_URL, goalById } from '../rules/goals';
 import { paceOf, type Pace } from '../rules/pace';
+import { progressOf, type GoalProgress } from '../rules/progress';
 import { CostDetail, CostStat, costOf, openRates } from './Cost';
 import { Finish } from './Finish';
 import { MedicalFields } from './Medical';
@@ -20,9 +21,15 @@ interface Props {
 }
 
 export function ProgressView({ book, updateProfile, onAddHours }: Props) {
-  const results = useMemo(() => GOALS.map((g) => evaluateGoal(g, book.entries, book.profile)), [book]);
+  const results = useMemo(
+    () => GOALS.map((g) => {
+      const now = evaluateGoal(g, book.entries, book.profile);
+      return { now, progress: progressOf(now, evaluateGoal(g, [], book.profile)) };
+    }),
+    [book],
+  );
   const pace = useMemo(() => paceOf(book.entries, today()), [book.entries]);
-  const focus = results.find((r) => r.goal.id === book.profile.focus) ?? results[0]!;
+  const focus = results.find((r) => r.now.goal.id === book.profile.focus) ?? results[0]!;
   const setFocus = (id: GoalId) => updateProfile((p) => ({ ...p, focus: id }));
 
   return (
@@ -39,69 +46,73 @@ export function ProgressView({ book, updateProfile, onAddHours }: Props) {
         </div>
       )}
 
-      <div className="focus-picker">
-        <label htmlFor="focus">Working on</label>
-        <select id="focus" value={focus.goal.id} onChange={(e) => setFocus(e.target.value as GoalId)}>
-          {results.map((r) => (
-            <option key={r.goal.id} value={r.goal.id}>
-              {r.goal.name}
-              {r.held ? ' (held)' : ''}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <GoalDetail result={focus} profile={book.profile} updateProfile={updateProfile} pace={pace} entries={book.entries} />
-
-      <section aria-labelledby="all-goals">
-        <h2 id="all-goals" className="section-title">
-          Every licence and rating
-        </h2>
-        <div className="goal-grid">
-          {results.map((r) => (
-            <GoalCard key={r.goal.id} result={r} active={r.goal.id === focus.goal.id} onSelect={() => setFocus(r.goal.id)} />
-          ))}
-        </div>
-      </section>
+      <GoalDetail
+        result={focus.now}
+        progress={focus.progress}
+        profile={book.profile}
+        updateProfile={updateProfile}
+        pace={pace}
+        entries={book.entries}
+        picker={
+          <div className="goal-pick">
+            <label htmlFor="focus">Working on</label>
+            <select id="focus" value={focus.now.goal.id} onChange={(e) => setFocus(e.target.value as GoalId)}>
+              {results.map(({ now, progress }) => (
+                <option key={now.goal.id} value={now.goal.id}>
+                  {now.goal.name}
+                  {now.held ? ' (held)' : now === focus.now ? '' : ` · ${progress.percent}%`}
+                </option>
+              ))}
+            </select>
+          </div>
+        }
+      />
     </div>
   );
 }
 
-function statusText(r: GoalResult): string {
-  if (r.held) return r.held.date ? `Held since ${r.held.date}` : 'Held';
-  if (r.credited) return 'Covered by a rating you hold';
-  if (r.complete) return 'Every requirement met';
-  const left = r.minutesToGo > 0 ? ` · at least ${formatHoursUp(r.minutesToGo)} h to go` : '';
-  return `${r.done} of ${r.total} done${left}`;
-}
-
-function GoalCard({ result: r, active, onSelect }: { result: GoalResult; active: boolean; onSelect: () => void }) {
-  const finished = r.held !== null || r.credited !== null || r.complete;
-  const pct = finished ? 100 : Math.round((r.done / Math.max(1, r.total)) * 100);
+/** How far along: a picture first, since that's the question this screen is for. */
+function Ring({ percent }: { percent: number }) {
+  const length = 2 * Math.PI * 44;
   return (
-    <button type="button" className={`goal-card${active ? ' is-active' : ''}${finished ? ' is-done' : ''}`} onClick={onSelect} aria-pressed={active}>
-      <span className="goal-card-name">{r.goal.short}</span>
-      <span className="goal-card-status">{statusText(r)}</span>
-      <span className="bar" aria-hidden="true">
-        <span style={{ width: `${pct}%` }} />
-      </span>
-    </button>
+    <svg className={`ring${percent === 100 ? ' is-full' : ''}`} viewBox="0 0 100 100" role="img" aria-label={`${percent}% of the way there`}>
+      <circle className="ring-track" cx="50" cy="50" r="44" />
+      <circle className="ring-fill" cx="50" cy="50" r="44" strokeDasharray={length} strokeDashoffset={length * (1 - percent / 100)} transform="rotate(-90 50 50)" />
+      <text x="50" y="50" dominantBaseline="central" textAnchor="middle">
+        {percent}%
+      </text>
+    </svg>
   );
 }
 
 interface DetailProps {
   result: GoalResult;
+  progress: GoalProgress;
   profile: Profile;
   updateProfile: UpdateProfile;
   pace: Pace | null;
   entries: readonly Entry[];
+  picker: ReactNode;
 }
 
-function GoalDetail({ result: r, profile, updateProfile, pace, entries }: DetailProps) {
+/** The hours are what a student comes to see; the standard's own order is prerequisites first. */
+const hoursFirst = (sections: readonly SectionResult[]) => [...sections.filter((s) => s.section.kind === 'experience'), ...sections.filter((s) => s.section.kind !== 'experience')];
+
+/** Nothing left to do in it. An info row is a figure to read, not something to finish. */
+const isDone = (r: ReqResult): boolean => r.req.kind !== 'info' && r.met && r.children.every(isDone);
+
+function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries, picker }: DetailProps) {
   const { goal } = r;
   const holding = GOALS.filter((g) => g.id !== goal.id && profile.held[g.id] !== undefined);
   const cost = costOf(r, profile);
   const costPanel = useRef<HTMLDetailsElement>(null);
+  // What was ticked just now stays in place, with its date and mark still to fill in.
+  const [pinned, setPinned] = useState<ReadonlySet<string>>(new Set());
+  const pin = (id: string) => setPinned((p) => new Set(p).add(id));
+  // Held, the requirements are for reference, so they all stay.
+  const showAll = r.held !== null || r.credited !== null;
+  const stays = (x: ReqResult) => showAll || !isDone(x) || pinned.has(x.req.id);
+  const finished = showAll ? [] : flatten(r.sections.flatMap((s) => s.results)).filter((x) => x.req.kind !== 'info' && x.met && !pinned.has(x.req.id));
   const setHeld = (date: string | null) =>
     updateProfile((p) => {
       const held = { ...p.held };
@@ -113,16 +124,19 @@ function GoalDetail({ result: r, profile, updateProfile, pace, entries }: Detail
   return (
     <section className="card goal" aria-labelledby="goal-title">
       <header className="goal-head">
-        <div>
+        <div className="goal-title">
+          {picker}
+          <h1 id="goal-title" className="sr-only">
+            {goal.name}
+          </h1>
           <p className="eyebrow">
             Transport Canada ·{' '}
             <a href={STANDARD_421_URL} target="_blank" rel="noreferrer">
               Standard {goal.cite}
             </a>
           </p>
-          <h1 id="goal-title">{goal.name}</h1>
         </div>
-        {r.held ? (
+        {r.held && (
           <div className="held-box">
             <label>
               <span>Held since</span>
@@ -132,10 +146,6 @@ function GoalDetail({ result: r, profile, updateProfile, pace, entries }: Detail
               Mark as not held
             </button>
           </div>
-        ) : (
-          <button type="button" className="btn" onClick={() => setHeld('')}>
-            Mark {goal.short} as held
-          </button>
         )}
       </header>
 
@@ -149,18 +159,31 @@ function GoalDetail({ result: r, profile, updateProfile, pace, entries }: Detail
       {r.held || r.credited ? (
         <p className="banner ok">{r.held ? 'You hold this. The requirements are below for reference.' : r.credited}</p>
       ) : (
-        <div className={`summary${cost ? ' with-cost' : ''}`}>
-          <div className="stat">
-            <span className="stat-value">{r.minutesToGo > 0 ? formatHoursUp(r.minutesToGo) : '0'}<small> h</small></span>
-            <span className="stat-label">{r.minutesToGo > 0 ? 'of flying left, at least' : 'hours all met'}</span>
-          </div>
-          <div className="stat">
-            <span className="stat-value">
-              {r.done}<small> / {r.total}</small>
+        <div className="hero">
+          <Ring percent={progress.percent} />
+          <div className="hero-hours">
+            {progress.need > 0 && (
+              <span className="hero-figure">
+                {formatHours(progress.flown)}
+                <small> of {formatHours(progress.need)} h</small>
+              </span>
+            )}
+            <span className="stat-label">{progress.left > 0 ? `at least ${formatHoursUp(progress.left)} h to go` : progress.need > 0 ? 'All hours flown' : 'No minimum hours'}</span>
+            <span className="stat-label">
+              {r.done} of {r.total} requirements met
             </span>
-            <span className="stat-label">requirements met</span>
           </div>
           {cost && <CostStat result={r} cost={cost} profile={profile} onRates={() => openRates(costPanel.current)} />}
+        </div>
+      )}
+      {r.complete && !r.held && !r.credited && (
+        <div className="banner ok goal-complete">
+          <span>
+            <strong>Every {goal.short} requirement is met.</strong> Time to send in your application.
+          </span>
+          <button type="button" className="btn primary small" onClick={() => setHeld('')}>
+            Mark {goal.short} as held
+          </button>
         </div>
       )}
       <Finish result={r} pace={pace} logged={entries.length > 0} />
@@ -178,16 +201,35 @@ function GoalDetail({ result: r, profile, updateProfile, pace, entries }: Detail
 
       {r.scope && <ScopeControl result={r} profile={profile} updateProfile={updateProfile} />}
 
-      {r.sections.map((s) => (
-        <div key={s.section.title} className="req-section">
-          <h2>{s.section.title}</h2>
+      {(showAll ? r.sections : hoursFirst(r.sections)).map((s) => {
+        const open = s.results.filter(stays);
+        if (open.length === 0) return null;
+        return (
+          <div key={s.section.title} className="req-section">
+            <h2>{s.section.title}</h2>
+            <ul className="reqs">
+              {open.map((x) => (
+                <ReqRow key={x.req.id} r={x} goalId={goal.id} profile={profile} updateProfile={updateProfile} stays={stays} pin={pin} />
+              ))}
+            </ul>
+          </div>
+        );
+      })}
+      {finished.length > 0 && (
+        <details className="req-done">
+          <summary>Done ({finished.length})</summary>
           <ul className="reqs">
-            {s.results.map((x) => (
-              <ReqRow key={x.req.id} r={x} goalId={goal.id} profile={profile} updateProfile={updateProfile} />
+            {finished.map((x) => (
+              <ReqRow key={x.req.id} r={{ ...x, children: [] }} goalId={goal.id} profile={profile} updateProfile={updateProfile} stays={() => false} pin={pin} />
             ))}
           </ul>
-        </div>
-      ))}
+        </details>
+      )}
+      {!r.held && !r.complete && (
+        <button type="button" className="link goal-held" onClick={() => setHeld('')}>
+          Mark {goal.short} as held
+        </button>
+      )}
     </section>
   );
 }
@@ -199,25 +241,32 @@ function shortfall(r: ReqResult): string {
 }
 
 function Gate({ gate: g }: { gate: GateResult }) {
+  const open = g.open.length;
+  const status = g.passed ? 'Passed' : g.met ? (g.gate.exams ? 'You can write it' : 'Unlocked') : `${open} ${open === 1 ? 'thing' : 'things'} left`;
+  const title = (
+    <>
+      <strong>{g.gate.label}</strong>
+      <span className="gate-status">{status}</span>
+    </>
+  );
   return (
     <li className={`gate${g.met ? ' is-open' : ''}`}>
       <span className="gate-icon">
         <LockIcon open={g.met} />
       </span>
-      <div>
-        <strong>{g.gate.label}</strong> <span className="cite">{g.gate.cite}</span>
-        {g.passed ? (
-          <p>Passed</p>
-        ) : g.met ? (
-          <p>{g.gate.exams ? 'You can write it' : 'Unlocked'}</p>
-        ) : (
+      {g.met || g.passed ? (
+        <div className="gate-line">{title}</div>
+      ) : (
+        <details className="gate-more">
+          <summary className="gate-line">{title}</summary>
+          <p className="cite">{g.gate.cite}</p>
           <ul className="gate-open">
             {g.open.map((o) => (
               <li key={o.req.id}>{shortfall(o)}</li>
             ))}
           </ul>
-        )}
-      </div>
+        </details>
+      )}
     </li>
   );
 }
@@ -254,16 +303,19 @@ interface RowProps {
   goalId: GoalId;
   profile: Profile;
   updateProfile: UpdateProfile;
+  /** Whether a sub-requirement stays in this list. */
+  stays: (r: ReqResult) => boolean;
+  pin: (id: string) => void;
 }
 
-function ReqRow({ r, goalId, profile, updateProfile }: RowProps) {
+function ReqRow({ r, goalId, profile, updateProfile, stays, pin }: RowProps) {
   const { req } = r;
   const fieldId = `${goalId}-${req.id}`;
   return (
     <li className={`req${r.met ? ' is-met' : ''}`}>
       <div className="req-line">
         {req.kind === 'milestone' ? (
-          <MilestoneCheck r={r} fieldId={fieldId} updateProfile={updateProfile} />
+          <MilestoneCheck r={r} fieldId={fieldId} updateProfile={updateProfile} pin={pin} />
         ) : (
           <span className={`dot${r.met ? ' is-met' : ''}`} aria-hidden="true">
             {r.met && <CheckIcon />}
@@ -300,10 +352,10 @@ function ReqRow({ r, goalId, profile, updateProfile }: RowProps) {
           {req.note && <p className="note">{req.note}</p>}
         </div>
       </div>
-      {r.children.length > 0 && (
+      {r.children.some(stays) && (
         <ul className="reqs nested">
-          {r.children.map((c) => (
-            <ReqRow key={c.req.id} r={c} goalId={goalId} profile={profile} updateProfile={updateProfile} />
+          {r.children.filter(stays).map((c) => (
+            <ReqRow key={c.req.id} r={c} goalId={goalId} profile={profile} updateProfile={updateProfile} stays={stays} pin={pin} />
           ))}
         </ul>
       )}
@@ -315,10 +367,10 @@ function ReqRow({ r, goalId, profile, updateProfile }: RowProps) {
 function ExamPanel({ exam }: { exam: ExamResult }) {
   const left = exam.checks.filter((c) => !c.met).length;
   return (
-    <div className={`exam-check${exam.ready ? ' is-ready' : ''}`}>
-      <p className="exam-check-title">
+    <details className={`exam-check${exam.ready ? ' is-ready' : ''}`}>
+      <summary className="exam-check-title">
         {exam.ready ? `You can write the ${exam.name}.` : `Can you write the ${exam.name} yet? Not yet: ${left} ${left === 1 ? 'thing' : 'things'} left.`}
-      </p>
+      </summary>
       <ul aria-label={`To write the ${exam.name}`}>
         {exam.checks.map((c) => (
           <li key={c.req.id} className={c.met ? 'is-met' : ''}>
@@ -334,7 +386,7 @@ function ExamPanel({ exam }: { exam: ExamResult }) {
         ))}
       </ul>
       <p className="hint">On the day, bring government photo ID (421.13(2)).</p>
-    </div>
+    </details>
   );
 }
 
@@ -403,7 +455,7 @@ function setMilestone(updateProfile: UpdateProfile, key: string, next: Milestone
 }
 
 /** The status dot doubles as the checkbox for things the log can't show. */
-function MilestoneCheck({ r, fieldId, updateProfile }: { r: ReqResult; fieldId: string; updateProfile: UpdateProfile }) {
+function MilestoneCheck({ r, fieldId, updateProfile, pin }: { r: ReqResult; fieldId: string; updateProfile: UpdateProfile; pin: (id: string) => void }) {
   if (r.req.kind !== 'milestone') return null;
   const { key } = r.req;
   return (
@@ -413,7 +465,10 @@ function MilestoneCheck({ r, fieldId, updateProfile }: { r: ReqResult; fieldId: 
         type="checkbox"
         checked={r.record !== null || r.credited !== null}
         disabled={r.credited !== null}
-        onChange={(e) => setMilestone(updateProfile, key, e.target.checked ? { date: today() } : null)}
+        onChange={(e) => {
+          pin(r.req.id);
+          setMilestone(updateProfile, key, e.target.checked ? { date: today() } : null);
+        }}
       />
       {r.met && <CheckIcon />}
     </span>

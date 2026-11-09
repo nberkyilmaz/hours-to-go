@@ -760,6 +760,25 @@ viewport. That part needs a real phone to confirm.
 Turned down: replacing the columns (the record has to match the paper log), and a toast that vanishes in
 4 seconds (Undo has to be reachable by someone who has already looked away).
 
+### D47. Progress answers "how far am I?" first
+Replaces D18's order. The screen read as the structure of Standard 421: 4.8 screens, the first progress
+bar 3 screens down, what's unlocked repeated three times, and a bar saying 25% to someone who had flown
+58% of their hours (it counted requirements).
+
+- **A ring, by hours** (`rules/progress.ts`), then "23.8 of 45.0 h", then the price. The figure is the plan
+  the price and finish date are for, or D4's when that's larger (Class 4's prerequisites), so the three
+  never disagree. A goal with no hours in it goes by what's ticked. It never says 100% until every
+  requirement is met.
+- **One goal switcher**, the "Working on" list at the top of the card, showing how far along the others
+  are. The grid of nine cards at the bottom did the same job and changed the page 3,800 px away from
+  where the tap was.
+- **What's left, then Done (n) folded**, the hours first. A row just ticked stays put while its date and
+  mark are filled in.
+- **What's unlocked is one line each**, and an exam's "Can you write it yet?" opens from its row.
+- **Mark as held** moved from the top of the card, where a student working toward a licence could tap it
+  by accident, to the end. When every requirement is met it comes back as the thing to do.
+- **Milestones get a moment**: first solo, passing half way, finishing a requirement, finishing the goal.
+
 ## Process
 
 ### D22. Check the UI in a real browser, at phone size, before calling it done
