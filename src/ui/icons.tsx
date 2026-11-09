@@ -65,6 +65,20 @@ export const CloudCheckIcon = () => (
   </svg>
 );
 
+export const CloudUpIcon = () => (
+  <svg {...base} width={16} height={16}>
+    <path d="M7 18a4.5 4.5 0 0 1-.5-9 6 6 0 0 1 11.5 1.5A3.75 3.75 0 0 1 17.5 18z" />
+    <path d="M12 15.5v-5M9.75 12.5 12 10.25l2.25 2.25" />
+  </svg>
+);
+
+export const CloudOffIcon = () => (
+  <svg {...base} width={16} height={16}>
+    <path d="M7 18a4.5 4.5 0 0 1-.5-9 6 6 0 0 1 11.5 1.5A3.75 3.75 0 0 1 17.5 18z" />
+    <path d="M4 4l16 16" />
+  </svg>
+);
+
 /** The app mark: a progress ring closing in cyan, the cockpit's set-value colour, on the graphite panel. */
 export const Mark = ({ size = 28 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">

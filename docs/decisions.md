@@ -335,6 +335,8 @@ Server-first made checkboxes lag on a phone and invited double taps. Now every c
 locally, then the server calls run one at a time in a queue, each built from the state the previous
 one left. On failure the server's copy is reloaded and a banner says the change was not saved. If
 the server is unreachable the banner stays up. A 401 returns the app to guest mode and says so.
+(Since D41 the queue is kept on the device, and a change that can't reach the server waits rather
+than failing. A change the server refuses still goes as this says.)
 
 ### D25. Published as a page on GitHub Pages and an API on its own subdomain
 The owner wanted it at `nberkyilmaz.com/hours-to-go/`, beside departure-brief, on the domain they
@@ -364,7 +366,8 @@ waits for the profile as before, and after 4 seconds says the server may be waki
 sign-up form pings `/api/health` so the server wakes while the pilot types: on the first focus in
 the form, not on sight, since the welcome screen shows the form to every new visitor (D27). A
 sign-up still waiting after 4 seconds says the server is waking. Cost: a pilot whose browser lost
-the flag but kept the cookie opens as a guest and signs in again.
+the flag but kept the cookie opens as a guest and signs in again. (Since D41, a browser with a
+copy of the profile opens on it at once and refreshes behind it, without waiting.)
 
 ### D29. Nightly backups, in a private repository
 Neon's free plan can roll back only a short recent window, and losing a pilot's logbook is the
@@ -507,6 +510,66 @@ Facebook and others show with a shared link. The picture is the welcome screen's
 the headline, and a gauge with hours to go. It was drawn as HTML with the app's colours and B612,
 and saved from Edge. Previews need full addresses, so the tags name
 `https://nberkyilmaz.com/hours-to-go/`; they move with the site if it gets a domain of its own.
+
+### D41. Offline: the app kept on the device, and changes kept until the server has them
+Pilots often have no signal at the airport, which is when a flight gets logged. Before this, the
+home-screen app wouldn't open without a connection; a signed-in pilot who opened it offline was
+dropped into the guest log; and a change made as the signal went was lost on the next reload. It
+replaces the failure half of D17, and the wait in D26 for a browser that has a copy.
+
+**The app** is kept by a service worker, `src/sw.js`, under 80 lines by hand. The build
+(`vite.config.ts`) writes in the name of every file it made and a version from their contents, so a
+new version is stored whole when it installs and the old one goes when it takes over.
+- Pages come from the network if it answers within 4 seconds, so a new version shows at once;
+  otherwise from the copy kept. A weak signal can hang for a minute, which is worse than none.
+- Built files have their content's hash in the name, so a kept one is never out of date.
+- It never touches the API: those answers are the pilot's, and the app decides what to do without
+  them.
+
+**The logbook**, signed in, is a copy on the device (`hours-to-go/account/<email>` in
+localStorage, `model/sync.ts`): the logbook as the server last had it, and the changes it doesn't
+have yet, oldest first. Each change is added there before anything is sent and leaves only once
+the server has it, so closing the app loses nothing. The screen is the server's copy with the
+waiting changes on top. They go when the app is opened, when the browser says it's back online,
+when the pilot comes back to the app, and every 30 seconds while any are waiting. All three kinds of
+change are safe to send twice: a line is stored by its id, and deleting a missing line is fine.
+
+**Two devices, both offline.** This is the hard part, so each case is decided:
+- *Different flights on each device* both survive: each line has its own id.
+- *The same line edited on both*: the last to reach the server wins the whole line. Mixing two
+  edits field by field would make a flight nobody logged.
+- *A line deleted on one and edited on the other*: whichever reaches the server last. An edit after
+  a delete brings the line back, the safe way round: deleting a flight twice beats losing one.
+- *The profile* is sent as what changed, not whole: each field, and each item of a set (one licence
+  held, one milestone, one training start). The waiting changes go on top of the newest profile,
+  and the app fetches the server's copy first after any time offline. So ticking a milestone on the
+  phone doesn't undo the medical changed on the laptop.
+
+**When a change can't be saved:**
+- Out of reach, or a 5xx: it waits. The top bar says "Offline" in amber, and a note says how many
+  changes are kept. Nothing is reverted and it isn't an error.
+- Refused (a 4xx): sending it again won't help, so it's dropped, a banner says so, and the screen
+  shows what the profile has.
+- A 401: signed out, as before. Changes still waiting stay on the device, under that address, and
+  go when that address signs in again; a different address never gets them.
+
+**Signing out** sends what's waiting first, and refuses if it can't, because signing out takes
+the copy off the device. Deleting the profile removes it too, and so does a session that ends with
+nothing waiting. The privacy page says all this.
+
+With a copy, the app also opens at once and refreshes behind it, so the sleeping free server (D26)
+no longer holds up anyone who has signed in on that device before. Importing a file, moving guest
+entries in and account changes still need the server, and say so.
+
+Turned down:
+- **Workbox or vite-plugin-pwa.** A dependency and a generated worker, to save under 80 lines whose
+  every rule can be read here.
+- **IndexedDB.** localStorage is simpler and synchronous, so a change is stored before anything
+  else happens. A line is under 1 KB, so thousands fit in its 5 MB.
+- **The Background Sync API.** Safari doesn't have it, so it wouldn't work on an iPhone. Trying
+  again while the app is open covers it, and opening the app sends what's waiting.
+- **Version numbers per line on the server**, to detect conflicts. A table change and a conflict
+  screen for what is one pilot's own devices, where the last edit is nearly always the right one.
 
 ## Interface
 

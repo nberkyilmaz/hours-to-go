@@ -666,11 +666,48 @@ has the student flying before the 8 weeks, which is what it meant to check.
   ATPL "more than 5 years away", multi-engine no line. A phone at 390, 360 and 320 px and a
   desktop, light and dark, with no sideways scroll and no page errors.
 
+## Phase 19: offline (2026-11-08)
+
+**Owner request.** Three things to build, offline logging first: pilots often have no signal at the
+airport, and the riskiest part is one logbook edited on two devices while offline.
+
+**Built** (D41):
+- `src/sw.js`, a service worker: the build writes in every file of that version, so the whole app is
+  stored at install and replaced whole. Pages from the network within 4 s, else the copy; built
+  files from the copy; the API never touched.
+- `src/model/sync.ts`: signed in, a copy on the device of the server's logbook and the changes it
+  doesn't have yet. A profile change is what changed, field by field and item by item.
+- `useLogbook` keeps each change before sending it, and sends them oldest first, one run at a
+  time. Unreachable or a 5xx leaves them waiting; a 4xx drops the one refused and says so; a 401
+  leaves them for signing in again. Opening with a copy shows it at once.
+- The top bar says Saved, Saving… or Offline, and a note says how many changes are kept. Signing out
+  sends what's waiting first, or refuses. The privacy page says what stays on the device.
+
+**Problems on the way:**
+1. *The worker's list had no pages.* Vite adds the HTML to the bundle after ordinary plugins run, so
+   the first build listed only scripts and fonts and the app wouldn't have opened offline. The
+   plugin now runs last, and the Pages workflow checks that `sw.js` was built.
+2. *"Your change is kept… and go".* Edge showed the note reading wrong in the singular.
+3. *A longer badge moved the top bar.* "Offline · 3 changes to save" wrapped the app's name at 800 px
+   wide. It says "Offline · 3 to save" now, no wider than "Saved to your profile"; the full
+   sentence is in its label.
+
+**Checked:**
+- 10 new tests: a profile change landing on a profile another device changed; the copy kept per
+  address, and unreadable storage. On the screen, with a server that drops off and comes back: a
+  flight kept and sent; the app reopened with no connection, on the pilot's own logbook, and its
+  change put on top of the laptop's; a refused change; signing out with changes waiting; a
+  session ending with changes waiting, and signing in again.
+- **In Edge**, with the browser's own offline switch, the built page and a real API: signed up on
+  a phone, logged a flight; offline, logged another, reloaded the page, and both were there with
+  "Offline" in the top bar; the privacy page opened too; back online the change went by itself
+  (2 lines on the server, none waiting). Light and dark, 800 and 1280 px.
+
 ## Where things stand
 
-- 156 tests pass (rules 37, cost to go 16, finish date 8, logbook model 21, server API 42, first
-  visit, guest, cost to go, finish date, password reset, confirm links and feedback 26, signed in
-  6), and the API tests per
+- 166 tests pass (rules 37, cost to go 16, finish date 8, logbook model 21, offline changes 5,
+  server API 42, first visit, guest, cost to go, finish date, password reset, confirm links and
+  feedback 26, signed in 6, offline on the screen 5), and the API tests per
   database also run against a Postgres server through `pg` in CI.
 - Typecheck clean on both configs; `npm audit` clean.
 - Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.

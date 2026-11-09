@@ -63,9 +63,9 @@ The owner wants every one of these. Roughly in order of value:
 4. **Currency and recency** (401.05) for licensed pilots: 5 takeoffs and landings in 6 months to
    carry passengers, night currency, IFR currency (6 approaches and holds in 6 months; the
    approaches column already exists). It keeps pilots using the app after their licence.
-5. **Offline logging while signed in.** Today, without a connection the app falls back to this
-   device's guest log and offers to merge it later. A service worker plus a queue of unsent
-   changes would let a pilot log at the airport with no signal. The phone apps need it too.
+5. ~~**Offline logging while signed in.**~~ Done: a service worker keeps the app on the device, and
+   changes are kept there until the server has them, so a pilot can open it and log with no signal
+   (D41). The phone apps needed it too.
 6. **"Log again"**: copy an earlier flight. Students fly the same lesson many times. (The form
    already starts from the last aircraft, registration and departure.)
 7. **Search and filter** the logbook by date, aircraft type and registration; the list grows to
@@ -102,7 +102,7 @@ These cost money, so they wait (D32):
     14 days before going public.
   - The apps sign in with a token in the phone's secure storage, since iOS blocks the cookie the
     website uses from an API on another domain.
-  - Offline logging (feature 5) first, which Apple also expects of an app that isn't just a website.
+  - Offline logging (feature 5, done), which Apple also expects of an app that isn't just a website.
   - iPhone builds on GitHub's macOS runners, free for a public repository; testing through TestFlight.
 
 ## Confirm with the flight school
@@ -135,7 +135,10 @@ The logbook-photo import was dropped by the owner (decision D24); pilots type th
 - The cost to go prices the flying only: not ground school, briefings, exam and flight-test fees,
   the medical or the licence. It takes one aeroplane rate, so a Group 1 IFR flown partly in a twin
   is priced as a single.
-- No service worker: the home-screen app needs a connection to open.
+- Offline, importing a file, moving guest entries into a profile and account changes need the
+  server. If one line is edited on two devices while offline, the last to reach the server wins (D41).
+  Safari can clear a website's storage after 7 days without a visit, changes still waiting included,
+  unless the app is on the home screen.
 - On the free plan the API sleeps. A signed-in pilot opening the app can wait up to a minute (D26).
 - Safari keeps the session cookie only 7 days (D25). The app renews it on every open, so this
   matters only to a pilot who hasn't opened it for a week.

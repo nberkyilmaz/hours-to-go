@@ -263,6 +263,15 @@ button:focus-visible {
   color: #4ade80;
 }
 
+.save-state.is-saving svg {
+  color: var(--panel-muted);
+}
+
+/* Amber, the cockpit's caution colour: nothing is wrong, but the profile is behind this device. */
+.save-state.is-offline svg {
+  color: #fbbf24;
+}
+
 .save-state.is-local {
   border: 0;
   padding: 0;
