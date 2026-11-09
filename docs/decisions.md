@@ -213,6 +213,47 @@ Turned down:
 - **A day, or a range.** A range would look precise about its own error, which nobody can know
   from a few weeks of flying.
 
+### D43. The next flight: each kind of flight tried against the real rules
+One flight can count toward several requirements, so which one a student flies next changes what
+the training costs. Under the price, each goal now says which flight counts toward the most of
+what is left, what it counts toward, and what it costs.
+
+**It has no rules of its own.** `rules/next.ts` puts each kind of flight in the log as if it had
+been flown and runs `evaluateGoal`, so it can't disagree with the Progress screen, and a change to
+a requirement changes the suggestion with it.
+
+**How flights are compared**, each at the pilot's usual length (the middle of their last ten, to
+the half hour, 1.5 h if there are none):
+1. How much closer the whole goal gets: the fall in the plan the price is for (D39).
+2. How many open requirements it counts toward, which is the point.
+3. How many it finishes, then the minutes of progress, then the price.
+
+A flight is dropped if it doesn't get the goal closer, or if another flight, for no more money,
+does at least as much toward everything this one does. Three are shown at most.
+
+**The order schools teach in** isn't in the standard, and on the numbers alone a first-lesson
+student would be told to fly a solo cross-country. So it holds these back:
+- Nothing is suggested before a solo is in the log or a licence is held. The school's lessons set
+  the order then, and there is nothing to choose between.
+- Solo cross-country waits for the PPL's 3 h of dual cross-country, unless a licence is held.
+- Night flights wait for a licence, and solo night for the night rating's 5 h dual at night.
+
+**Double counting.** The CPL's 20 h of instrument time is "on top of" its night and cross-country
+time, and the app's sums can't see that (D3). So the flight that mixes hood time into a
+cross-country is offered only where the standard allows the overlap: the PPL, whose 17 h dual
+"includes" both, and the IFR, whose long flight is exactly that. As a backstop, a flight that would
+take more off the plan than it lasts is dropped.
+
+**It knows the standard, not the school.** It doesn't know the syllabus, the weather, or what the
+student is ready for, and students pay for what they fly. So the card says it's a suggestion and
+that the instructor decides, and the order above is on the list for an instructor to check.
+
+Turned down:
+- **Planning every remaining flight.** A plan for 30 flights is out of date after the first, and
+  implies a precision nobody has. The next one is what a student can take to a lesson.
+- **Suggesting from the first flight.** See above.
+- **A length the pilot picks.** One more control on a full card; their usual length is what they'll book.
+
 ## Logbook model
 
 ### D6. A line has the paper personal log's columns (replaced one role per line)

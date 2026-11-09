@@ -204,7 +204,7 @@ const medical = (anyOf: Medical[], label: string, cite: string): MedicalReq => (
 
 const holds = (c: Ctx, ...ids: GoalId[]) => ids.some((id) => c.profile.held[id] !== undefined);
 
-const PILOT_LICENCE: GoalId[] = ['ppl', 'cpl', 'atpl'];
+export const PILOT_LICENCE: GoalId[] = ['ppl', 'cpl', 'atpl'];
 
 // ---------------------------------------------------------------------------
 // Writing a written exam, 421.13. Transport Canada checks a medical, for some
