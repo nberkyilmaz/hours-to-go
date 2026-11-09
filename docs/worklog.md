@@ -825,12 +825,26 @@ leave the form and comes back to "Log a flight"; a route is never clipped from 7
 no control under 44 px on a phone but the inline link to the standard; and axe finds nothing on the form,
 the logbook, Profile or Progress in dark.
 
+## Phase 25: logging a flight (2026-11-08)
+
+The audit's second batch (D46): the quick form over the paper columns, the + on every tab with a
+home-screen shortcut, the message after saving with Undo, deleting with Undo instead of a question, and
+the sheet following the keyboard.
+
+**Problem on the way:** the new button in the top bar pushed it wider than the screen from 721 to 880 px.
+The + stays by the thumb up to 1000 px wide now.
+
+**Checked.** 14 new tests. In Edge on a phone: an ordinary dual flight is 3 taps and 3 digits; "1.3 h
+logged. PPL: 43.7 h to go, was 45.0."; the same flight appears in the paper columns; the bar fits at
+every width; axe finds nothing on the quick form in light or dark. The keyboard behaviour can't be
+checked without a real phone.
+
 ## Where things stand
 
-- 214 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
+- 228 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
   21, offline changes 5, server API 42, the standard's watcher 8, first visit, guest, cost to go,
   finish date, next flight, expiry, password reset, confirm links and feedback 28, the form and
-  notices 12, signed in 6, offline on the screen 5), and the API tests per
+  notices 12, the quick form 14, signed in 6, offline on the screen 5), and the API tests per
   database also run against a Postgres server through `pg` in CI.
 - Typecheck clean on both configs; `npm audit` clean.
 - Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.

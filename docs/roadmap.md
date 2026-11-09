@@ -107,8 +107,9 @@ government form. The batches, with its finding numbers:
   lost (F6), impossible numbers questioned (F7), the logbook at tablet widths (F9), one slim banner at
   a time (F13), the dialog's keyboard behaviour (F19), contrast (F20), tap targets (F21), and the small
   things that were quick (F25).
-- **B. The flight** (about a week): a quick form on top of the paper columns (F1), a + on every tab
-  (F2), a "logged" moment with Undo (F3), the keyboard not covering Save, on real phones (F8).
+- ~~**B. The flight.**~~ Done (D46): a quick form on top of the paper columns (F1), a + on every tab
+  (F2), a "logged" moment with Undo (F3), and the sheet following the keyboard (F8, to confirm on a
+  real phone).
 - **C. Progress at a glance** (about a week): a hero with a ring, and a short "what's left" list (F5),
   achievements (F16), one goal switcher (F17), the price's sample rates said out loud (F14).
 - **D. A logbook that scales** (3 to 4 days): compact rows, month headers, search and filter (F10,

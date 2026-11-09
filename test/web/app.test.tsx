@@ -59,7 +59,8 @@ describe('the app as a guest', () => {
   it('will not save cross-country time longer than the flight it is part of', async () => {
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: /^Logbook/ }));
-    fireEvent.click(screen.getByRole('button', { name: /Log a flight/ }));
+    fireEvent.click(screen.getAllByRole('button', { name: /Log a flight/ })[0]!);
+    fireEvent.click(screen.getByRole('button', { name: 'Paper columns' }));
     type('Single-engine day Dual', '1.0');
     type('Cross-country day Dual', '1:30');
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));

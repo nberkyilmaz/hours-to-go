@@ -31,6 +31,7 @@ hours-to-go/
 │   │   ├── profile.ts          goals held, medical, milestones, training start dates, focus,
 │   │   │                           the school's rates and the sample ones (D39)
 │   │   ├── store.ts            parsing (and converting old lines), merging, guest localStorage
+│   │   ├── quick.ts            the quick form's choices, and which paper columns they fill (D46)
 │   │   └── sync.ts             signed in: changes waiting for the server, and the copy on this device (D41)
 │   ├── rules/
 │   │   ├── goals.ts            the Standard 421 catalogue: every requirement with its paragraph,
@@ -38,6 +39,7 @@ hours-to-go/
 │   │   ├── evaluate.ts         turns a logbook + profile into progress per goal
 │   │   ├── cost.ts             prices a plan at the school's rates; money formatting (D39)
 │   │   ├── pace.ts             the time logged a week lately, and when a goal's time left is flown (D40)
+│   │   ├── moment.ts           what a flight just did for the goal, for the message after saving (D46)
 │   │   └── next.ts             which flight counts toward the most, by trying each against the rules (D43)
 │   └── ui/
 │       ├── Progress.tsx        goal detail, gates, requirement rows, milestone tick-offs, goal cards

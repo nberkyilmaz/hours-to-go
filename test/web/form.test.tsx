@@ -26,7 +26,8 @@ async function openForm() {
   saveGuestLogbook({ ...emptyLogbook(), entries: [line('2026-10-01', { seDayDual: 1.2 })] });
   render(<App />);
   fireEvent.click(await screen.findByRole('button', { name: /^Logbook/ }));
-  fireEvent.click(screen.getByRole('button', { name: /Log a flight/ }));
+  fireEvent.click(screen.getAllByRole('button', { name: /Log a flight/ })[0]!);
+  fireEvent.click(screen.getByRole('button', { name: 'Paper columns' }));
   return screen.getByRole('dialog');
 }
 const save = (dialog: HTMLElement, name: string | RegExp = 'Save') => fireEvent.click(within(dialog).getByRole('button', { name }));
@@ -85,7 +86,8 @@ describe('leaving the form', () => {
     window.dispatchEvent(new PopStateEvent('popstate'));
     await gone();
 
-    fireEvent.click(screen.getByRole('button', { name: /Log a flight/ }));
+    fireEvent.click(screen.getAllByRole('button', { name: /Log a flight/ })[0]!);
+    fireEvent.click(screen.getByRole('button', { name: 'Paper columns' }));
     const again = screen.getByRole('dialog');
     type('Single-engine day Dual', '1.3');
     window.dispatchEvent(new PopStateEvent('popstate'));

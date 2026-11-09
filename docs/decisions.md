@@ -730,6 +730,36 @@ From the audit's first batch ([ux-audit.md](ux-audit.md)).
 Turned down: a draft kept in storage (the quick form in the next batch makes a typed flight short), and
 `window.confirm` for leaving (it can't say "Keep editing", and it sits badly with Back).
 
+### D46. A quick form on top of the paper columns, and something back for logging
+The audit's biggest finding: the form was the paper log on glass, 21 boxes over 1.8 screens for a flight
+that needs one number, with the same time typed twice for a cross-country and "solo" split between a
+box and a tick.
+
+**The columns stay the record** (D6, D10). The quick form is a faster way to fill them: Dual, Solo or PIC,
+the time, then Night, Cross-country or Hood, and landings. `model/quick.ts` turns those into the same
+boxes, so saving, validation and the rules are all unchanged, and **Paper columns** shows the same flight
+in them. A line that doesn't fit (time in two columns, multi-engine, actual IMC) opens in the columns, so
+it's never forced into a shape that loses something. An ordinary dual flight is 3 taps and 3 digits.
+
+- **It won't guess who was flying.** Defaulting to the last flight's kind would save a tap, and now and
+  then log a solo as dual, which counts toward the wrong requirements in a legal record.
+- **Landings start at 1**, since a flight ends in one. The destination starts at the departure, and
+  choosing Cross-country clears it and asks.
+- **The aircraft and route are one line** with Change, from the last flight.
+
+**The + is on every tab**: by the thumb on a phone or tablet, a button in the bar on a wider screen. The
+home-screen icon has a "Log a flight" shortcut. Tapping the tab you're on goes to its top.
+
+**Saving gives something back.** "1.3 h logged. PPL: 43.7 h to go, was 45.0", and what the flight finished,
+from the rules (`rules/moment.ts`), with See progress and Undo. Deleting no longer asks: it deletes and
+offers Undo, which is both faster and safer than a question people learn to dismiss.
+
+A phone's keyboard covers the screen without resizing it, so the sheet takes its height from the visual
+viewport. That part needs a real phone to confirm.
+
+Turned down: replacing the columns (the record has to match the paper log), and a toast that vanishes in
+4 seconds (Undo has to be reachable by someone who has already looked away).
+
 ## Process
 
 ### D22. Check the UI in a real browser, at phone size, before calling it done

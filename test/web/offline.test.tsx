@@ -55,7 +55,8 @@ afterEach(() => {
 
 async function logFlight(hours: string) {
   fireEvent.click(screen.getByRole('button', { name: /^Logbook/ }));
-  fireEvent.click(screen.getByRole('button', { name: /Log a flight/ }));
+  fireEvent.click(screen.getAllByRole('button', { name: /Log a flight/ })[0]!);
+  fireEvent.click(screen.getByRole('button', { name: 'Paper columns' }));
   fireEvent.change(screen.getByLabelText('Single-engine day Dual'), { target: { value: hours } });
   fireEvent.click(screen.getByRole('button', { name: 'Save' }));
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
@@ -77,7 +78,7 @@ describe('signed in with no connection', () => {
 
     // Shown, kept, and waiting: nothing reverted, nothing lost.
     expect(await screen.findByRole('button', { name: 'Offline. 1 change kept on this device' })).toBeTruthy();
-    expect(screen.getByRole('status').textContent).toMatch(/You’re offline. Your change is kept on this device/);
+    expect(screen.getByText(/You’re offline/).textContent).toMatch(/Your change is kept on this device/);
     expect(screen.getByRole('list', { name: 'Logbook entries' }).children).toHaveLength(1);
     expect(loadCopy()?.ops).toHaveLength(1);
     expect(screen.queryByRole('alert')).toBeNull();

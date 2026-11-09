@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { blankEntry, derive, isFtdOnly, type Entry } from './model/entry';
+import { blankEntry, derive, formatHours, formatHoursUp, isFtdOnly, today, type Entry } from './model/entry';
 import { hasContent, isSnoozed, snooze } from './model/store';
 import { ConfirmBanner } from './ui/Account';
 import { ConfirmEmail } from './ui/ConfirmEmail';
 import { EntryForm, type FormLayout, type Suggestions } from './ui/EntryForm';
-import { BookIcon, CloudCheckIcon, CloudOffIcon, CloudUpIcon, Mark, ProgressIcon, UserIcon } from './ui/icons';
+import { goalById } from './rules/goals';
+import { momentOf } from './rules/moment';
+import { BookIcon, CloudCheckIcon, CloudOffIcon, CloudUpIcon, Mark, PlusIcon, ProgressIcon, UserIcon } from './ui/icons';
 import { LogbookView } from './ui/Logbook';
 import { ProfileView } from './ui/Profile';
 import { ProgressView } from './ui/Progress';
@@ -82,6 +84,37 @@ function SaveState({ sync, onClick }: { sync: Sync; onClick: () => void }) {
   );
 }
 
+interface Toast {
+  text: JSX.Element;
+  undo: () => void;
+  progress: boolean;
+}
+
+const TOAST_MS = 8000;
+
+/** After a flight is saved or deleted: what it did, and the way back. */
+function Toast({ toast, onUndo, onProgress, onDone }: { toast: Toast; onUndo: () => void; onProgress: () => void; onDone: () => void }) {
+  useEffect(() => {
+    const timer = setTimeout(onDone, TOAST_MS);
+    return () => clearTimeout(timer);
+  }, [toast, onDone]);
+  return (
+    <div className="toast" role="status">
+      <p>{toast.text}</p>
+      <span className="toast-actions">
+        {toast.progress && (
+          <button type="button" className="link" onClick={onProgress}>
+            See progress
+          </button>
+        )}
+        <button type="button" className="link" onClick={onUndo}>
+          Undo
+        </button>
+      </span>
+    </div>
+  );
+}
+
 export function App() {
   const lb = useLogbook();
   const [tab, setTab] = useState<Tab>('progress');
@@ -90,6 +123,9 @@ export function App() {
   const [hideStranded, setHideStranded] = useState(false);
   const [hideConfirm, setHideConfirm] = useState(() => isSnoozed('confirm-email'));
   const [link, setLink] = useState(linkInUrl);
+  const [hash, setHash] = useState(window.location.hash);
+  const [toast, setToast] = useState<Toast | null>(null);
+  const clearToast = useCallback(() => setToast(null), []);
   const entries = lb.book.entries;
 
   useEffect(() => {
@@ -104,6 +140,7 @@ export function App() {
   // page doesn't load again.
   useEffect(() => {
     const onHash = () => {
+      setHash(window.location.hash);
       const found = linkInUrl();
       if (found) setLink(found);
     };
@@ -126,17 +163,58 @@ export function App() {
     const newest = [...entries].filter((e) => !e.forward).sort((a, b) => (a.date < b.date ? 1 : -1));
     // Most students fly the same aircraft from the same field, so start from the last one.
     const last = newest.find((e) => (layout === 'ftd' ? isFtdOnly(e) : derive(e).total > 0));
-    if (last && layout === 'flight') Object.assign(entry, { aircraft: last.aircraft, registration: last.registration, from: last.from });
+    // Most flights come back where they left from; a cross-country says otherwise.
+    if (last && layout === 'flight') Object.assign(entry, { aircraft: last.aircraft, registration: last.registration, from: last.from, to: last.from });
     if (last && layout === 'ftd') entry.aircraft = last.aircraft;
     setDraft({ entry, isNew: true, layout });
   };
   const editEntry = (entry: Entry) =>
     setDraft({ entry, isNew: false, layout: entry.forward ? 'forward' : isFtdOnly(entry) ? 'ftd' : 'flight' });
 
+  const saveEntry = async (entry: Entry) => {
+    const isNew = draft?.isNew === true;
+    const moment = isNew ? momentOf(goalById(lb.book.profile.focus), entries, entry, lb.book.profile, today()) : null;
+    const ok = await lb.saveEntry(entry);
+    if (ok && isNew) {
+      const d = derive(entry);
+      setToast({
+        text: (
+          <>
+            <strong>{formatHours(d.total || entry.ftd)} h logged.</strong>
+            {moment?.complete ? ` Every ${moment.short} requirement is met.` : moment && moment.now < moment.was ? ` ${moment.short}: ${formatHoursUp(moment.now)} h to go, was ${formatHoursUp(moment.was)}.` : ''}
+            {moment && moment.finished.length > 0 && !moment.complete ? ` Done: ${moment.finished[0]}.` : ''}
+          </>
+        ),
+        undo: () => void lb.removeEntry(entry.id),
+        progress: true,
+      });
+    }
+    return ok;
+  };
+
+  const deleteEntry = (entry: Entry) => {
+    void lb.removeEntry(entry.id);
+    setToast({
+      text: <>Deleted the {[entry.date, entry.aircraft, entry.registration].filter(Boolean).join(' ')} entry.</>,
+      undo: () => void lb.saveEntry(entry),
+      progress: false,
+    });
+  };
+
   // A first visit, with nothing logged yet: recommend a profile before anything else.
   const welcoming = lb.mode.kind === 'guest' && !lb.mode.offline && !lb.welcomed && !hasContent(lb.guest);
   // The welcome's buttons are low on a phone, so the app it gives way to would open scrolled.
   useEffect(toTop, [welcoming, tab, link]);
+
+  // The home-screen icon's "Log a flight" shortcut opens the app at #log.
+  const ready = lb.mode.kind !== 'loading' && !welcoming;
+  useEffect(() => {
+    if (!ready || hash !== '#log') return;
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    setHash('');
+    startEntry('flight');
+    // Only when the app has come up; startEntry reads the logbook of the moment.
+  }, [ready, hash]);
 
   if (link?.kind === 'reset') return <ResetPassword token={link.token} lb={lb} onDone={() => setLink(null)} />;
   if (link?.kind === 'confirm') return <ConfirmEmail token={link.token} lb={lb} onDone={() => setLink(null)} />;
@@ -230,12 +308,15 @@ export function App() {
         </div>
         <nav className="tabs" aria-label="Sections">
           {TABS.map(({ id, label, Icon }) => (
-            <button key={id} type="button" className="tab" aria-current={tab === id ? 'page' : undefined} onClick={() => setTab(id)}>
+            <button key={id} type="button" className="tab" aria-current={tab === id ? 'page' : undefined} onClick={() => (tab === id ? toTop() : setTab(id))}>
               <Icon />
               <span>{label}</span>
             </button>
           ))}
         </nav>
+        <button type="button" className="btn primary small topbar-log" onClick={() => startEntry('flight')}>
+          <PlusIcon /> Log a flight
+        </button>
         {mode.kind === 'account' ? (
           <SaveState sync={lb.sync} onClick={() => setTab('profile')} />
         ) : (
@@ -274,14 +355,30 @@ export function App() {
             entries={book.entries}
             onNew={startEntry}
             onEdit={editEntry}
-            onDelete={(entry) => {
-              const what = [entry.date, entry.aircraft, entry.registration].filter(Boolean).join(' ');
-              if (window.confirm(`Delete the ${what} entry?`)) void lb.removeEntry(entry.id);
-            }}
+            onDelete={deleteEntry}
           />
         )}
         {tab === 'profile' && <ProfileView lb={lb} />}
       </main>
+
+      {toast ? (
+        <Toast
+          toast={toast}
+          onDone={clearToast}
+          onProgress={() => {
+            setTab('progress');
+            clearToast();
+          }}
+          onUndo={() => {
+            toast.undo();
+            clearToast();
+          }}
+        />
+      ) : (
+        <button type="button" className="fab" aria-label="Log a flight" onClick={() => startEntry('flight')}>
+          <PlusIcon />
+        </button>
+      )}
 
       {draft && (
         <EntryForm
@@ -291,7 +388,7 @@ export function App() {
           layout={draft.layout}
           suggestions={suggestions}
           pplDate={book.profile.held.ppl?.date}
-          onSave={lb.saveEntry}
+          onSave={saveEntry}
           onClose={closeDraft}
         />
       )}
