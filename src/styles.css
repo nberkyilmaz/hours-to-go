@@ -33,6 +33,7 @@
   --danger-ink: #ffffff;
   /* An open requirement's ring: 3:1 against the card, as a control needs. */
   --ring: #858d9b;
+  --track: #d3d8df;
   --radius: 10px;
   --radius-input: 8px;
   --shadow: 0 1px 2px rgb(15 20 27 / 6%), 0 4px 14px rgb(15 20 27 / 5%);
@@ -65,6 +66,7 @@
     --danger-soft: #3a1820;
     --danger-ink: #1f0a0a;
     --ring: #748091;
+    --track: #2c3646;
     --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 4px 14px rgb(0 0 0 / 22%);
     --shadow-lift: 0 2px 4px rgb(0 0 0 / 35%), 0 16px 36px rgb(0 0 0 / 40%);
   }
@@ -110,12 +112,6 @@ h3,
 .save-state,
 .stat-value,
 .tile dd,
-.goal-card-name,
-.c-total,
-.loading-title {
-  font-family: var(--font-display);
-}
-
 input,
 select,
 textarea,
@@ -571,9 +567,9 @@ button:focus-visible {
 
 .bar {
   display: block;
-  height: 6px;
+  height: 8px;
   border-radius: 999px;
-  background: var(--surface-2);
+  background: var(--track);
   overflow: hidden;
 }
 
@@ -815,22 +811,6 @@ button:focus-visible {
 
 /* ---- Progress -------------------------------------------------------- */
 
-.focus-picker {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.focus-picker label {
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.focus-picker select {
-  max-width: 420px;
-  font-weight: 600;
-}
-
 .goal {
   padding: 20px;
 }
@@ -874,12 +854,6 @@ button:focus-visible {
   min-height: 36px;
 }
 
-.summary {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
 .stat {
   display: flex;
   flex-direction: column;
@@ -914,6 +888,10 @@ button:focus-visible {
 
 .stat-more .link {
   padding: 0;
+}
+
+.stat-more:has(.link) {
+  margin-top: 0;
 }
 
 .gates {
@@ -964,10 +942,6 @@ button:focus-visible {
 }
 
 /* The cost to go: the arithmetic behind the price, and the school's rates. */
-.summary.with-cost {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
 /* When the pilot finishes at their pace, under the hours and the price. */
 .pace {
   margin: 12px 0 0;
@@ -1363,62 +1337,7 @@ button:focus-visible {
   font-weight: 600;
 }
 
-.goal-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 10px;
-}
-
-.goal-card {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 14px;
-  text-align: left;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  cursor: pointer;
-}
-
-.goal-card:hover {
-  border-color: var(--muted);
-}
-
-.goal-card {
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.goal-card:hover {
-  box-shadow: var(--shadow);
-}
-
-.goal-card.is-active {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent);
-}
-
-.goal-card.is-done .bar > span {
-  background: var(--ok);
-}
-
-.goal-card-name {
-  font-weight: 700;
-  font-size: 17px;
-}
-
-.goal-card-status {
-  color: var(--muted);
-  font-size: 14px;
-  min-height: 2.6em;
-}
-
 @media (max-width: 720px) {
-  .focus-picker {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 6px;
-  }
   .goal {
     padding: 16px;
   }
@@ -1431,13 +1350,7 @@ button:focus-visible {
   .stat-value {
     font-size: 26px;
   }
-  .goal-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
   /* The price gets a row of its own under the hours. */
-  .summary.with-cost {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
   .stat-money {
     grid-column: 1 / -1;
   }
@@ -1763,6 +1676,163 @@ button:focus-visible {
 .brand,
 .topbar .btn {
   white-space: nowrap;
+}
+
+/* ---- The top of a goal ----------------------------------------------- */
+
+.goal-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.goal-pick label {
+  display: block;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.goal-pick select {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 2px;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.goal-title .eyebrow {
+  margin: 6px 0 0;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px 16px;
+  margin-top: 14px;
+}
+
+.ring {
+  width: 108px;
+  height: 108px;
+}
+
+.ring circle {
+  fill: none;
+  stroke-width: 10;
+}
+
+.ring-track {
+  stroke: var(--track);
+}
+
+.ring-fill {
+  stroke: var(--accent);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.6s ease;
+}
+
+.ring.is-full .ring-fill {
+  stroke: var(--ok);
+}
+
+.ring text {
+  fill: currentColor;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.hero-hours {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.hero-figure {
+  font-family: var(--font-display);
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.hero-figure small {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.hero .stat-money {
+  grid-column: 1 / -1;
+  padding: 12px 14px;
+}
+
+.goal-complete {
+  margin: 12px 0 0;
+}
+
+.gate-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 12px;
+  min-width: 0;
+}
+
+.gate-more {
+  flex: 1;
+  min-width: 0;
+}
+
+.gate-more > summary {
+  cursor: pointer;
+}
+
+.gate-status {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.gate.is-open > .gate-line {
+  flex: 1;
+}
+
+.next-why {
+  margin-top: 6px;
+}
+
+.next-why > summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.req-done {
+  margin-top: 16px;
+}
+
+.req-done > summary {
+  padding: 8px 0;
+  color: var(--muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.goal-held {
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+@media (min-width: 721px) {
+  .hero {
+    grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .hero .stat-money {
+    grid-column: auto;
+  }
 }
 
 /* ---- Quick form, the + and the moment after saving ------------------- */

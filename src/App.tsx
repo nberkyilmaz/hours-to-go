@@ -181,7 +181,9 @@ export function App() {
         text: (
           <>
             <strong>{formatHours(d.total || entry.ftd)} h logged.</strong>
+            {moment?.firstSolo && ' Your first solo. Congratulations!'}
             {moment?.complete ? ` Every ${moment.short} requirement is met.` : moment && moment.now < moment.was ? ` ${moment.short}: ${formatHoursUp(moment.now)} h to go, was ${formatHoursUp(moment.was)}.` : ''}
+            {moment?.halfway && !moment.complete && ' Halfway there.'}
             {moment && moment.finished.length > 0 && !moment.complete ? ` Done: ${moment.finished[0]}.` : ''}
           </>
         ),

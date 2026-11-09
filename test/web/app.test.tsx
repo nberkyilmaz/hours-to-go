@@ -208,7 +208,7 @@ describe('the app as a guest', () => {
     render(<App />);
     const card = (await screen.findByRole('region', { name: 'Your next flight' })) as HTMLElement;
     expect(card.textContent).toContain('Dual cross-country, a third under the hood, 1.5 h, about $530');
-    expect(card.textContent).toContain('It counts toward 3 requirements you still need:');
+    expect(card.textContent).toContain('It counts toward 3 requirements you still need');
     expect(card.textContent).toContain('3 h dual cross-country3.0 h → 1.5 h to go');
     expect(card.textContent).toContain('Also useful: Solo, local area · Dual, all under the hood.');
     expect(card.textContent).toContain('Your instructor decides what you fly next');

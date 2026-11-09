@@ -110,7 +110,7 @@ government form. The batches, with its finding numbers:
 - ~~**B. The flight.**~~ Done (D46): a quick form on top of the paper columns (F1), a + on every tab
   (F2), a "logged" moment with Undo (F3), and the sheet following the keyboard (F8, to confirm on a
   real phone).
-- **C. Progress at a glance** (about a week): a hero with a ring, and a short "what's left" list (F5),
+- ~~**C. Progress at a glance.**~~ Done (D47): a ring first and a short "what's left" list (F5),
   achievements (F16), one goal switcher (F17), the price's sample rates said out loud (F14).
 - **D. A logbook that scales** (3 to 4 days): compact rows, month headers, search and filter (F10,
   and feature 7 above), plain words on the rows (F15).

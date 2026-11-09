@@ -40,6 +40,7 @@ hours-to-go/
 │   │   ├── cost.ts             prices a plan at the school's rates; money formatting (D39)
 │   │   ├── pace.ts             the time logged a week lately, and when a goal's time left is flown (D40)
 │   │   ├── moment.ts           what a flight just did for the goal, for the message after saving (D46)
+│   │   ├── progress.ts         how far along a goal is, by hours, for the ring (D47)
 │   │   └── next.ts             which flight counts toward the most, by trying each against the rules (D43)
 │   └── ui/
 │       ├── Progress.tsx        goal detail, gates, requirement rows, milestone tick-offs, goal cards
