@@ -100,8 +100,34 @@ in the profile); instructor sign-off on milestones (today the pilot ticks them).
 ### UI and UX
 
 The owner isn't happy with how it looks and feels yet, and wants it much better before going
-public. A full audit of the experience comes first, by someone who didn't build it, measured in
-a real browser on a phone. What it finds is the work list for this section.
+public. [ux-audit.md](ux-audit.md) is a full audit by a reviewer who didn't build it, measured in a
+real browser on a phone. Its verdict: correct and trustworthy, but it feels like filling in a
+government form. The batches, with its finding numbers:
+
+- **A. Stop the bleeding** (3 to 4 days): errors the pilot can see (F4), a typed flight can't be lost
+  (F6), impossible numbers questioned (F7), the logbook at tablet widths (F9), one slim banner at a
+  time (F13), the dialog's keyboard behaviour (F19), contrast (F20), tap targets (F21), small
+  things (F25).
+- **B. The flight** (about a week): a quick form on top of the paper columns (F1), a + on every tab
+  (F2), a "logged" moment with Undo (F3), the keyboard not covering Save, on real phones (F8).
+- **C. Progress at a glance** (about a week): a hero with a ring, and a short "what's left" list (F5),
+  achievements (F16), one goal switcher (F17), the price's sample rates said out loud (F14).
+- **D. A logbook that scales** (3 to 4 days): compact rows, month headers, search and filter (F10,
+  and feature 7 above), plain words on the rows (F15).
+- **E. First run and trust** (about a week): show the product before asking for a password (F11), ask
+  who the pilot is (F12), explain the terms (F15), put the trust details by the numbers (F18), and
+  say what happened after account actions (F24).
+- **F. Finish** (2 to 3 days): legibility in sun (F22), and one visual pass across it all (F23).
+
+A and B come before the trial with students. These collide with recorded decisions, so each needs
+its decision updated when it's built: F1 with D6 and D10, F5 with D18, F11 with D27.
+
+**Then, to make it excellent** (the owner wants these too):
+- **A "Landed" shortcut**: long-press the icon and log with one number, or a timer.
+- **"I flew this"** on Your next flight, opening the form already filled in.
+- **Training drawn as a flight plan**, with waypoints: first solo, written exam, flight test.
+- **A what-if slider for pace**: "twice a week: done by February, about $X".
+- **Shareable milestone cards**: "First solo at 14.2 h".
 
 ### 4. Going public
 
