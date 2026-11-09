@@ -329,6 +329,18 @@ const RAW: Record<string, string> = {
   'in the last {weeks} weeks': 'au cours des {weeks} dernières semaines',
   'since {date}': 'depuis le {date}',
 
+  'What if you flew more or less?': 'Et si vous voliez plus ou moins?',
+  'Hours a week': 'Heures par semaine',
+  '{n} h a week': '{n} h par semaine',
+  'Around {month}': 'Vers {month}',
+  'More than 5 years away': 'Dans plus de 5 ans',
+  'about {price} a month': 'environ {price} par mois',
+  'About the same as your pace.': 'À peu près comme à votre rythme actuel.',
+  '1 month sooner than your pace.': '1 mois plus tôt qu’à votre rythme actuel.',
+  '1 month later than your pace.': '1 mois plus tard qu’à votre rythme actuel.',
+  '{n} months sooner than your pace.': '{n} mois plus tôt qu’à votre rythme actuel.',
+  '{n} months later than your pace.': '{n} mois plus tard qu’à votre rythme actuel.',
+
   // ---- Importing a spreadsheet ----
   'What this file would add': 'Ce que ce fichier ajouterait',
   '1 line': '1 ligne',

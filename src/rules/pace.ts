@@ -55,6 +55,9 @@ const MONTH: Intl.DateTimeFormatOptions = { month: 'long', timeZone: 'UTC' };
 const MONTH_YEAR: Intl.DateTimeFormatOptions = { month: 'long', year: 'numeric', timeZone: 'UTC' };
 const DAY_MONTH: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', timeZone: 'UTC' };
 
+/** Whole months from one finish to another; positive when `to` is later. A month is the only precision a finish has. */
+export const monthsBetween = (from: string, to: string) => Math.round((dayOf(to) - dayOf(from)) / 30.44);
+
 /** "March", or "March 2027" outside this year: a finish is only ever about a month. */
 export function monthText(date: string, today: string): string {
   const d = new Date(dayOf(date) * DAY);

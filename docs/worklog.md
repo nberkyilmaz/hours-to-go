@@ -970,13 +970,19 @@ names that weren't translated.
 shows, nothing scrolls sideways, and axe finds nothing. Emails are tested in both languages. No French speaker has
 read it yet.
 
+## Phase 38: what if you flew more or less (2026-11-09)
+
+A slider under the finish date moves it, and the monthly cost, for any pace from half an hour to 15 hours a week (D58).
+
+**Checked.** In Edge on a phone in both languages, by keyboard as well as touch; axe finds nothing.
+
 ## Where things stand
 
-- 376 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
+- 383 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
   21, offline changes 5, server API 42, the standard's watcher 8, first visit, guest, cost to go,
   finish date, next flight, expiry, password reset, confirm links and feedback 28, the form and
   notices 12, the quick form 14, Progress 9, the logbook 7, first run and trust 10, signed in 6,
-  offline on the screen 5, log again and the cost a month 4, current to fly 17, reminders 21, the spreadsheet 19, the paper log 13, the instructor link 20, French 27), and the API tests per
+  offline on the screen 5, log again and the cost a month 4, current to fly 17, reminders 21, the spreadsheet 19, the paper log 13, the instructor link 20, French 27, the what-if slider 7), and the API tests per
   database also run against a Postgres server through `pg` in CI.
 - Typecheck clean on both configs; `npm audit` clean.
 - Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.

@@ -2150,6 +2150,46 @@ button.log-row:hover {
   min-width: 0;
 }
 
+/* ---- What if (D58) --------------------------------------------------- */
+
+.what-if {
+  margin-top: 10px;
+}
+
+.what-if summary {
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.what-if p {
+  margin: 8px 0 0;
+}
+
+.what-if-pace {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin-top: 8px;
+}
+
+.what-if-pace span {
+  flex: 1 0 100%;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.what-if-pace input {
+  flex: 1 1 160px;
+  min-height: 44px;
+  accent-color: var(--accent);
+}
+
+.what-if-pace strong {
+  white-space: nowrap;
+}
+
 /* ---- Current to fly ------------------------------------------------- */
 
 .currency {
