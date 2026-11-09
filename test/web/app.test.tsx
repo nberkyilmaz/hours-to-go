@@ -218,6 +218,26 @@ describe('the app as a guest', () => {
     expect(screen.queryByRole('region', { name: 'Your next flight' })).toBeNull();
   });
 
+  it('says when a medical or an exam has run out, and takes the medical’s date', async () => {
+    const blank = emptyLogbook().profile;
+    saveGuestLogbook({
+      ...emptyLogbook(),
+      profile: { ...blank, medical: 'cat3', medicalUntil: '2020-01-01', milestones: { 'exam-ppaer': { date: '2020-01-01', score: 80 } } },
+    });
+    render(<App />);
+    expect(await screen.findByText('Your medical ran out on January 1, 2020. Renew it for this to count.')).toBeTruthy();
+    expect(screen.getByText(/Dated January 1, 2020, more than 24 months ago, so it doesn’t count any more/)).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText('Valid to'), { target: { value: '2099-01-01' } });
+    expect(await screen.findByText('Counts until January 1, 2099.')).toBeTruthy();
+    expect(screen.queryByText(/Your medical ran out/)).toBeNull();
+
+    // A different category is a different certificate, so its date goes.
+    fireEvent.change(screen.getByLabelText('Your medical'), { target: { value: 'cat1' } });
+    expect(((await screen.findByLabelText('Valid to')) as HTMLInputElement).value).toBe('');
+    expect(screen.queryByText(/Counts until January 1, 2099/)).toBeNull();
+  });
+
   it('says why a rating has no price', async () => {
     render(<App />);
     fireEvent.change(await screen.findByLabelText('Working on'), { target: { value: 'multi' } });

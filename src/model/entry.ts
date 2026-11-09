@@ -295,6 +295,24 @@ export function today(now: Date = new Date()): string {
   return `${y}-${m}-${d}`;
 }
 
+/** `months` after a YYYY-MM-DD date. The 31st becomes the last day of a shorter month. */
+export function addMonths(date: string, months: number): string {
+  const [y, m, d] = date.split('-').map(Number) as [number, number, number];
+  const first = new Date(Date.UTC(y, m - 1 + months, 1));
+  const lastDay = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0)).getUTCDate();
+  first.setUTCDate(Math.min(d, lastDay));
+  return first.toISOString().slice(0, 10);
+}
+
+export function addDays(date: string, days: number): string {
+  return new Date(Date.parse(`${date}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
+}
+
+const LONG_DATE = new Intl.DateTimeFormat('en-CA', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+
+/** "March 1, 2028". */
+export const dateText = (date: string) => LONG_DATE.format(new Date(`${date}T00:00:00Z`));
+
 export function blankEntry(forward = false, date: string = today()): Entry {
   const e = {
     id: newId(),

@@ -254,6 +254,39 @@ Turned down:
 - **Suggesting from the first flight.** See above.
 - **A length the pilot picks.** One more control on a full card; their usual length is what they'll book.
 
+### D44. What runs out stops counting
+A pilot trusts a "met". Until now an exam written years ago, or a medical long expired, stayed met
+for good, so the app could say someone was ready when Transport Canada would say they weren't.
+
+- **Written exams count for 24 months.** Transport Canada: "Examinations must be written within 24
+  months of applying for the permit or licence" (general information on pilot licences; also the
+  PPL study guide, TP 12880, and the application form). It isn't in Standard 421, so it's the one
+  rule here without a paragraph to cite.
+- **Flight tests count for 12 months** where the standard says "within the 12 months preceding the
+  date of application": PPL, CPL, ATPL and the night rating's qualifying flight (421.26(5),
+  421.30(5)(a), 421.34(5)(a), 421.42(1)). The IFR, VFR OTT, multi-engine and Class 4 sections state
+  no limit, so none is applied.
+- **The letter for the flight test** (421.14(3)): dated within the 30 days before it, once only, for
+  the PPL and CPL. The app didn't have this requirement at all.
+- **The medical counts to the "valid to" date the pilot enters.** How long one lasts depends on age,
+  licence and the flying done (CAR 404.04), and it runs from the first of the next month, so working
+  it out would mean asking for a birth date to guess what's printed on the certificate.
+  Changing the category clears the date: it's a different certificate.
+
+Each counts through its last day. It shows "Counts until March 1, 2028", in amber within 60 days,
+and once past that it says when it ran out and stops being met, which reopens what depended on
+it: an exam that has run out needs writing again, so its gate and "Can you write it yet?" come back
+and the letter it used no longer counts as used.
+
+An item with no date can't be checked, so it counts as before. And none of this applies once what it
+was for is held (`validUnless`): an old PPAER doesn't matter to someone with a PPL, and an INRAT
+that earned an instrument rating stays good for the ATPL.
+
+Turned down:
+- **Working out the medical's expiry from a birth date.** Personal data, and a calculation that can
+  only be less right than the certificate in the pilot's hand.
+- **Leaving an expired item met with a warning.** "Met" is the word the whole app is built on.
+
 ## Logbook model
 
 ### D6. A line has the paper personal log's columns (replaced one role per line)

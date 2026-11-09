@@ -759,12 +759,39 @@ it with a clear note that the instructor decides.
   after one, the mixed cross-country for 1.5 h and about $530, counting toward 4 requirements. A
   phone at 390, 360 and 320 px and a desktop, light and dark, no sideways scroll and no page errors.
 
+## Phase 22: what runs out (2026-11-08)
+
+**Owner request.** Start the next round with expiry checks; put every idea on the roadmap, all of it
+wanted; and a great audit of the experience.
+
+**Read first.** The 12-month flight-test window is in Standard 421, for the PPL, CPL, ATPL and the
+night rating only. The written exams' 24 months isn't in it, so it comes from Transport Canada's
+general information page, which the PPL study guide and application form agree with. A medical's
+length depends on age, licence and flying (CAR 404.04), so the app takes the date from the
+certificate rather than work it out. Reading 421.14(3) also turned up a requirement the app
+didn't have: a recommendation for the flight test, dated within 30 days.
+
+**Built** (D44):
+- `validMonths` and `validUnless` on a dated requirement, and `until` and `stale` on its result.
+  An exam, flight test, letter or medical past its last day isn't met, and what rests on it reopens.
+- `medicalUntil` in the profile, and "Valid to" beside the medical on Progress and Profile.
+- "Counts until…", in amber within 60 days, and a plain message once it has run out.
+- The roadmap now has every list, in the order agreed, and a section for UI and UX.
+
+**Checked:**
+- 15 new tests: the months and days, every limit on its last day and the day after, an item with no
+  date, a licence held lifting the limit, an expired exam reopening its gate and its letter, the
+  medical holding up an exam, the date in the profile, and the screen.
+- **In Edge**, as a guest on a phone at 390, 360 and 320 px and a desktop, light and dark: an
+  expired medical and exam say so, and "Can you write the PPAER yet?" comes back. It showed "Valid
+  to" wrapping onto two lines on a phone, now fixed.
+
 ## Where things stand
 
-- 187 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, logbook model 21, offline
-  changes 5, server API 42, the standard's watcher 8, first visit, guest, cost to go, finish date,
-  next flight, password reset, confirm links and feedback 27, signed in 6, offline on the screen 5),
-  and the API tests per
+- 202 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
+  21, offline changes 5, server API 42, the standard's watcher 8, first visit, guest, cost to go,
+  finish date, next flight, expiry, password reset, confirm links and feedback 28, signed in 6,
+  offline on the screen 5), and the API tests per
   database also run against a Postgres server through `pg` in CI.
 - Typecheck clean on both configs; `npm audit` clean.
 - Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.
