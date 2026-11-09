@@ -15,10 +15,10 @@ export function ShareSection() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    api.share().then(
-      (r) => setShare(r.share),
-      () => setShare('unavailable'),
-    );
+    api
+      .share()
+      .then((r) => setShare(r.share))
+      .catch(() => setShare('unavailable'));
   }, []);
 
   if (share === 'loading' || share === 'unavailable') return null;
