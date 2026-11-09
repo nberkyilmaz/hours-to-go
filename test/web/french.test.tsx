@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
-import { lang, setLang, t } from '../../src/i18n';
+import { lang, setLang, shortName, t } from '../../src/i18n';
 import { parseCsv, readCsv, toCsv, type CsvRead } from '../../src/model/csv';
 import { dateText, formatHours, parseDuration } from '../../src/model/entry';
 import { shortDate } from '../../src/model/search';
@@ -15,7 +15,16 @@ describe('in French', () => {
 
   it('translates and fills in', () => {
     expect(t('Log a flight')).toBe('Inscrire un vol');
-    expect(t('Page {n} of {total}', { n: 2, total: 9 })).toBe('Page 2 de 9');
+    expect(t('Page {n} of {total}', { n: 2, total: 9 })).toBe('Page 2 sur 9');
+  });
+
+  it('names a goal in words a sentence can use', () => {
+    expect(shortName('Night')).toBe('qualification de vol de nuit');
+    expect(shortName('PPL')).toBe('PPL');
+  });
+
+  it('spaces a percent the French way', () => {
+    expect(t('{n}%', { n: 60 })).toBe('60\u00a0%');
   });
 
   it('shows English for anything not translated yet', () => {
