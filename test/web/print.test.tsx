@@ -89,7 +89,7 @@ describe('the screen', () => {
   it('opens from the Logbook, and comes back', async () => {
     seed(flights(3));
     await open();
-    const page = screen.getByRole('region', { name: 'Page 1 of 1' });
+    const page = within(screen.getByRole('main')).getByRole('region', { name: 'Page 1 of 1' });
     expect(within(page).getAllByRole('row').length).toBeGreaterThan(3);
     expect(within(page).getByRole('rowheader', { name: 'Total to date' })).toBeTruthy();
     window.history.replaceState(null, '', '/');

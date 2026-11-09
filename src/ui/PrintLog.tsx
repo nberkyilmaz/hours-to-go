@@ -59,7 +59,7 @@ export function PrintLog({ entries, onBack }: Props) {
   }, []);
 
   return (
-    <div className="print-view">
+    <main className="print-view">
       {/* Only while this is on the screen, so nothing else in the app prints sideways. */}
       <style>{'@page { size: landscape; margin: 9mm; }'}</style>
       <div className="print-bar">
@@ -168,6 +168,6 @@ export function PrintLog({ entries, onBack }: Props) {
           </section>
         )}
       </div>
-    </div>
+    </main>
   );
 }
