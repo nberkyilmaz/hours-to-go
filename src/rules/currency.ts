@@ -87,9 +87,11 @@ export function currencyOf(entries: readonly Entry[], profile: Profile, today: s
   const flown = lines.filter((e) => derive(e).total > 0);
   const single = flown.filter((e) => derive(e).multi === 0);
   const multi = flown.filter((e) => derive(e).multi > 0);
+  // Without a night rating or any night flying, the night row would only be an alarm about nothing.
+  const atNight = (['night', 'cpl', 'atpl'] as const).some((id) => profile.held[id] !== undefined) || entries.some((e) => e.nightLandings > 0 || derive(e).night > 0);
   const passengers = (suffix: string, name: string, of: readonly Entry[]) => {
     items.push(recent(`passengers-day${suffix}`, t('Passengers by day{class}: 5 takeoffs and landings in 6 months', { class: name }), '401.05(2)(b)', of, LANDINGS, landings, today));
-    items.push(recent(`passengers-night${suffix}`, t('Passengers at night{class}: 5 night takeoffs and landings in 6 months', { class: name }), '401.05(2)(b)', of, LANDINGS, (e) => e.nightLandings, today));
+    if (atNight) items.push(recent(`passengers-night${suffix}`, t('Passengers at night{class}: 5 night takeoffs and landings in 6 months', { class: name }), '401.05(2)(b)', of, LANDINGS, (e) => e.nightLandings, today));
   };
   passengers('', profile.held.multi || multi.length > 0 ? t(', single-engine') : '', single);
   if (profile.held.multi || multi.length > 0) passengers('-multi', t(', multi-engine'), multi);

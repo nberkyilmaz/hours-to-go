@@ -1029,6 +1029,15 @@ The goal stays a native select, laid invisibly over its title, so a phone still 
 have a sheet of their own with a Done button, because they're what makes the biggest number on the screen the pilot's own
 and they used to be 1,100 px down in a fold.
 
+### D65. Getting set up
+- **After paper totals, one card asks what the hours can't show**: the medical, ground school, the letter and the exam,
+  answered where they are. It's only for a logbook with paper totals, since a student logging flight by flight would be
+  asked every two weeks about an exam that isn't due yet. Later puts it off for two weeks.
+- **A licensed pilot keeps the way to add hours.** Done closes the list of licences and leaves Add my hours. The PPL's
+  date is asked there, and again on the CPL, where commercial training counts from it.
+- **Current to fly stays folded until a flight is logged**, since four alarms on an empty logbook only say it's empty.
+  Passengers at night is left out for a pilot with no night rating or night flying.
+
 ## Process
 
 ### D22. Check the UI in a real browser, at phone size, before calling it done

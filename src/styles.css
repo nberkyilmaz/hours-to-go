@@ -1882,6 +1882,23 @@ button.log-row:hover {
   margin: 12px 0 0;
 }
 
+.catch-up {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+
+.catch-up h2 {
+  margin: 0 0 4px;
+  font-size: 17px;
+}
+
+.first-lesson p {
+  margin: 0;
+}
+
 @media (max-width: 720px) {
   .goal-title {
     flex: 1 1 100%;

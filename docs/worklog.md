@@ -1033,13 +1033,19 @@ Progress now leads with what to do next (D64), and the route agrees with the rin
 **Checked.** Edge at phone width in both languages, at three stages of training, looked at; automated accessibility scans
 clean; every signed-in flow against a throwaway server.
 
+## Phase 46: getting set up (2026-11-09)
+
+What a student catching up sees after adding paper totals, and what a licensed pilot sees first (D65).
+
+**Checked.** A test for each, and Edge at phone width in both languages.
+
 ## Where things stand
 
-- 454 tests pass (rules 38, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
+- 463 tests pass (rules 38, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
   21, offline changes 5, server API 42, the standard's watcher 8, first visit, guest, cost to go,
   finish date, next flight, expiry, password reset, confirm links and feedback 28, the form and
-  notices 12, the quick form 16, Progress 9, the logbook 8, first run and trust 10, signed in 6,
-  offline on the screen 9, log again and the cost a month 6, current to fly 18, reminders 21, the spreadsheet 21, the paper log 13, the instructor link 20, French 27, the what-if slider 12, the flight clock 16, the route 10, cards to share 13, the server's defences 14), and the API tests per
+  notices 12, the quick form 16, Progress 9, the logbook 8, first run and trust 18, signed in 6,
+  offline on the screen 9, log again and the cost a month 6, current to fly 19, reminders 21, the spreadsheet 21, the paper log 13, the instructor link 20, French 27, the what-if slider 12, the flight clock 16, the route 10, cards to share 13, the server's defences 14), and the API tests per
   database also run against a Postgres server through `pg` in CI.
 - Typecheck clean on both configs; `npm audit` clean.
 - Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.

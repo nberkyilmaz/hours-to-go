@@ -86,7 +86,7 @@ function resolveScope(goal: Goal, profile: Profile): ScopeInfo | null {
   }
   const ppl = profile.held.ppl;
   if (!ppl) return { start: null, message: t('This starts counting once you hold your PPL.') };
-  if (!ppl.date) return { start: null, message: t('Add your PPL issue date in Profile. Until then every flight is counted, including PPL training.') };
+  if (!ppl.date) return { start: null, message: t('Until you say when you got your PPL, every flight is counted, including PPL training.') };
   return { start: ppl.date, message: null };
 }
 

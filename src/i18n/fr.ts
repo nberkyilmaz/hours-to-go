@@ -123,7 +123,11 @@ const RAW: Record<string, string> = {
   // ---- What the rules say back ----
   'Set the date your course started to count this training.': 'Indiquez la date de début de votre cours pour compter cette formation.',
   'This starts counting once you hold your PPL.': 'Ceci commence à compter dès que vous détenez votre PPL.',
-  'Add your PPL issue date in Profile. Until then every flight is counted, including PPL training.': 'Ajoutez la date de délivrance de votre PPL dans Profil. D’ici là, tous les vols sont comptés, y compris la formation PPL.',
+  'After your first lesson, tap + to log it.': 'Après votre premier cours, touchez + pour l’inscrire.',
+  'A few things your hours can’t show': 'Ce que vos heures ne peuvent pas montrer',
+  ' · log a flight to check': ' · inscrivez un vol pour vérifier',
+  'When did you get your PPL?': 'Quand avez-vous obtenu votre PPL?',
+  'Until you say when you got your PPL, every flight is counted, including PPL training.': 'Tant que vous n’indiquez pas la date d’obtention de votre PPL, tous les vols sont comptés, y compris la formation PPL.',
   'Your paper totals up to {dates} don’t say how much was flown after your PPL, so all of it counts here. Edit that line in the Logbook to answer.': 'Vos totaux papier jusqu’au {dates} n’indiquent pas combien d’heures ont été effectuées après votre PPL : tout est donc compté ici. Modifiez cette ligne dans le Carnet pour répondre.',
   'You hold the {goal}, since {date}.': 'Vous détenez la {goal} depuis le {date}.',
   'You hold the {goal}.': 'Vous détenez la {goal}.',

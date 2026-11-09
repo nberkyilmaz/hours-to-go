@@ -41,6 +41,11 @@ describe('currency', () => {
       expect(on('2026-08-31')).toMatchObject({ current: false, until: null, note: '0 of 5 in the last 6 months' });
     });
 
+    it('leaves out passengers at night for a pilot with no night rating or night flying', () => {
+      expect(items([flight('2026-10-01', 9)]).some((i) => i.id === 'passengers-night')).toBe(false);
+      expect(items([flight('2026-10-01', 9)], licensed({ held: { ppl: { date: '2026-01-15' }, night: { date: '2026-03-01' } } })).some((i) => i.id === 'passengers-night')).toBe(true);
+    });
+
     it('needs night landings for passengers at night', () => {
       const list = items([flight('2026-10-01', 9, 4)]);
       expect(item(list, 'passengers-day').current).toBe(true);
@@ -118,7 +123,7 @@ describe('the card', () => {
     cleanup();
     vi.unstubAllGlobals();
   });
-  const seed = (p: Partial<Profile>) => saveGuestLogbook({ ...emptyLogbook(), profile: { ...emptyLogbook().profile, ...p } });
+  const seed = (p: Partial<Profile>, entries: ReturnType<typeof line>[] = []) => saveGuestLogbook({ ...emptyLogbook(), entries, profile: { ...emptyLogbook().profile, ...p } });
 
   it('isn’t there for a student', async () => {
     seed({});
@@ -128,7 +133,7 @@ describe('the card', () => {
   });
 
   it('opens when something needs sorting out, and takes a date', async () => {
-    seed({ held: { ppl: { date: '' } } });
+    seed({ held: { ppl: { date: '' } } }, [line('2026-01-01', { seDayPic: 1 })]);
     render(<App />);
     const card = (await screen.findByText('Current to fly')).closest('details') as HTMLDetailsElement;
     expect(card.open).toBe(true);

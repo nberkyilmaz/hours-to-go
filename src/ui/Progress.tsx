@@ -40,6 +40,7 @@ export function ProgressView({ book, updateProfile, onAddHours, onFly, onProfile
   const pace = useMemo(() => paceOf(book.entries, today()), [book.entries]);
   const focus = results.find((r) => r.now.goal.id === book.profile.focus) ?? results[0]!;
   const [settled, setSettled] = useState(() => isSnoozed('first-step'));
+  const justStarting = settled && book.entries.length === 0 && Object.keys(book.profile.held).length === 0;
   const setFocus = (id: GoalId) => updateProfile((p) => ({ ...p, focus: id }));
 
   return (
@@ -54,6 +55,13 @@ export function ProgressView({ book, updateProfile, onAddHours, onFly, onProfile
             setSettled(true);
           }}
         />
+      )}
+
+      {justStarting && (
+        <div className="callout first-lesson">
+          <p>{t('After your first lesson, tap + to log it.')}</p>
+          <MedicalFields label={t('Your medical')} profile={book.profile} updateProfile={updateProfile} />
+        </div>
       )}
 
       <CurrencyCard entries={book.entries} profile={book.profile} updateProfile={updateProfile} />
@@ -128,7 +136,7 @@ function FirstStep({ profile, updateProfile, onAddHours, onDone }: { profile: Pr
       </button>
       <div className="first-step-more">
         <button type="button" className="link" onClick={onDone}>
-          {t('I’m just starting')}
+          {Object.keys(profile.held).length > 0 ? t('Later') : t('I’m just starting')}
         </button>
         <button type="button" className="link" aria-expanded={licensed} onClick={() => setLicensed(!licensed)}>
           {t('I already hold a licence')}
@@ -143,12 +151,24 @@ function FirstStep({ profile, updateProfile, onAddHours, onDone }: { profile: Pr
               <span>{t(g.name)}</span>
             </label>
           ))}
-          <button type="button" className="btn small" onClick={onDone}>
+          {profile.held.ppl && <PplDate profile={profile} updateProfile={updateProfile} />}
+          {/* The hours are still to come, so the way to add them stays. */}
+          <button type="button" className="btn small" onClick={() => setLicensed(false)}>
             {t('Done')}
           </button>
         </fieldset>
       )}
     </div>
+  );
+}
+
+/** Commercial training counts from this day, so it's asked where it's needed rather than left for Profile. */
+function PplDate({ profile, updateProfile }: { profile: Profile; updateProfile: UpdateProfile }) {
+  return (
+    <label className="inline-field">
+      <span>{t('When did you get your PPL?')}</span>
+      <input type="date" value={profile.held.ppl?.date ?? ''} onChange={(e) => updateProfile((p) => ({ ...p, held: { ...p.held, ppl: { date: e.target.value } } }))} />
+    </label>
   );
 }
 
@@ -207,7 +227,17 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
   const pin = (id: string) => setPinned((p) => new Set(p).add(id));
   // Held, the requirements are for reference, so they all stay.
   const showAll = r.held !== null || r.credited !== null;
-  const stays = (x: ReqResult) => showAll || !isDone(x) || pinned.has(x.req.id);
+  // After paper totals: what the hours can't show, asked here rather than 2,000 px down the page.
+  const [caughtUp, setCaughtUp] = useState(() => isSnoozed('catch-up'));
+  const toCatch =
+    !showAll && !caughtUp && entries.some((e) => e.forward)
+      ? r.sections
+          .filter((s) => s.section.kind === 'prerequisites' || s.section.kind === 'knowledge')
+          .flatMap((s) => s.results)
+          .filter((x) => (x.req.kind === 'medical' || x.req.kind === 'milestone') && (!isDone(x) || pinned.has(x.req.id)))
+      : [];
+  const catching = new Set(toCatch.map((x) => x.req.id));
+  const stays = (x: ReqResult) => !catching.has(x.req.id) && (showAll || !isDone(x) || pinned.has(x.req.id));
   const finished = showAll ? [] : flatten(r.sections.flatMap((s) => s.results)).filter((x) => x.req.kind !== 'info' && x.met && !pinned.has(x.req.id));
   const setHeld = (date: string | null) =>
     updateProfile((p) => {
@@ -266,6 +296,26 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
         </div>
       )}
       <Finish result={r} pace={pace} logged={entries.length > 0} cost={cost} />
+      {toCatch.length > 0 && (
+        <section className="catch-up" aria-labelledby="catch-up-title">
+          <h2 id="catch-up-title">{t('A few things your hours can’t show')}</h2>
+          <ul className="reqs">
+            {toCatch.map((x) => (
+              <ReqRow key={x.req.id} r={{ ...x, children: [] }} goalId={goal.id} profile={profile} updateProfile={updateProfile} stays={() => false} pin={pin} />
+            ))}
+          </ul>
+          <button
+            type="button"
+            className="link"
+            onClick={() => {
+              snooze('catch-up');
+              setCaughtUp(true);
+            }}
+          >
+            {t('Later')}
+          </button>
+        </section>
+      )}
       {r.complete && !r.held && !r.credited && (
         <div className="banner ok goal-complete">
           <span>
@@ -385,6 +435,7 @@ function ScopeControl({ result: r, profile, updateProfile }: { result: GoalResul
     <div className="scope">
       <p>{r.goal.scope && t(r.goal.scope.label)}</p>
       {r.scope?.message && <p className="warn-text">{r.scope.message}</p>}
+      {r.goal.scope?.from === 'ppl' && profile.held.ppl && !profile.held.ppl.date && <PplDate profile={profile} updateProfile={updateProfile} />}
       <label className="inline-field">
         <span>{t('Count training from')}</span>
         <input type="date" value={override || r.scope?.start || ''} onChange={(e) => setStart(e.target.value)} />
