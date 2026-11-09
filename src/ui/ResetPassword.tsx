@@ -3,6 +3,7 @@ import { ApiError, api } from '../api';
 import type { LogbookState } from '../useLogbook';
 import { Mark } from './icons';
 import { useSlow } from './useSlow';
+import { t } from '../i18n';
 
 interface Props {
   /** From the emailed link, which opens the page at `#reset=…`. */
@@ -32,7 +33,7 @@ export function ResetPassword({ token, lb, onDone }: Props) {
       await lb.resetPassword(token, password);
       onDone();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Something went wrong. Try again.');
+      setError(err instanceof ApiError ? err.message : t('Something went wrong. Try again.'));
       setBusy(false);
     }
   };
@@ -43,19 +44,19 @@ export function ResetPassword({ token, lb, onDone }: Props) {
         <div className="welcome-hero">
           <div className="brand">
             <Mark size={32} />
-            <span>Hours to Go</span>
+            <span>{t('Hours to Go')}</span>
           </div>
-          <p className="kicker">Password reset</p>
-          <h1 id="reset-title">Choose a new password</h1>
+          <p className="kicker">{t('Password reset')}</p>
+          <h1 id="reset-title">{t('Choose a new password')}</h1>
         </div>
       </header>
 
       <main className="welcome-main">
         <section className="card welcome-card" aria-labelledby="reset-title">
-          <p className="muted">You’ll be signed in with it here, and signed out on your other devices.</p>
+          <p className="muted">{t('You’ll be signed in with it here, and signed out on your other devices.')}</p>
           <form className="auth" onSubmit={submit}>
             <div className="field">
-              <label htmlFor="reset-password">New password</label>
+              <label htmlFor="reset-password">{t('New password')}</label>
               <input
                 id="reset-password"
                 type="password"
@@ -65,7 +66,7 @@ export function ResetPassword({ token, lb, onDone }: Props) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-              <p className="hint">At least 8 characters.</p>
+              <p className="hint">{t('At least 8 characters.')}</p>
             </div>
             {error && (
               <p className="field-error" role="alert">
@@ -73,17 +74,17 @@ export function ResetPassword({ token, lb, onDone }: Props) {
               </p>
             )}
             <button type="submit" className="btn primary" disabled={busy}>
-              {busy ? 'One moment…' : 'Save new password'}
+              {busy ? t('One moment…') : t('Save new password')}
             </button>
             {slow && (
               <p className="hint" role="status">
-                The server is waking up. If nobody has used Hours to Go for a while, this takes up to a minute.
+                {t('The server is waking up. If nobody has used Hours to Go for a while, this takes up to a minute.')}
               </p>
             )}
           </form>
           <div className="welcome-skip">
             <button type="button" className="btn quiet" onClick={onDone}>
-              Back to Hours to Go
+              {t('Back to Hours to Go')}
             </button>
           </div>
         </section>

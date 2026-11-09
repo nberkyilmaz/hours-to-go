@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { COLUMN_LABEL, LOG_GROUPS, dateText, formatHours, isTimeColumn, today, type Column, type Entry } from '../model/entry';
 import { printPages, remarksCut, remarksOf, withLongRemarks, type ColumnTotals } from '../model/printlog';
+import { t } from '../i18n';
 
 /** The few headings too wide for a printed column. */
-const SHORT: Partial<Record<Column, string>> = { meDayCopilot: 'Co', meNightCopilot: 'Co', actualImc: 'IMC', approaches: 'App' };
+const SHORT: Partial<Record<Column, string>> = { meDayCopilot: t('Co'), meNightCopilot: t('Co'), actualImc: 'IMC', approaches: t('App') };
 const COLUMNS = LOG_GROUPS.flatMap((g) => g.columns);
 
 const shown = (c: Column, value: number) => (value === 0 ? '' : isTimeColumn(c) ? formatHours(value) : String(value));
 
 /** A career's totals have to fit a column sized for one flight, and a number can't be cut short. */
 const sizeOf = (text: string) => {
-  const digits = text.replace('.', '').length;
+  const digits = text.replace(/[.,]/, '').length;
   return digits >= 6 ? 'num tighter' : digits === 5 ? 'num tight' : 'num';
 };
 
@@ -52,7 +53,7 @@ export function PrintLog({ entries, onBack }: Props) {
   // A browser names the PDF after the page's title.
   useEffect(() => {
     const before = document.title;
-    document.title = `Logbook ${today()}`;
+    document.title = t('Logbook {date}', { date: today() });
     return () => {
       document.title = before;
     };
@@ -64,30 +65,29 @@ export function PrintLog({ entries, onBack }: Props) {
       <style>{'@page { size: landscape; margin: 9mm; }'}</style>
       <div className="print-bar">
         <button type="button" className="link" onClick={onBack}>
-          Back to the logbook
+          {t('Back to the logbook')}
         </button>
-        <h1>Print your logbook</h1>
+        <h1>{t('Print your logbook')}</h1>
         <label className="inline-field">
-          <span>Name on the pages</span>
+          <span>{t('Name on the pages')}</span>
           <input type="text" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
         </label>
         <button type="button" className="btn primary" onClick={() => window.print()}>
-          Print or save as PDF
+          {t('Print or save as PDF')}
         </button>
         <p className="hint">
-          {pages.length} {pages.length === 1 ? 'page' : 'pages'}, sideways. To get a file, choose “Save as PDF” as the printer. Ask your examiner or school whether they’ll accept a
-          printout.
+          {pages.length === 1 ? t('1 page') : t('{n} pages', { n: pages.length })}{t(', sideways. To get a file, choose “Save as PDF” as the printer. Ask your examiner or school whether they’ll accept a printout.')}
         </p>
       </div>
 
-      <div className="print-sheets" tabIndex={0} role="group" aria-label="Preview of the pages">
+      <div className="print-sheets" tabIndex={0} role="group" aria-label={t('Preview of the pages')}>
         {pages.map((p, i) => (
-          <section key={i} className="print-page" aria-label={`Page ${i + 1} of ${pages.length}`}>
+          <section key={i} className="print-page" aria-label={t('Page {n} of {total}', { n: i + 1, total: pages.length })}>
             <header className="print-head">
-              <strong>Pilot’s personal log</strong>
+              <strong>{t('Pilot’s personal log')}</strong>
               <span>{name || ' '}</span>
               <span>
-                Page {i + 1} of {pages.length}
+                {t('Page')}{' '}{i + 1}{' '}{t('of')}{' '}{pages.length}
               </span>
             </header>
             <table className="print-table">
@@ -104,21 +104,21 @@ export function PrintLog({ entries, onBack }: Props) {
               </colgroup>
               <thead>
                 <tr>
-                  <th rowSpan={2}>Date</th>
-                  <th rowSpan={2}>Type</th>
-                  <th rowSpan={2}>Reg.</th>
-                  <th rowSpan={2}>From</th>
-                  <th rowSpan={2}>To</th>
+                  <th rowSpan={2}>{t('Date')}</th>
+                  <th rowSpan={2}>{t('Type')}</th>
+                  <th rowSpan={2}>{t('Reg.')}</th>
+                  <th rowSpan={2}>{t('From')}</th>
+                  <th rowSpan={2}>{t('To')}</th>
                   {LOG_GROUPS.map((g) => (
                     <th key={g.title} colSpan={g.columns.length} scope="colgroup">
-                      {g.title}
+                      {t(g.title)}
                     </th>
                   ))}
-                  <th rowSpan={2}>Remarks</th>
+                  <th rowSpan={2}>{t('Remarks')}</th>
                 </tr>
                 <tr>
                   {COLUMNS.map((c) => (
-                    <th key={c}>{SHORT[c] ?? COLUMN_LABEL[c]}</th>
+                    <th key={c}>{SHORT[c] ?? t(COLUMN_LABEL[c])}</th>
                   ))}
                 </tr>
               </thead>
@@ -136,22 +136,22 @@ export function PrintLog({ entries, onBack }: Props) {
                 ))}
               </tbody>
               <tfoot>
-                <TotalRow label="This page" values={p.page} />
-                <TotalRow label="Brought forward" values={p.forward} />
-                <TotalRow label="Total to date" values={p.toDate} />
+                <TotalRow label={t('This page')} values={p.page} />
+                <TotalRow label={t('Brought forward')} values={p.forward} />
+                <TotalRow label={t('Total to date')} values={p.toDate} />
               </tfoot>
             </table>
             <footer className="print-foot">
-              <span>Printed from Hours to Go on {printed}</span>
-              <span>Signature: ______________________________</span>
+              <span>{t('Printed from Hours to Go on')}{' '}{printed}</span>
+              <span>{t('Signature: ______________________________')}</span>
             </footer>
           </section>
         ))}
 
         {long.length > 0 && (
-          <section className="print-page print-notes" aria-label="Remarks in full">
+          <section className="print-page print-notes" aria-label={t('Remarks in full')}>
             <header className="print-head">
-              <strong>Remarks in full</strong>
+              <strong>{t('Remarks in full')}</strong>
               <span>{name || ' '}</span>
               <span />
             </header>

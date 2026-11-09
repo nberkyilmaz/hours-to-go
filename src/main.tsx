@@ -3,7 +3,10 @@ import { createRoot } from 'react-dom/client';
 import '@fontsource/b612/400.css';
 import '@fontsource/b612/700.css';
 import { App } from './App';
+import { locale } from './i18n';
 import './styles.css';
+
+document.documentElement.lang = locale();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

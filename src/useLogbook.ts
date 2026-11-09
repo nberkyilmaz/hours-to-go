@@ -16,6 +16,7 @@ import {
   type Logbook,
 } from './model/store';
 import { applyChanges, applyOps, clearCopy, loadCopy, profileChanges, saveCopy, type AccountCopy, type Op } from './model/sync';
+import { t } from './i18n';
 
 export type Mode =
   | { kind: 'loading' }
@@ -73,7 +74,10 @@ export interface LogbookState {
   deleteAccount: (password: string) => Promise<void>;
 }
 
-const describe = (err: unknown) => (err instanceof ApiError ? err.message : 'Something went wrong. Try again.');
+const signedOutSaving = (n: number) =>
+  n === 1 ? t('You were signed out. Sign in again to save the change made on this device.') : t('You were signed out. Sign in again to save the {n} changes made on this device.', { n });
+
+const describe = (err: unknown) => (err instanceof ApiError ? err.message : t('Something went wrong. Try again.'));
 /** Out of reach, or the server failing for now: worth trying again later. */
 const unreachable = (err: unknown) => !(err instanceof ApiError) || err.status === 0 || err.status >= 500;
 /** How often changes still waiting are tried again; coming back online or to the app tries at once. */
@@ -230,8 +234,8 @@ export function useLogbook(): LogbookState {
         const n = copy?.ops.length ?? 0;
         setError(
           n > 0
-            ? `You were signed out. Sign in again to save the ${n === 1 ? 'change' : `${n} changes`} made on this device.`
-            : 'You were signed out. Sign in again to keep saving to your profile.',
+            ? signedOutSaving(n)
+            : t('You were signed out. Sign in again to keep saving to your profile.'),
         );
         signedOutHere();
       } else if (unreachable(err) || sending.length === 0) {
@@ -240,7 +244,7 @@ export function useLogbook(): LogbookState {
         setSync((s) => ({ ...s, offline: true }));
       } else if (copy) {
         // Refused: sending it again won't help. Say so, drop it, and show what the profile has.
-        setError(`${describe(err)} That change was not saved.`);
+        setError(`${describe(err)} ${t('That change was not saved.')}`);
         keep({ ...copy, ops: copy.ops.slice(sending.length) });
         stale.current = true;
         again = true;
@@ -273,7 +277,7 @@ export function useLogbook(): LogbookState {
           return;
         }
         const n = copyRef.current?.ops.length ?? 0;
-        if (n > 0) setError(`You were signed out. Sign in again to save the ${n === 1 ? 'change' : `${n} changes`} made on this device.`);
+        if (n > 0) setError(signedOutSaving(n));
         if (out) becomeGuest(true);
         else signedOutHere();
       }
@@ -302,11 +306,11 @@ export function useLogbook(): LogbookState {
 
   const fail = (err: unknown) => {
     if (err instanceof ApiError && err.status === 401 && modeRef.current.kind === 'account') {
-      setError('You were signed out. Sign in again to keep saving to your profile.');
+      setError(t('You were signed out. Sign in again to keep saving to your profile.'));
       signedOutHere();
       return;
     }
-    setError(`${describe(err)} Your last change was not saved.`);
+    setError(`${describe(err)} ${t('Your last change was not saved.')}`);
     // Show what the server really has once it answers, with this device's waiting changes on top.
     if (modeRef.current.kind === 'account') {
       stale.current = true;
@@ -386,7 +390,7 @@ export function useLogbook(): LogbookState {
     if (hasContent(local)) clearGuestLogbook();
     enterAccount(user, server, []);
     const n = local.entries.length;
-    if (n > 0) setNotice(`${n === 1 ? 'The entry' : `All ${n} entries`} from this device ${n === 1 ? 'is' : 'are'} in your new profile.`);
+    if (n > 0) setNotice(n === 1 ? t('The entry from this device is in your new profile.') : t('All {n} entries from this device are in your new profile.', { n }));
   };
 
   const signIn = async (email: string, password: string) => {
@@ -434,7 +438,7 @@ export function useLogbook(): LogbookState {
     await flush();
     const copy = copyRef.current;
     if (copy && copy.ops.length > 0) {
-      throw new ApiError('Some changes aren’t in your profile yet. Sign out once you’re back online and they’ve been saved.', 0);
+      throw new ApiError(t('Some changes aren’t in your profile yet. Sign out once you’re back online and they’ve been saved.'), 0);
     }
     await api.logout();
     if (copy) clearCopy(copy.account.email);
@@ -446,7 +450,7 @@ export function useLogbook(): LogbookState {
     const copy = copyRef.current;
     if (copy) clearCopy(copy.account.email);
     becomeGuest(false);
-    setNotice('Your profile is deleted, along with every entry in it.');
+    setNotice(t('Your profile is deleted, along with every entry in it.'));
   };
 
   return {

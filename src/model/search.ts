@@ -1,5 +1,6 @@
 /** Finding a flight, and laying the logbook out by month (D48). */
 import { derive, type Entry } from './entry';
+import { dateFormat } from '../i18n';
 
 export type LogFilter = 'all' | 'dual' | 'solo' | 'night' | 'xc' | 'ftd';
 
@@ -46,15 +47,17 @@ export interface LogMonth {
 }
 
 const UTC = (date: string) => new Date(`${date}T00:00:00Z`);
-const MONTH = new Intl.DateTimeFormat('en-CA', { month: 'long', year: 'numeric', timeZone: 'UTC' });
-const DAY = new Intl.DateTimeFormat('en-CA', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+const MONTH: Intl.DateTimeFormatOptions = { month: 'long', year: 'numeric', timeZone: 'UTC' };
+/** French writes "octobre 2026" in lower case, but this is a heading. */
+const capital = (s: string) => s.charAt(0).toLocaleUpperCase() + s.slice(1);
+const DAY: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', timeZone: 'UTC' };
 
 /** Newest first, as the list is given. */
 export function byMonth(sorted: readonly Entry[]): LogMonth[] {
   const months = new Map<string, LogMonth>();
   for (const e of sorted) {
     const key = e.date.slice(0, 7);
-    const month = months.get(key) ?? { key, label: MONTH.format(UTC(`${key}-01`)), entries: [], minutes: 0 };
+    const month = months.get(key) ?? { key, label: capital(dateFormat(MONTH).format(UTC(`${key}-01`))), entries: [], minutes: 0 };
     month.entries.push(e);
     month.minutes += derive(e).total;
     months.set(key, month);
@@ -63,4 +66,4 @@ export function byMonth(sorted: readonly Entry[]): LogMonth[] {
 }
 
 /** "Nov 8", the month's header giving the year. */
-export const shortDate = (date: string) => DAY.format(UTC(date));
+export const shortDate = (date: string) => dateFormat(DAY).format(UTC(date));

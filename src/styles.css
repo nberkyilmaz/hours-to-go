@@ -2138,6 +2138,18 @@ button.log-row:hover {
   width: 100%;
 }
 
+/* French labels run longer, so a label and its box can share a line only when they fit. */
+.inline-field {
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
+.inline-field select,
+.inline-field input {
+  max-width: 100%;
+  min-width: 0;
+}
+
 /* ---- Current to fly ------------------------------------------------- */
 
 .currency {

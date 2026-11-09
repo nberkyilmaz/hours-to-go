@@ -3,6 +3,7 @@ import { ApiError } from '../api';
 import type { LogbookState } from '../useLogbook';
 import { Mark } from './icons';
 import { useSlow } from './useSlow';
+import { t } from '../i18n';
 
 interface Props {
   /** From the link in a reminder, which opens the page at `#stop=…`. */
@@ -23,11 +24,11 @@ export function StopReminders({ token, lb, onDone }: Props) {
     started.current = true;
     lb.stopReminders(token).then(
       () => setDone(true),
-      (err: unknown) => setError(err instanceof ApiError ? err.message : 'Something went wrong. Try the link again.'),
+      (err: unknown) => setError(err instanceof ApiError ? err.message : t('Something went wrong. Try the link again.')),
     );
   }, [ready, lb, token]);
 
-  const title = done ? 'Reminders are off' : error ? 'This link didn’t work' : 'Turning reminders off…';
+  const title = done ? t('Reminders are off') : error ? t('This link didn’t work') : t('Turning reminders off…');
 
   return (
     <div className="welcome">
@@ -35,16 +36,16 @@ export function StopReminders({ token, lb, onDone }: Props) {
         <div className="welcome-hero">
           <div className="brand">
             <Mark size={32} />
-            <span>Hours to Go</span>
+            <span>{t('Hours to Go')}</span>
           </div>
-          <p className="kicker">Your email</p>
+          <p className="kicker">{t('Your email')}</p>
           <h1 id="stop-title">{title}</h1>
         </div>
       </header>
 
       <main className="welcome-main">
         <section className="card welcome-card" aria-labelledby="stop-title">
-          {done && <p role="status">You won’t get any more reminder emails. You can turn them back on from the Profile tab.</p>}
+          {done && <p role="status">{t('You won’t get any more reminder emails. You can turn them back on from the Profile tab.')}</p>}
           {error && (
             <p className="field-error" role="alert">
               {error}
@@ -52,12 +53,12 @@ export function StopReminders({ token, lb, onDone }: Props) {
           )}
           {slow && (
             <p className="hint" role="status">
-              The server is waking up. If nobody has used Hours to Go for a while, this takes up to a minute.
+              {t('The server is waking up. If nobody has used Hours to Go for a while, this takes up to a minute.')}
             </p>
           )}
           <div className="welcome-skip">
             <button type="button" className={done ? 'btn primary' : 'btn quiet'} onClick={onDone}>
-              Open Hours to Go
+              {t('Open Hours to Go')}
             </button>
           </div>
         </section>

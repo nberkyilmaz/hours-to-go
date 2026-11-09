@@ -6,8 +6,9 @@ import { Ring } from './Ring';
 import { CheckIcon, Mark } from './icons';
 import { keepUnits } from './text';
 import { useSlow } from './useSlow';
+import { t } from '../i18n';
 
-const amount = (l: SharedLine) => (l.unit === 'hours' ? `${formatHours(l.have!)} of ${formatHours(l.need!)} h` : `${l.have} of ${l.need}`);
+const amount = (l: SharedLine) => (l.unit === 'hours' ? t('{have} of {need} h', { have: formatHours(l.have!), need: formatHours(l.need!) }) : t('{have} of {need}', { have: l.have!, need: l.need! }));
 
 /** Where a read-only link opens, for someone with no reason to have a profile (D56). */
 export function Shared({ token, onDone }: { token: string; onDone: () => void }) {
@@ -15,10 +16,10 @@ export function Shared({ token, onDone }: { token: string; onDone: () => void })
   const [error, setError] = useState<string | null>(null);
   const slow = useSlow(!data && !error);
   useEffect(() => {
-    api.shared(token).then(setData, (err: unknown) => setError(err instanceof ApiError ? err.message : 'Something went wrong. Try the link again.'));
+    api.shared(token).then(setData, (err: unknown) => setError(err instanceof ApiError ? err.message : t('Something went wrong. Try the link again.')));
   }, [token]);
 
-  const title = data ? `${data.name || 'A pilot'}: ${data.goal}` : error ? 'This link didn’t work' : 'Loading…';
+  const title = data ? `${data.name || t('A pilot')}: ${t(data.goal)}` : error ? t('This link didn’t work') : t('Loading…');
 
   return (
     <div className="welcome">
@@ -26,9 +27,9 @@ export function Shared({ token, onDone }: { token: string; onDone: () => void })
         <div className="welcome-hero">
           <div className="brand">
             <Mark size={32} />
-            <span>Hours to Go</span>
+            <span>{t('Hours to Go')}</span>
           </div>
-          <p className="kicker">Shared progress, read only</p>
+          <p className="kicker">{t('Shared progress, read only')}</p>
           <h1 id="shared-title">{title}</h1>
         </div>
       </header>
@@ -41,14 +42,14 @@ export function Shared({ token, onDone }: { token: string; onDone: () => void })
             </p>
             <div className="welcome-skip">
               <button type="button" className="btn quiet" onClick={onDone}>
-                Open Hours to Go
+                {t('Open Hours to Go')}
               </button>
             </div>
           </section>
         )}
         {slow && (
           <p className="hint" role="status">
-            The server is waking up. If nobody has used Hours to Go for a while, this takes up to a minute.
+            {t('The server is waking up. If nobody has used Hours to Go for a while, this takes up to a minute.')}
           </p>
         )}
         {data && (
@@ -58,21 +59,21 @@ export function Shared({ token, onDone }: { token: string; onDone: () => void })
               <div>
                 <p>
                   {data.complete ? (
-                    <strong>All the requirements are met.</strong>
+                    <strong>{t('All the requirements are met.')}</strong>
                   ) : (
                     <>
-                      <strong>At least {formatHoursUp(data.left)} h</strong> of flying to go.
+                      <strong>{t('At least')}{' '}{formatHoursUp(data.left)}{' '}{t('h')}</strong>{' '}{t('of flying to go.')}
                     </>
                   )}
                 </p>
                 <p className="hint">
-                  As of {dateText(data.asOf)}. This is what the pilot has logged and ticked, and nobody has checked it. The link works until {dateText(today(new Date(data.expiresAt)))}.
+                  {t('As of')}{' '}{dateText(data.asOf)}{t('. This is what the pilot has logged and ticked, and nobody has checked it. The link works until')}{' '}{dateText(today(new Date(data.expiresAt)))}.
                 </p>
               </div>
             </section>
             {data.sections.map((s) => (
               <section key={s.title} className="card pad req-section">
-                <h2>{s.title}</h2>
+                <h2>{t(s.title)}</h2>
                 <ul className="reqs">
                   {s.lines.map((l, i) => (
                     <li key={i} className={`req${l.met ? ' is-met' : ''}`} style={{ marginLeft: l.depth * 20 }}>
@@ -82,8 +83,8 @@ export function Shared({ token, onDone }: { token: string; onDone: () => void })
                         </span>
                         <div className="req-body">
                           <div className="req-label">
-                            <span>{keepUnits(l.label)}</span> <span className="cite">{l.cite}</span>
-                            <span className="sr-only">{l.met ? ' (met)' : ' (not met)'}</span>
+                            <span>{keepUnits(t(l.label))}</span> <span className="cite">{l.cite}</span>
+                            <span className="sr-only">{l.met ? t(' (met)') : t(' (not met)')}</span>
                           </div>
                           {l.have !== null && <p className="note muted">{amount(l)}</p>}
                         </div>

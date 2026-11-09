@@ -4,6 +4,7 @@ import { about, atLeast, money, priceOf, rateText, type Cost, type CostLine } fr
 import type { GoalResult } from '../rules/evaluate';
 import type { Priced } from '../rules/goals';
 import { keepUnits } from './text';
+import { t } from '../i18n';
 
 type UpdateProfile = (fn: (p: Profile) => Profile) => unknown;
 
@@ -32,17 +33,17 @@ export function CostStat({ result: r, cost, profile, onRates }: StatProps) {
   return (
     <div className="stat stat-money">
       <span className="stat-value">{money(atLeast(cost.total))}</span>
-      <span className="stat-label">left to pay, at least</span>
+      <span className="stat-label">{t('left to pay, at least')}</span>
       {typical && (
         <span className="stat-more">
-          About {money(about(typical.total))} at the {typical.hours} h average
+          {t('About {price} at the {hours} h average', { price: money(about(typical.total)), hours: typical.hours })}
         </span>
       )}
       {profile.rates === null && (
         <span className="stat-more muted">
-          At sample rates.{' '}
+          {t('At sample rates.')}{' '}
           <button type="button" className="link" onClick={onRates}>
-            Enter your school’s rates
+            {t('Enter your school’s rates')}
           </button>
         </span>
       )}
@@ -65,9 +66,9 @@ function typicalOf(r: GoalResult, cost: Cost): { hours: number; total: number } 
 }
 
 function lineLabel(l: CostLine, pricing: Priced): string {
-  if (l.kind === 'dual') return 'with an instructor';
-  if (l.kind === 'sim') return 'in a simulator, with an instructor';
-  return pricing.solo;
+  if (l.kind === 'dual') return t('with an instructor');
+  if (l.kind === 'sim') return t('in a simulator, with an instructor');
+  return t(pricing.solo);
 }
 
 interface Props {
@@ -90,16 +91,16 @@ export function CostDetail({ result: r, cost, profile, updateProfile, panel }: P
   return (
     <details className="cost" ref={panel}>
       <summary>
-        How the cost is worked out{' '}
-        <span className="muted">{own ? '· your school’s rates' : '· sample rates'}</span>
+        {t('How the cost is worked out')}{' '}
+        <span className="muted">{own ? t('· your school’s rates') : t('· sample rates')}</span>
       </summary>
       <table className="type-table cost-table">
-        <caption className="sr-only">The cost to go, line by line</caption>
+        <caption className="sr-only">{t('The cost to go, line by line')}</caption>
         <tbody>
           {cost.lines.map((l) => (
             <tr key={l.kind}>
               <th scope="row">
-                {l.hours.toFixed(1)} h {lineLabel(l, pricing)}
+                {l.hours.toFixed(1)}{' '}{t('h')}{' '}{lineLabel(l, pricing)}
               </th>
               <td>× {rateText(l.rate)}</td>
               <td>{money(l.amount)}</td>
@@ -107,37 +108,35 @@ export function CostDetail({ result: r, cost, profile, updateProfile, panel }: P
           ))}
           {cost.tax > 0 && (
             <tr>
-              <th scope="row">Tax, {rates.tax}%</th>
+              <th scope="row">{t('Tax,')}{' '}{rates.tax}%</th>
               <td />
               <td>{money(cost.tax)}</td>
             </tr>
           )}
           <tr className="cost-total">
-            <th scope="row">In all</th>
+            <th scope="row">{t('In all')}</th>
             <td />
             <td>{money(cost.total)}</td>
           </tr>
         </tbody>
       </table>
       <p>
-        Each hour past the minimum adds about {money(cost.perHour.dual)} with an instructor
-        {hasSolo ? `, or ${money(cost.perHour.solo)} ${pricing.solo}` : ''}, tax included.
+        {t('Each hour past the minimum adds about')}{' '}{money(cost.perHour.dual)}{' '}{t('with an instructor')}
+        {hasSolo ? t(', or {price} {what}', { price: money(cost.perHour.solo), what: t(pricing.solo) }) : ''}{t(', tax included.')}
         {typical && (
           <>
             {' '}
-            Most students need more than the minimum: schools often quote {typical.hours} h as the national average. At {typical.hours} h,
-            it would be about <strong>{money(about(typical.total))}</strong>.
+            {t('Most students need more than the minimum: schools often quote')}{' '}{typical.hours}{' '}{t('h as the national average. At')}{' '}{typical.hours}{' '}{t('h, it would be about')}{' '}<strong>{money(about(typical.total))}</strong>.
           </>
         )}
       </p>
-      <p className="note">{keepUnits(pricing.note)}</p>
+      <p className="note">{keepUnits(t(pricing.note))}</p>
       {pricing.vocational && (
         <p className="note">
-          A vocational school may not charge GST or HST on this training up to the minimum hours (CRA GST/HST Memorandum 20-4). If
-          yours doesn’t, set the tax to 0.
+          {t('A vocational school may not charge GST or HST on this training up to the minimum hours (CRA GST/HST Memorandum 20-4). If yours doesn’t, set the tax to 0.')}
         </p>
       )}
-      <p className="note">Not counted: ground school, briefings, exam and flight test fees, your medical and your licence.</p>
+      <p className="note">{t('Not counted: ground school, briefings, exam and flight test fees, your medical and your licence.')}</p>
 
       <RatesForm rates={rates} own={own} updateProfile={updateProfile} />
     </details>
@@ -155,20 +154,19 @@ function RatesForm({ rates, own, updateProfile }: { rates: Rates; own: boolean; 
 
   return (
     <fieldset className="rates">
-      <legend>Your school’s rates</legend>
+      <legend>{t('Your school’s rates')}</legend>
       {!own && (
         <p className="hint">
-          Until you change them, these are sample rates: {rateText(SAMPLE_RATES.aircraft)} an hour for a Cessna 172 with fuel, as Ontario
-          clubs charge, {rateText(SAMPLE_RATES.instructor)} for the instructor and {SAMPLE_RATES.tax}% tax.
+          {t('Until you change them, these are sample rates:')}{' '}{rateText(SAMPLE_RATES.aircraft)}{' '}{t('an hour for a Cessna 172 with fuel, as Ontario clubs charge,')}{' '}{rateText(SAMPLE_RATES.instructor)}{' '}{t('for the instructor and')}{' '}{SAMPLE_RATES.tax}{t('% tax.')}
         </p>
       )}
       <div className="rates-grid" key={refill}>
-        <RateField field="aircraft" label="Aeroplane, $ an hour" hint="With fuel and any fuel surcharge." value={rates.aircraft} set={set} />
-        <RateField field="instructor" label="Instructor, $ an hour" value={rates.instructor} set={set} />
-        <RateField field="sim" label="Simulator, $ an hour" hint="Empty if you won’t use one." value={rates.sim} set={set} />
-        <RateField field="tax" label="Tax, %" hint="13 for Ontario’s HST, 5 where only GST applies." value={rates.tax} set={set} />
+        <RateField field="aircraft" label={t('Aeroplane, $ an hour')} hint={t('With fuel and any fuel surcharge.')} value={rates.aircraft} set={set} />
+        <RateField field="instructor" label={t('Instructor, $ an hour')} value={rates.instructor} set={set} />
+        <RateField field="sim" label={t('Simulator, $ an hour')} hint={t('Empty if you won’t use one.')} value={rates.sim} set={set} />
+        <RateField field="tax" label={t('Tax, %')} hint={t('13 for Ontario’s HST, 5 where only GST applies.')} value={rates.tax} set={set} />
       </div>
-      <p className="hint">If your school quotes a dual rate with the instructor in it, put its solo rate as the aeroplane and the difference as the instructor.</p>
+      <p className="hint">{t('If your school quotes a dual rate with the instructor in it, put its solo rate as the aeroplane and the difference as the instructor.')}</p>
       {own && (
         <button
           type="button"
@@ -178,7 +176,7 @@ function RatesForm({ rates, own, updateProfile }: { rates: Rates; own: boolean; 
             setRefill((n) => n + 1);
           }}
         >
-          Use the sample rates
+          {t('Use the sample rates')}
         </button>
       )}
     </fieldset>

@@ -16,34 +16,43 @@ import {
   type Column,
   type Entry,
 } from './entry';
+import { decimal, lang, t, translator } from '../i18n';
 
 type Field = Column | 'date' | 'aircraft' | 'registration' | 'from' | 'to' | 'solo' | 'soloNightLandings' | 'forward' | 'remarks' | 'id';
 
-const COLUMNS = LOG_GROUPS.flatMap((g) => g.columns.map((column) => ({ column, heading: `${g.title} ${COLUMN_LABEL[column]}` })));
+const COLUMNS = LOG_GROUPS.flatMap((g) => g.columns.map((column) => ({ column, group: g.title, label: COLUMN_LABEL[column] })));
 
-const HEADINGS: readonly [string, Field][] = [
-  ['Date', 'date'],
-  ['Aircraft', 'aircraft'],
-  ['Registration', 'registration'],
-  ['From', 'from'],
-  ['To', 'to'],
-  ...COLUMNS.map((c): [string, Field] => [c.heading, c.column]),
-  ['Solo', 'solo'],
-  ['Solo night landings', 'soloNightLandings'],
-  ['Paper totals', 'forward'],
-  ['Remarks', 'remarks'],
-  ['Id', 'id'],
+const headings = (word: (english: string) => string): [string, Field][] => [
+  [word('Date'), 'date'],
+  [word('Aircraft'), 'aircraft'],
+  [word('Registration'), 'registration'],
+  [word('From'), 'from'],
+  [word('To'), 'to'],
+  ...COLUMNS.map((c): [string, Field] => [`${word(c.group)} ${word(c.label)}`, c.column]),
+  [word('Solo'), 'solo'],
+  [word('Solo night landings'), 'soloNightLandings'],
+  [word('Paper totals'), 'forward'],
+  [word('Remarks'), 'remarks'],
+  [word('Id'), 'id'],
 ];
 
-const headingKey = (h: string) => h.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]/g, '');
+const headingKey = (h: string) =>
+  h
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]/g, '');
 
 /** Every heading that can only mean one column. Deliberately no bare "Dual", "PIC" or "Night". */
 const FIELD_OF: ReadonlyMap<string, Field> = (() => {
   const map = new Map<string, Field>();
-  for (const [heading, field] of HEADINGS) {
+  // Either language reads, so a file made in one still opens in the other.
+  for (const [heading, field] of headings(translator('en'))) {
     map.set(headingKey(heading), field);
     map.set(headingKey(heading.replace('Single-engine', 'SE').replace('Multi-engine', 'ME').replace('Cross-country', 'XC')), field);
   }
+  for (const [heading, field] of headings(translator('fr'))) map.set(headingKey(heading), field);
   const also: Record<string, Field> = {
     type: 'aircraft',
     aircrafttype: 'aircraft',
@@ -73,9 +82,9 @@ const FIELD_OF: ReadonlyMap<string, Field> = (() => {
 /** Text a spreadsheet would run as a formula gets a leading apostrophe, taken off again when it's read back. */
 const guarded = (s: string) => (/^[=+\-@\t\r]/.test(s) ? `'${s}` : s);
 const unguarded = (s: string) => (/^'[=+\-@\t\r]/.test(s) ? s.slice(1) : s);
-const quoted = (s: string) => (/[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s);
+const quoted = (s: string) => (/[",;\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s);
 /** Two places is close enough to come back to the same whole minute. Empty for none, like a paper log. */
-const hoursText = (minutes: number) => (minutes ? String(Number((minutes / 60).toFixed(2))) : '');
+const hoursText = (minutes: number) => (minutes ? decimal(String(Number((minutes / 60).toFixed(2)))) : '');
 
 function cellsOf(e: Entry): string[] {
   return [
@@ -85,19 +94,20 @@ function cellsOf(e: Entry): string[] {
     guarded(e.from),
     guarded(e.to),
     ...COLUMNS.map(({ column }) => (isTimeColumn(column) ? hoursText(e[column]) : e[column] ? String(e[column]) : '')),
-    e.solo ? 'yes' : '',
+    e.solo ? t('yes') : '',
     e.soloNightLandings ? String(e.soloNightLandings) : '',
-    e.forward ? 'yes' : '',
+    e.forward ? t('yes') : '',
     guarded(e.remarks),
     e.id,
   ];
 }
 
-/** Oldest first, like a paper log. With a byte-order mark, or Excel misreads accents. */
+/** Oldest first, like a paper log. With a byte-order mark, or Excel misreads accents. French Excel expects semicolons. */
 export function toCsv(entries: readonly Entry[]): string {
   const sorted = [...entries].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
-  const rows = [HEADINGS.map(([h]) => h), ...sorted.map(cellsOf)];
-  return `﻿${rows.map((r) => r.map(quoted).join(',')).join('\r\n')}\r\n`;
+  const rows = [headings(t).map(([h]) => h), ...sorted.map(cellsOf)];
+  const separator = lang() === 'fr' ? ';' : ',';
+  return `﻿${rows.map((r) => r.map(quoted).join(separator)).join('\r\n')}\r\n`;
 }
 
 // ---- Reading ----
@@ -193,7 +203,7 @@ export function readCsv(text: string): CsvRead | string {
   });
   const hasTime = TIME_COLUMNS.some((c) => column.has(c));
   if (!column.has('date') || !hasTime) {
-    return 'The headings don’t say which logbook columns these are, so nothing was read. Export a spreadsheet from here to see the headings to use.';
+    return t('The headings don’t say which logbook columns these are, so nothing was read. Export a spreadsheet from here to see the headings to use.');
   }
 
   const headingOf = (f: Field) => header![column.get(f)!]!.trim();
@@ -208,14 +218,14 @@ export function readCsv(text: string): CsvRead | string {
     const get = (f: Field) => (column.has(f) ? (row[column.get(f)!] ?? '').trim() : '');
     const date = dateFrom(get('date'));
     if (!date) {
-      problems.push({ row: number, why: get('date') ? `Couldn’t read the date “${get('date')}”. Use the form 2026-10-20.` : 'There’s no date.' });
+      problems.push({ row: number, why: get('date') ? t('Couldn’t read the date “{value}”. Use the form 2026-10-20.', { value: get('date') }) : t('There’s no date.') });
       return;
     }
     const e = blankEntry(isYes(get('forward')), date);
     for (const c of [...TIME_COLUMNS, ...COUNT_COLUMNS]) {
       const value = isTimeColumn(c) ? minutesFrom(get(c)) : countFrom(get(c));
       if (value === null) {
-        problems.push({ row: number, why: `“${get(c)}” under ${headingOf(c)} isn’t a ${isTimeColumn(c) ? 'time. Use hours, like 1.5 or 1:30' : 'whole number'}.` });
+        problems.push({ row: number, why: t(isTimeColumn(c) ? '“{value}” under {heading} isn’t a time. Use hours, like 1.5 or 1:30.' : '“{value}” under {heading} isn’t a whole number.', { value: get(c), heading: headingOf(c) }) });
         return;
       }
       e[c] = value;

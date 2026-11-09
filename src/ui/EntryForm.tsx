@@ -25,6 +25,7 @@ import {
   type EntryErrors,
 } from '../model/entry';
 import { blankQuick, quickFrom, quickText, type Quick, type QuickKind } from '../model/quick';
+import { t } from '../i18n';
 
 /** Which boxes the form shows. The line underneath is the same in every case. */
 export type FormLayout = 'flight' | 'ftd' | 'forward';
@@ -73,15 +74,15 @@ const LANDINGS = group('Takeoffs & landings');
 const FTD_ONLY: ColumnGroup = { title: 'FTD session', columns: ['ftd', 'approaches'] };
 
 const KINDS: { kind: QuickKind; label: string }[] = [
-  { kind: 'dual', label: 'Dual, with an instructor' },
-  { kind: 'solo', label: 'Solo' },
-  { kind: 'pic', label: 'PIC, with passengers' },
+  { kind: 'dual', label: t('Dual, with an instructor') },
+  { kind: 'solo', label: t('Solo') },
+  { kind: 'pic', label: t('PIC, with passengers') },
 ];
 
-const TITLE: Record<FormLayout, { add: string; edit: string; thing: string }> = {
-  flight: { add: 'Log a flight', edit: 'Edit flight', thing: 'flight' },
-  ftd: { add: 'Log an FTD session', edit: 'Edit FTD session', thing: 'session' },
-  forward: { add: 'Totals from your paper logbook', edit: 'Totals from your paper logbook', thing: 'entry' },
+const TITLE: Record<FormLayout, { add: string; edit: string; discard: string }> = {
+  flight: { add: t('Log a flight'), edit: t('Edit flight'), discard: t('Discard this flight?') },
+  ftd: { add: t('Log an FTD session'), edit: t('Edit FTD session'), discard: t('Discard this session?') },
+  forward: { add: t('Totals from your paper logbook'), edit: t('Totals from your paper logbook'), discard: t('Discard this entry?') },
 };
 
 /** Reads a box; null when it isn't a number of the right kind. */
@@ -254,11 +255,11 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
     }
     for (const c of COUNT_COLUMNS) {
       const n = readCount(text[c]);
-      if (n === null) bad[c] = 'A whole number.';
+      if (n === null) bad[c] = t('A whole number.');
       line[c] = n ?? 0;
     }
     const landings = readCount(soloLandings);
-    if (landings === null) bad.soloNightLandings = 'A whole number.';
+    if (landings === null) bad.soloNightLandings = t('A whole number.');
     line.soloNightLandings = landings ?? 0;
     if (!forward) {
       line.breakdown = null;
@@ -277,7 +278,7 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
     if (afterAnswer === 'some') {
       for (const f of AFTER_PPL_FIELDS) {
         const n = f === 'soloNightLandings' ? readCount(afterText[f]) : parseDuration(afterText[f]);
-        if (n === null) bad[`after.${f}`] = f === 'soloNightLandings' ? 'A whole number.' : 'Hours, like 1.3 or 1:18.';
+        if (n === null) bad[`after.${f}`] = f === 'soloNightLandings' ? t('A whole number.') : 'Hours, like 1.3 or 1:18.';
         b.after[f] = n ?? 0;
       }
     }
@@ -302,10 +303,10 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
     }
     if (!askLandings) line.soloNightLandings = 0;
     const errs: EntryErrors = { ...bad };
-    if (askSolo && !soloAnswer) errs.soloAnswer = 'Pick one, so the solo requirements count the right time.';
-    if (askLandings && soloLandings.trim() === '') errs.soloNightLandings = 'Enter how many were solo (0 if none).';
-    if (askAfterPpl && !afterAnswer) errs.afterAnswer = 'Pick one, so the CPL counts only what came after your PPL.';
-    if (quick && !quick.kind) errs.time = 'Choose Dual, Solo or PIC, and enter the time.';
+    if (askSolo && !soloAnswer) errs.soloAnswer = t('Pick one, so the solo requirements count the right time.');
+    if (askLandings && soloLandings.trim() === '') errs.soloNightLandings = t('Enter how many were solo (0 if none).');
+    if (askAfterPpl && !afterAnswer) errs.afterAnswer = t('Pick one, so the CPL counts only what came after your PPL.');
+    if (quick && !quick.kind) errs.time = t('Choose Dual, Solo or PIC, and enter the time.');
     const all = { ...validateEntry(line), ...errs };
     setErrors(all);
     if (Object.keys(all).length > 0) {
@@ -330,7 +331,7 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
   const groupInputs = (g: ColumnGroup) => <ColumnInputs key={g.title} group={g} text={text} errors={errors} onChange={setColumn} />;
 
   const landingsQuestion = askLandings && (
-    <Field id="f-solo-ldg" label={`How many of the ${preview.nightLandings} night takeoffs & landings were solo?`} error={errors.soloNightLandings}>
+    <Field id="f-solo-ldg" label={t('How many of the {n} night takeoffs & landings were solo?', { n: preview.nightLandings })} error={errors.soloNightLandings}>
       <input
         id="f-solo-ldg"
         className="narrow"
@@ -342,7 +343,7 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
         aria-invalid={errors.soloNightLandings ? true : undefined}
         aria-describedby={errors.soloNightLandings ? 'f-solo-ldg-err' : undefined}
       />
-      <p className="hint">The paper log doesn’t say which were yours alone. The night rating and the CPL each need 10 solo.</p>
+      <p className="hint">{t('The paper log doesn’t say which were yours alone. The night rating and the CPL each need 10 solo.')}</p>
     </Field>
   );
 
@@ -353,7 +354,7 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
   const whereFields = (
     <>
       <div className="grid-2">
-        <Field id="f-date" label={forward ? 'Up to (date)' : 'Date'} error={errors.date}>
+        <Field id="f-date" label={forward ? t('Up to (date)') : t('Date')} error={errors.date}>
           <input
             id="f-date"
             type="date"
@@ -364,11 +365,11 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
             aria-describedby={errors.date ? 'f-date-err' : undefined}
           />
         </Field>
-        <Field id="f-aircraft" label={ftd ? 'Device' : forward ? 'Aircraft type (blank for all types)' : 'Aircraft type'}>
+        <Field id="f-aircraft" label={ftd ? t('Device') : forward ? t('Aircraft type (blank for all types)') : t('Aircraft type')}>
           <input
             id="f-aircraft"
             list="dl-aircraft"
-            placeholder={ftd ? 'e.g. Redbird FMX' : 'e.g. C172, PA-28'}
+            placeholder={ftd ? t('e.g. Redbird FMX') : t('e.g. C172, PA-28')}
             autoComplete="off"
             value={entry.aircraft}
             onChange={(e) => set('aircraft', e.target.value)}
@@ -377,7 +378,7 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
       </div>
       {layout === 'flight' && (
         <div className="grid-3">
-          <Field id="f-reg" label="Registration">
+          <Field id="f-reg" label={t('Registration')}>
             <input
               id="f-reg"
               list="dl-reg"
@@ -387,10 +388,10 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
               onChange={(e) => set('registration', e.target.value.toUpperCase())}
             />
           </Field>
-          <Field id="f-from" label="From">
+          <Field id="f-from" label={t('From')}>
             <input id="f-from" list="dl-place" autoComplete="off" autoCapitalize="characters" value={entry.from} onChange={(e) => set('from', e.target.value.toUpperCase())} />
           </Field>
-          <Field id="f-to" label="To">
+          <Field id="f-to" label={t('To')}>
             <input id="f-to" list="dl-place" autoComplete="off" autoCapitalize="characters" value={entry.to} onChange={(e) => set('to', e.target.value.toUpperCase())} />
           </Field>
         </div>
@@ -399,10 +400,10 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
   );
 
   const route = entry.from || entry.to ? `${entry.from || '—'} → ${entry.to || '—'}` : '';
-  const where = [entry.date === today() ? 'Today' : entry.date, [entry.aircraft, entry.registration].filter(Boolean).join(' '), route].filter(Boolean).join(' · ');
+  const where = [entry.date === today() ? t('Today') : entry.date, [entry.aircraft, entry.registration].filter(Boolean).join(' '), route].filter(Boolean).join(' · ');
 
   const remarks = (
-    <Field id="f-remarks" label="Remarks">
+    <Field id="f-remarks" label={t('Remarks')}>
       <textarea id="f-remarks" rows={2} value={entry.remarks} onChange={(e) => set('remarks', e.target.value)} />
     </Field>
   );
@@ -412,13 +413,13 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
       {showWhere ? (
         whereFields
       ) : (
-        <button type="button" className="quick-where" onClick={() => setShowWhere(true)} aria-label={`Change the date, aircraft or route: ${where}`}>
+        <button type="button" className="quick-where" onClick={() => setShowWhere(true)} aria-label={t('Change the date, aircraft or route: {where}', { where })}>
           <span>{where}</span>
-          <span className="quick-change">Change</span>
+          <span className="quick-change">{t('Change')}</span>
         </button>
       )}
       <fieldset className="quick-group">
-        <legend>Who was flying</legend>
+        <legend>{t('Who was flying')}</legend>
         <div className="choices">
           {KINDS.map(({ kind, label }) => (
             <label key={kind} className={`choice${quick.kind === kind ? ' is-on' : ''}`}>
@@ -429,7 +430,7 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
         </div>
       </fieldset>
       <div className={`field${errors.time ? ' has-error' : ''}`}>
-        <label htmlFor="q-time">Flight time, in hours</label>
+        <label htmlFor="q-time">{t('Flight time, in hours')}</label>
         <input
           id="q-time"
           className="quick-time"
@@ -443,11 +444,11 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
         {timeError}
       </div>
       <fieldset className="quick-group">
-        <legend>Also</legend>
+        <legend>{t('Also')}</legend>
         <div className="choices">
           <label className={`choice${quick.night ? ' is-on' : ''}`}>
             <input type="checkbox" checked={quick.night} onChange={(e) => changeQuick({ night: e.target.checked })} />
-            Night
+            {t('Night')}
           </label>
           <label className={`choice${quick.xc ? ' is-on' : ''}`}>
             <input
@@ -463,22 +464,22 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
                 }
               }}
             />
-            Cross-country
+            {t('Cross-country')}
           </label>
           <label className={`choice${quick.hood ? ' is-on' : ''}`}>
             <input type="checkbox" checked={quick.hood} onChange={(e) => changeQuick({ hood: e.target.checked })} />
-            Hood
+            {t('Hood')}
           </label>
         </div>
       </fieldset>
       {quick.hood && (
         <div className={`field${errors.hood ? ' has-error' : ''}`}>
-          <label htmlFor="q-hood">Time under the hood, in hours</label>
+          <label htmlFor="q-hood">{t('Time under the hood, in hours')}</label>
           <input
             id="q-hood"
             className="narrow"
             inputMode="decimal"
-            placeholder={quick.time || 'All of it'}
+            placeholder={quick.time || t('All of it')}
             autoComplete="off"
             value={quick.hoodTime}
             onChange={(e) => changeQuick({ hoodTime: e.target.value })}
@@ -488,20 +489,20 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
         </div>
       )}
       <div className="quick-landings">
-        <span id="q-landings">Landings</span>
+        <span id="q-landings">{t('Landings')}</span>
         <div className="stepper" role="group" aria-labelledby="q-landings">
-          <button type="button" aria-label="One fewer landing" disabled={quick.landings === 0} onClick={() => changeQuick({ landings: quick.landings - 1 })}>
+          <button type="button" aria-label={t('One fewer landing')} disabled={quick.landings === 0} onClick={() => changeQuick({ landings: quick.landings - 1 })}>
             −
           </button>
           <output aria-live="polite">{quick.landings}</output>
-          <button type="button" aria-label="One more landing" onClick={() => changeQuick({ landings: quick.landings + 1 })}>
+          <button type="button" aria-label={t('One more landing')} onClick={() => changeQuick({ landings: quick.landings + 1 })}>
             +
           </button>
         </div>
       </div>
       {remarks}
       <button type="button" className="link quick-columns" onClick={() => setQuick(null)}>
-        Paper columns
+        {t('Paper columns')}
       </button>
     </div>
   );
@@ -528,37 +529,36 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
         <div className="sheet-head">
           <h2 id="entry-title">{isNew ? TITLE[layout].add : TITLE[layout].edit}</h2>
           <button type="button" className="link" onClick={tryClose}>
-            Cancel
+            {t('Cancel')}
           </button>
         </div>
 
         <div className="sheet-body" ref={body}>
           {forward && (
             <p className="hint-box">
-              Copy the “total to date” line from the last page of your paper logbook, box for box. A few questions underneath cover what the
-              paper columns don’t show. To keep totals by aircraft type, add one of these per type.
+              {t('Copy the “total to date” line from the last page of your paper logbook, box for box. A few questions underneath cover what the paper columns don’t show. To keep totals by aircraft type, add one of these per type.')}
             </p>
           )}
-          {ftd && <p className="hint-box">FTD time counts as instrument ground time with an instructor. It is not flight time.</p>}
+          {ftd && <p className="hint-box">{t('FTD time counts as instrument ground time with an instructor. It is not flight time.')}</p>}
 
           {quickView}
           {!quick && whereFields}
           {!quick && !forward && !ftd && (
             <details className="glossary">
-              <summary>What the columns mean</summary>
+              <summary>{t('What the columns mean')}</summary>
               <dl>
-                <dt>Dual</dt>
-                <dd>Flying with an instructor teaching you.</dd>
-                <dt>PIC</dt>
-                <dd>Pilot-in-command: you’re in charge, alone or with others aboard. Solo time goes here, with the tick below.</dd>
-                <dt>Actual IMC</dt>
-                <dd>Flown on instruments in real cloud.</dd>
-                <dt>Hood</dt>
-                <dd>Flown on instruments with your view outside blocked.</dd>
-                <dt>FTD</dt>
-                <dd>A flight training device: a simulator on the ground. It isn’t flight time.</dd>
-                <dt>IFR approaches</dt>
-                <dd>Instrument approaches you flew.</dd>
+                <dt>{t('Dual')}</dt>
+                <dd>{t('Flying with an instructor teaching you.')}</dd>
+                <dt>{t('PIC')}</dt>
+                <dd>{t('Pilot-in-command: you’re in charge, alone or with others aboard. Solo time goes here, with the tick below.')}</dd>
+                <dt>{t('Actual IMC')}</dt>
+                <dd>{t('Flown on instruments in real cloud.')}</dd>
+                <dt>{t('Hood')}</dt>
+                <dd>{t('Flown on instruments with your view outside blocked.')}</dd>
+                <dt>{t('FTD')}</dt>
+                <dd>{t('A flight training device: a simulator on the ground. It isn’t flight time.')}</dd>
+                <dt>{t('IFR approaches')}</dt>
+                <dd>{t('Instrument approaches you flew.')}</dd>
               </dl>
             </details>
           )}
@@ -571,21 +571,21 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
           ) : (
             <>
               <section className="form-section" aria-labelledby="sec-time">
-                <h3 id="sec-time">Flight time</h3>
+                <h3 id="sec-time">{t('Flight time')}</h3>
                 {timeError}
                 <div className="col-groups">{SINGLE.map(groupInputs)}</div>
                 {showMulti ? (
                   <div className="col-groups">{MULTI.map(groupInputs)}</div>
                 ) : (
                   <button type="button" className="link" onClick={() => setShowMulti(true)}>
-                    + Multi-engine time
+                    {t('+ Multi-engine time')}
                   </button>
                 )}
                 {!forward && (
                   <>
                     <label className="toggle">
                       <input type="checkbox" checked={entry.solo} onChange={(e) => set('solo', e.target.checked)} />
-                      <span>Solo flight: you were the only person on board</span>
+                      <span>{t('Solo flight: you were the only person on board')}</span>
                     </label>
                     {errors.solo && <p className="field-error">{errors.solo}</p>}
                   </>
@@ -593,8 +593,8 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
               </section>
 
               <section className="form-section" aria-labelledby="sec-xc">
-                <h3 id="sec-xc">Cross-country</h3>
-                <p className="hint">Part of the flight time above, logged again here. It isn’t added to the total.</p>
+                <h3 id="sec-xc">{t('Cross-country')}</h3>
+                <p className="hint">{t('Part of the flight time above, logged again here. It isn’t added to the total.')}</p>
                 <div className="col-groups">{XC.map(groupInputs)}</div>
               </section>
 
@@ -608,24 +608,24 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
 
           {forward && (askSolo || askAfterPpl) && (
             <section className="form-section questions" aria-labelledby="sec-questions">
-              <h3 id="sec-questions">What your paper log doesn’t separate</h3>
+              <h3 id="sec-questions">{t('What your paper log doesn’t separate')}</h3>
 
               {askSolo && (
                 <Question
                   name="solo"
-                  legend={`How much of your ${formatHours(d.pic)} h of PIC time was solo, with nobody else on board?`}
+                  legend={t('How much of your {hours} h of PIC time was solo, with nobody else on board?', { hours: formatHours(d.pic) })}
                   value={soloAnswer}
                   onChange={setSoloAnswer}
-                  labels={{ all: 'All of it', none: 'None of it', some: 'Some of it' }}
+                  labels={{ all: t('All of it'), none: t('None of it'), some: t('Some of it') }}
                   error={errors.soloAnswer}
                 >
                   {soloAnswer === 'some' && (
                     <div className="col-inputs three">
                       {(
                         [
-                          ['soloDay', 'Solo by day'],
-                          ['soloNight', 'Solo at night'],
-                          ['soloXc', 'Solo cross-country'],
+                          ['soloDay', t('Solo by day')],
+                          ['soloNight', t('Solo at night')],
+                          ['soloXc', t('Solo cross-country')],
                         ] as const
                       ).map(([k, label]) => (
                         <SmallInput
@@ -646,27 +646,26 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
               {askAfterPpl && (
                 <Question
                   name="after-ppl"
-                  legend={`How much of these totals did you fly after your PPL was issued${pplDate ? ` (${pplDate})` : ''}?`}
+                  legend={pplDate ? t('How much of these totals did you fly after your PPL was issued ({date})?', { date: pplDate }) : t('How much of these totals did you fly after your PPL was issued?')}
                   value={afterAnswer}
                   onChange={setAfterAnswer}
-                  labels={{ none: 'None of it', all: 'All of it', some: 'Some of it' }}
+                  labels={{ none: t('None of it'), all: t('All of it'), some: t('Some of it') }}
                   order={['none', 'all', 'some']}
                   error={errors.afterAnswer}
-                  hint="Only the CPL needs this: its 65 h of training must come after the PPL. The night rating and IFR count everything."
+                  hint={t("Only the CPL needs this: its 65 h of training must come after the PPL. The night rating and IFR count everything.")}
                 >
                   {afterAnswer === 'some' && (
                     <>
                       <p className="hint">
-                        Tip: take the “total to date” on the page where you passed your PPL flight test away from today’s. Leave a box blank for
-                        none.
+                        {t('Tip: take the “total to date” on the page where you passed your PPL flight test away from today’s. Leave a box blank for none.')}
                       </p>
                       <div className="col-inputs three">
                         {AFTER_PPL_FIELDS.map((f) => (
                           <SmallInput
                             key={f}
                             id={`f-after-${f}`}
-                            label={AFTER_PPL_LABEL[f]}
-                            srPrefix="After your PPL: "
+                            label={t(AFTER_PPL_LABEL[f])}
+                            srPrefix={t('After your PPL: ')}
                             count={f === 'soloNightLandings'}
                             value={afterText[f]}
                             error={errors[`after.${f}`]}
@@ -684,7 +683,7 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
           {!quick && remarks}
           {onLogAgain && (
             <button type="button" className="link sheet-delete" onClick={() => leaveThen(onLogAgain)}>
-              Log this flight again
+              {t('Log this flight again')}
             </button>
           )}
           {onDelete && (
@@ -696,7 +695,7 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
                 onDelete();
               }}
             >
-              Delete this entry
+              {t('Delete this entry')}
             </button>
           )}
         </div>
@@ -705,20 +704,20 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
           {asking ? (
             <>
               <p className="form-message" role="alert">
-                {isNew ? `Discard this ${TITLE[layout].thing}?` : 'Discard your changes?'}
+                {isNew ? TITLE[layout].discard : t('Discard your changes?')}
               </p>
               <button type="button" className="btn" onClick={() => setAsking(false)}>
-                Keep editing
+                {t('Keep editing')}
               </button>
               <button type="button" className="btn danger" onClick={leave}>
-                Discard
+                {t('Discard')}
               </button>
             </>
           ) : (
             <>
               {problems > 0 && (
                 <p className="form-message is-problem" role="alert">
-                  {problems === 1 ? '1 thing to fix' : `${problems} things to fix`}
+                  {problems === 1 ? t('1 thing to fix') : t('{n} things to fix', { n: problems })}
                 </p>
               )}
               {problems === 0 && stillDoubtful && (
@@ -728,11 +727,11 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
               )}
               {!ftd && !quick && (
                 <span className="line-total">
-                  Flight time on this line: <strong>{formatHours(FLIGHT_COLUMNS.reduce((t, c) => t + preview[c], 0))} h</strong>
+                  {t('Flight time on this line:')}{' '}<strong>{formatHours(FLIGHT_COLUMNS.reduce((t, c) => t + preview[c], 0))}{' '}{t('h')}</strong>
                 </span>
               )}
               <button type="submit" className="btn primary" disabled={saving}>
-                {saving ? 'Saving…' : stillDoubtful ? 'Save anyway' : 'Save'}
+                {saving ? t('Saving…') : stillDoubtful ? t('Save anyway') : t('Save')}
               </button>
             </>
           )}
@@ -852,13 +851,13 @@ function ColumnInputs({
 }) {
   return (
     <fieldset className="col-group">
-      <legend>{group.title}</legend>
+      <legend>{t(group.title)}</legend>
       <div className="col-inputs" style={{ gridTemplateColumns: `repeat(${group.columns.length}, minmax(0, 1fr))` }}>
         {group.columns.map((c) => (
           <div key={c} className={`field compact${errors[c] ? ' has-error' : ''}`}>
             <label htmlFor={`f-${c}`}>
-              <span className="sr-only">{group.title} </span>
-              {COLUMN_LABEL[c]}
+              <span className="sr-only">{t(group.title)} </span>
+              {t(COLUMN_LABEL[c])}
             </label>
             <input
               id={`f-${c}`}

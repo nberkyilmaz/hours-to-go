@@ -3,6 +3,7 @@ import { ApiError } from '../api';
 import type { LogbookState } from '../useLogbook';
 import { Mark } from './icons';
 import { useSlow } from './useSlow';
+import { t } from '../i18n';
 
 interface Props {
   /** From the emailed link, which opens the page at `#confirm=…`. */
@@ -24,11 +25,11 @@ export function ConfirmEmail({ token, lb, onDone }: Props) {
     if (!ready || started.current) return;
     started.current = true;
     lb.confirmEmail(token).then(setResult, (err: unknown) =>
-      setError(err instanceof ApiError ? err.message : 'Something went wrong. Try the link again.'),
+      setError(err instanceof ApiError ? err.message : t('Something went wrong. Try the link again.')),
     );
   }, [ready, lb, token]);
 
-  const title = result ? (result.changed ? 'Your email is changed' : 'Your email is confirmed') : error ? 'This link didn’t work' : 'Confirming your email…';
+  const title = result ? (result.changed ? t('Your email is changed') : t('Your email is confirmed')) : error ? t('This link didn’t work') : t('Confirming your email…');
 
   return (
     <div className="welcome">
@@ -36,9 +37,9 @@ export function ConfirmEmail({ token, lb, onDone }: Props) {
         <div className="welcome-hero">
           <div className="brand">
             <Mark size={32} />
-            <span>Hours to Go</span>
+            <span>{t('Hours to Go')}</span>
           </div>
-          <p className="kicker">Your email</p>
+          <p className="kicker">{t('Your email')}</p>
           <h1 id="confirm-title">{title}</h1>
         </div>
       </header>
@@ -47,12 +48,12 @@ export function ConfirmEmail({ token, lb, onDone }: Props) {
         <section className="card welcome-card" aria-labelledby="confirm-title">
           {result?.changed && (
             <p role="status">
-              Your profile now uses <strong>{result.email}</strong>. Sign in with it from now on.
+              {t('Your profile now uses')}{' '}<strong>{result.email}</strong>{t('. Sign in with it from now on.')}
             </p>
           )}
           {result && !result.changed && (
             <p role="status">
-              <strong>{result.email}</strong> is confirmed. If you ever forget your password, a reset link can reach you there.
+              <strong>{result.email}</strong>{' '}{t('is confirmed. If you ever forget your password, a reset link can reach you there.')}
             </p>
           )}
           {error && (
@@ -62,12 +63,12 @@ export function ConfirmEmail({ token, lb, onDone }: Props) {
           )}
           {slow && (
             <p className="hint" role="status">
-              The server is waking up. If nobody has used Hours to Go for a while, this takes up to a minute.
+              {t('The server is waking up. If nobody has used Hours to Go for a while, this takes up to a minute.')}
             </p>
           )}
           <div className="welcome-skip">
             <button type="button" className={result ? 'btn primary' : 'btn quiet'} onClick={onDone}>
-              Open Hours to Go
+              {t('Open Hours to Go')}
             </button>
           </div>
         </section>

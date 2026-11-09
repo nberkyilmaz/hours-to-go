@@ -1,5 +1,6 @@
 import { PGlite } from '@electric-sql/pglite';
 import pg from 'pg';
+import type { Lang } from '../src/i18n';
 import { newId, type Entry } from '../src/model/entry';
 import { blankProfile, type Profile } from '../src/model/profile';
 import { mergeLogbooks, parseEntry, parseProfile, type Logbook } from '../src/model/store';
@@ -112,6 +113,8 @@ const MIGRATIONS: string[][] = [
       expires_at bigint not null
     )`,
   ],
+  // 5: reminders go out in the language the pilot had the app in when they turned them on.
+  ["alter table users add column reminders_lang text not null default 'en'"],
 ];
 
 /**
@@ -417,9 +420,9 @@ export class Store {
   }
 
   /** On with `stop`, the token every reminder carries; off with null. A link in an earlier email keeps working. */
-  async setReminders(userId: string, stop: string | null): Promise<void> {
+  async setReminders(userId: string, stop: string | null, language: Lang = 'en'): Promise<void> {
     if (stop === null) await this.db.query('update users set reminders_at = null where id = $1', [userId]);
-    else await this.db.query('update users set reminders_at = coalesce(reminders_at, now()), reminders_stop = coalesce(reminders_stop, $2) where id = $1', [userId, stop]);
+    else await this.db.query('update users set reminders_at = coalesce(reminders_at, now()), reminders_stop = coalesce(reminders_stop, $2), reminders_lang = $3 where id = $1', [userId, stop, language]);
   }
 
   /** From the link in a reminder, with no sign-in. False when the link is unknown. */
@@ -428,8 +431,8 @@ export class Store {
   }
 
   /** Who asked for reminders, at an address that's been confirmed. */
-  reminderRecipients(): Promise<{ id: string; email: string; stop: string }[]> {
-    return this.db.query('select id, email, reminders_stop as stop from users where reminders_at is not null and email_confirmed_at is not null');
+  reminderRecipients(): Promise<{ id: string; email: string; stop: string; lang: Lang }[]> {
+    return this.db.query('select id, email, reminders_stop as stop, reminders_lang as lang from users where reminders_at is not null and email_confirmed_at is not null');
   }
 
   async sentReminders(userId: string): Promise<Set<string>> {

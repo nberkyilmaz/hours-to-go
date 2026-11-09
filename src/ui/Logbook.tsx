@@ -14,6 +14,7 @@ import {
 import { LOG_FILTERS, byMonth, matches, shortDate, type LogFilter } from '../model/search';
 import type { FormLayout } from './EntryForm';
 import { BookIcon, PlusIcon } from './icons';
+import { t } from '../i18n';
 
 interface Props {
   entries: readonly Entry[];
@@ -65,7 +66,7 @@ export function LogbookView({ entries, onNew, onEdit }: Props) {
     const groups = new Map<string, { label: string; entries: Entry[] }>();
     for (const e of entries) {
       const key = e.aircraft.trim().toUpperCase();
-      const g = groups.get(key) ?? { label: e.aircraft.trim() || 'Type not given', entries: [] };
+      const g = groups.get(key) ?? { label: e.aircraft.trim() || t('Type not given'), entries: [] };
       g.entries.push(e);
       groups.set(key, g);
     }
@@ -75,14 +76,14 @@ export function LogbookView({ entries, onNew, onEdit }: Props) {
   // Only the columns with something in them, so the route gets the room.
   const listColumns = (
     [
-      { key: 'dual', label: 'Dual', value: (_e, d) => h(d.dual) },
+      { key: 'dual', label: t('Dual'), value: (_e, d) => h(d.dual) },
       { key: 'pic', label: 'PIC', value: (_e, d) => h(d.pic) },
       { key: 'copilot', label: 'Co-pilot', value: (_e, d) => h(d.copilot) },
-      { key: 'night', label: 'Night', value: (_e, d) => h(d.night) },
+      { key: 'night', label: t('Night'), value: (_e, d) => h(d.night) },
       { key: 'xc', label: 'XC', value: (_e, d) => h(d.xcDual + d.xcPic) },
-      { key: 'inst', label: 'Inst', value: (_e, d) => h(d.inst) },
+      { key: 'inst', label: t('Inst'), value: (_e, d) => h(d.inst) },
       { key: 'ftd', label: 'FTD', value: (e) => h(e.ftd) },
-      { key: 'ldg', label: 'Ldg D/N', value: (e) => (e.dayLandings || e.nightLandings ? `${e.dayLandings}/${e.nightLandings}` : '') },
+      { key: 'ldg', label: t('Ldg D/N'), value: (e) => (e.dayLandings || e.nightLandings ? `${e.dayLandings}/${e.nightLandings}` : '') },
     ] satisfies ListColumn[]
   ).filter((c) => entries.some((e) => c.value(e, derive(e)) !== ''));
   const gridStyle = { '--log-cols': `92px minmax(120px, 1.4fr) minmax(120px, 1.1fr) repeat(${listColumns.length}, 52px) 64px` } as CSSProperties;
@@ -96,40 +97,39 @@ export function LogbookView({ entries, onNew, onEdit }: Props) {
     </div>
   );
   const mainTiles: [string, string][] = [
-    ['Grand total', formatHours(sums.total)],
+    [t('Grand total'), formatHours(sums.total)],
     ['PIC', formatHours(sums.pic)],
-    ['Dual', formatHours(sums.dual)],
+    [t('Dual'), formatHours(sums.dual)],
   ];
   const moreTiles: [string, string][] = [
     ['PIC cross-country', formatHours(sums.xcPic)],
-    ['Night', formatHours(sums.night)],
+    [t('Night'), formatHours(sums.night)],
     ['Actual + hood', formatHours(sums.inst)],
     ['FTD', formatHours(sums.ftd)],
-    ['Landings day / night', `${sums.dayLandings} / ${sums.nightLandings}`],
+    [t('Landings day / night'), `${sums.dayLandings} / ${sums.nightLandings}`],
   ];
 
   // Nothing logged yet: one card that says where to start, instead of eight totals of 0.0.
   if (sorted.length === 0) {
     return (
       <section className="card empty-state" aria-labelledby="empty-title">
-        <h1 className="sr-only">Logbook</h1>
+        <h1 className="sr-only">{t('Logbook')}</h1>
         <span className="empty-icon">
           <BookIcon />
         </span>
-        <h2 id="empty-title">No flights logged yet</h2>
+        <h2 id="empty-title">{t('No flights logged yet')}</h2>
         <p className="muted">
-          Already flying? Start with the totals from your paper logbook, so your progress counts from where you are. Then log each flight as
-          you fly it.
+          {t('Already flying? Start with the totals from your paper logbook, so your progress counts from where you are. Then log each flight as you fly it.')}
         </p>
         <div className="empty-actions">
           <button type="button" className="btn primary" onClick={() => onNew('forward')}>
-            <PlusIcon /> Add paper logbook totals
+            <PlusIcon />{' '}{t('Add paper logbook totals')}
           </button>
           <button type="button" className="btn" onClick={() => onNew('flight')}>
-            Log a flight
+            {t('Log a flight')}
           </button>
           <button type="button" className="btn" onClick={() => onNew('ftd')}>
-            Log FTD session
+            {t('Log FTD session')}
           </button>
         </div>
       </section>
@@ -138,20 +138,20 @@ export function LogbookView({ entries, onNew, onEdit }: Props) {
 
   return (
     <div className="stack">
-      <h1 className="sr-only">Logbook</h1>
+      <h1 className="sr-only">{t('Logbook')}</h1>
       <dl className="tiles tiles-main">{mainTiles.map(tile)}</dl>
 
       <details className="card fold">
-        <summary>All totals, by column and aircraft type</summary>
+        <summary>{t('All totals, by column and aircraft type')}</summary>
         <dl className="tiles tiles-more">{moreTiles.map(tile)}</dl>
         <div className="paper-totals">
           {LOG_GROUPS.filter((g) => g.columns.some((c) => sums[c] > 0)).map((g) => (
             <div key={g.title} className="paper-group">
-              <h4>{g.title}</h4>
+              <h4>{t(g.title)}</h4>
               <dl>
                 {g.columns.map((c) => (
                   <div key={c}>
-                    <dt>{COLUMN_LABEL[c]}</dt>
+                    <dt>{t(COLUMN_LABEL[c])}</dt>
                     <dd>{show(c, sums[c])}</dd>
                   </div>
                 ))}
@@ -159,21 +159,21 @@ export function LogbookView({ entries, onNew, onEdit }: Props) {
             </div>
           ))}
           <div className="paper-group grand">
-            <h4>Grand total</h4>
+            <h4>{t('Grand total')}</h4>
             <p>{formatHours(sums.total)}</p>
           </div>
         </div>
-        <h3 className="fold-title">By aircraft type</h3>
+        <h3 className="fold-title">{t('By aircraft type')}</h3>
         <div className="table-scroll">
           <table className="type-table">
             <thead>
               <tr>
-                <th scope="col">Type</th>
-                <th scope="col">Dual</th>
-                <th scope="col">PIC</th>
-                {sums.copilot > 0 && <th scope="col">Co-pilot</th>}
-                <th scope="col">Total</th>
-                {sums.ftd > 0 && <th scope="col">FTD</th>}
+                <th scope="col">{t('Type')}</th>
+                <th scope="col">{t('Dual')}</th>
+                <th scope="col">{t('PIC')}</th>
+                {sums.copilot > 0 && <th scope="col">{t('Co-pilot')}</th>}
+                <th scope="col">{t('Total')}</th>
+                {sums.ftd > 0 && <th scope="col">{t('FTD')}</th>}
               </tr>
             </thead>
             <tbody>
@@ -194,29 +194,29 @@ export function LogbookView({ entries, onNew, onEdit }: Props) {
 
       <div className="log-actions">
         <button type="button" className="link" onClick={() => onNew('ftd')}>
-          Log FTD session
+          {t('Log FTD session')}
         </button>
         <button type="button" className="link" onClick={() => onNew('forward')}>
-          Add paper logbook totals
+          {t('Add paper logbook totals')}
         </button>
         <a className="link" href="#print">
-          Print or save as PDF
+          {t('Print or save as PDF')}
         </a>
       </div>
 
       {sorted.length >= SEARCH_FROM && (
         <div className="log-find">
-          <input type="search" aria-label="Search your logbook" placeholder="Search aircraft, airports, remarks" value={query} onChange={(e) => setQuery(e.target.value)} />
-          <div className="choices" role="group" aria-label="Show">
+          <input type="search" aria-label={t('Search your logbook')} placeholder={t('Search aircraft, airports, remarks')} value={query} onChange={(e) => setQuery(e.target.value)} />
+          <div className="choices" role="group" aria-label={t('Show')}>
             {LOG_FILTERS.map((f) => (
               <button key={f.id} type="button" className={`choice${filter === f.id ? ' is-on' : ''}`} aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}>
-                {f.label}
+                {t(f.label)}
               </button>
             ))}
           </div>
           {(query.trim() !== '' || filter !== 'all') && (
             <p className="hint" role="status">
-              {showing} of {sorted.length} {sorted.length === 1 ? 'entry' : 'entries'}
+              {sorted.length === 1 ? t('{showing} of 1 entry', { showing }) : t('{showing} of {total} entries', { showing, total: sorted.length })}
             </p>
           )}
         </div>
@@ -224,17 +224,17 @@ export function LogbookView({ entries, onNew, onEdit }: Props) {
 
       <div className="card log" style={gridStyle}>
         <div className="log-row log-head" aria-hidden="true">
-          <span>Date</span>
-          <span>Aircraft</span>
-          <span>From → To</span>
+          <span>{t('Date')}</span>
+          <span>{t('Aircraft')}</span>
+          <span>{t('From → To')}</span>
           {listColumns.map((c) => (
             <span key={c.key} className="num">
               {c.label}
             </span>
           ))}
-          <span className="num">Total</span>
+          <span className="num">{t('Total')}</span>
         </div>
-        <ul aria-label="Logbook entries">
+        <ul aria-label={t('Logbook entries')}>
           {months.map((m) => (
             <MonthRows key={m.key} label={m.label} minutes={m.minutes}>
               {m.entries.map((e) => {
@@ -242,13 +242,13 @@ export function LogbookView({ entries, onNew, onEdit }: Props) {
                 const landings = e.dayLandings + e.nightLandings;
                 return (
                   <li key={e.id} className="log-entry">
-                    <button type="button" className="log-row" onClick={() => onEdit(e)} aria-label={`Edit the ${e.date} entry`}>
+                    <button type="button" className="log-row" onClick={() => onEdit(e)} aria-label={t('Edit the {date} entry', { date: e.date })}>
                       <span className="c-date">{shortDate(e.date)}</span>
                       <span className="c-aircraft">
-                        {[e.aircraft, e.registration].filter(Boolean).join(' ') || (e.forward ? 'All types' : <span className="muted">Aircraft not entered</span>)}
-                        {e.forward && <span className="badge">Brought forward</span>}
-                        {e.solo && <span className="badge">Solo</span>}
-                        {d.multi > 0 && <span className="badge">ME</span>}
+                        {[e.aircraft, e.registration].filter(Boolean).join(' ') || (e.forward ? t('All types') : <span className="muted">{t('Aircraft not entered')}</span>)}
+                        {e.forward && <span className="badge">{t('Brought forward')}</span>}
+                        {e.solo && <span className="badge">{t('Solo')}</span>}
+                        {d.multi > 0 && <span className="badge">{t('ME')}</span>}
                       </span>
                       <span className="c-sub">
                         <span className="c-route">{e.from || e.to ? `${e.from || '—'} → ${e.to || '—'}` : ''}</span>
@@ -259,7 +259,7 @@ export function LogbookView({ entries, onNew, onEdit }: Props) {
                             </span>
                           ))}
                         </span>
-                        {landings > 0 && <span className="c-landings">{landings === 1 ? '1 landing' : `${landings} landings`}</span>}
+                        {landings > 0 && <span className="c-landings">{landings === 1 ? t('1 landing') : t('{n} landings', { n: landings })}</span>}
                       </span>
                       <span className="num c-total">{d.total ? formatHours(d.total) : `${formatHours(e.ftd)} FTD`}</span>
                     </button>
@@ -269,7 +269,7 @@ export function LogbookView({ entries, onNew, onEdit }: Props) {
             </MonthRows>
           ))}
         </ul>
-        {months.length === 0 && <p className="log-none">Nothing matches that.</p>}
+        {months.length === 0 && <p className="log-none">{t('Nothing matches that.')}</p>}
       </div>
     </div>
   );
@@ -280,7 +280,7 @@ function MonthRows({ label, minutes, children }: { label: string; minutes: numbe
     <>
       <li className="log-month">
         <h2>{label}</h2>
-        {minutes > 0 && <span>{formatHours(minutes)} h</span>}
+        {minutes > 0 && <span>{formatHours(minutes)}{' '}{t('h')}</span>}
       </li>
       {children}
     </>

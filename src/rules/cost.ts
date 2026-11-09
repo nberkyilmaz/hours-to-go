@@ -4,6 +4,7 @@
  */
 import type { Rates } from '../model/profile';
 import type { Plan } from './goals';
+import { numberFormat } from '../i18n';
 
 export interface CostLine {
   kind: 'dual' | 'sim' | 'solo';
@@ -53,10 +54,10 @@ export function atLeast(dollars: number): number {
   return Math.floor(dollars / step(dollars)) * step(dollars);
 }
 
-const WHOLE = new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 });
-const CENTS = new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const WHOLE: Intl.NumberFormatOptions = { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 };
+const CENTS: Intl.NumberFormatOptions = { style: 'currency', currency: 'CAD', minimumFractionDigits: 2, maximumFractionDigits: 2 };
 
 /** "$14,500": whole dollars. */
-export const money = (dollars: number) => WHOLE.format(dollars);
+export const money = (dollars: number) => numberFormat(WHOLE).format(dollars);
 /** "$212.50" or "$220": a rate as the school prints it. */
-export const rateText = (dollars: number) => (Number.isInteger(dollars) ? WHOLE : CENTS).format(dollars);
+export const rateText = (dollars: number) => numberFormat(Number.isInteger(dollars) ? WHOLE : CENTS).format(dollars);

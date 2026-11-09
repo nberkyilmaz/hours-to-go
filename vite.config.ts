@@ -43,6 +43,7 @@ export default defineConfig({
       input: {
         main: fileURLToPath(new URL('index.html', import.meta.url)),
         privacy: fileURLToPath(new URL('privacy/index.html', import.meta.url)),
+        privacyFr: fileURLToPath(new URL('privacy/fr/index.html', import.meta.url)),
       },
     },
   },

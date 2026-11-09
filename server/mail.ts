@@ -1,3 +1,4 @@
+import { translator, type Lang } from '../src/i18n';
 import { dateText } from '../src/model/entry';
 import type { Due } from '../src/rules/reminders';
 
@@ -32,82 +33,69 @@ export function printMail(mail: Mail): Promise<void> {
   return Promise.resolve();
 }
 
-export function resetMail(to: string, link: string, minutes: number): Mail {
-  const text = [
-    'Someone asked to reset the password for the Hours to Go profile with this email address.',
-    '',
-    `To choose a new password, open this link in the next ${minutes} minutes. It works once.`,
-    link,
-    '',
-    'If it wasn’t you, ignore this email. Your password stays as it is.',
-  ].join('\n');
-  // The link goes in as given: it is built from APP_URL and a base64url token, so it has no
-  // characters that need escaping in HTML.
-  const html = `<!doctype html><html><body style="margin:0;padding:24px;background:#f3f4f6;font:16px/1.5 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#0f141b">
+const page = (body: string) => `<!doctype html><html><body style="margin:0;padding:24px;background:#f3f4f6;font:16px/1.5 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#0f141b">
 <div style="max-width:480px;margin:0 auto;background:#fff;border:1px solid #e1e4e9;border-radius:10px;padding:24px">
 <p style="margin:0 0 16px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-size:13px;color:#0e7490">Hours to Go</p>
-<p style="margin:0 0 16px">Someone asked to reset the password for the Hours to Go profile with this email address.</p>
-<p style="margin:0 0 24px">To choose a new password, open this link in the next ${minutes} minutes. It works once.</p>
-<p style="margin:0 0 24px"><a href="${link}" style="display:inline-block;padding:12px 20px;border-radius:8px;background:#0e7490;color:#fff;font-weight:700;text-decoration:none">Choose a new password</a></p>
-<p style="margin:0;color:#5b6573;font-size:14px">If it wasn’t you, ignore this email. Your password stays as it is.</p>
+${body}
 </div></body></html>`;
-  return { to, subject: 'Reset your Hours to Go password', text, html };
+
+const button = (link: string, label: string) =>
+  `<p style="margin:0 0 24px"><a href="${link}" style="display:inline-block;padding:12px 20px;border-radius:8px;background:#0e7490;color:#fff;font-weight:700;text-decoration:none">${label}</a></p>`;
+
+export function resetMail(to: string, link: string, minutes: number, language: Lang = 'en'): Mail {
+  const tr = translator(language);
+  const who = tr('Someone asked to reset the password for the Hours to Go profile with this email address.');
+  const open = tr('To choose a new password, open this link in the next {minutes} minutes. It works once.', { minutes });
+  const ignore = tr('If it wasn’t you, ignore this email. Your password stays as it is.');
+  const text = [who, '', open, link, '', ignore].join('\n');
+  // The link goes in as given: it is built from APP_URL and a base64url token, so it has no
+  // characters that need escaping in HTML.
+  const html = page(`<p style="margin:0 0 16px">${who}</p>
+<p style="margin:0 0 24px">${open}</p>
+${button(link, tr('Choose a new password'))}
+<p style="margin:0;color:#5b6573;font-size:14px">${ignore}</p>`);
+  return { to, subject: tr('Reset your Hours to Go password'), text, html };
 }
 
 /**
  * The link that confirms an address: the one a pilot signed up with, or, for a `change`, one they
  * are moving to. A change doesn't name the old address: a mistyped new one reaches a stranger.
  */
-export function confirmMail(to: string, link: string, days: number, change: boolean): Mail {
+export function confirmMail(to: string, link: string, days: number, change: boolean, language: Lang = 'en'): Mail {
+  const tr = translator(language);
   const why = change
-    ? 'Someone asked to move a Hours to Go profile to this email address.'
-    : 'Thanks for creating a Hours to Go profile. Confirm that this is your email address, so that a password reset can reach you if you ever need one.';
-  const until = change ? 'Until you do, the profile keeps its old address.' : '';
-  const ignore = change ? 'If it wasn’t you, ignore this email and nothing changes.' : 'If you didn’t create a profile, ignore this email.';
-  const text = [why, '', `Open this link in the next ${days} days. It works once. ${until}`.trim(), link, '', ignore].join('\n');
+    ? tr('Someone asked to move a Hours to Go profile to this email address.')
+    : tr('Thanks for creating a Hours to Go profile. Confirm that this is your email address, so that a password reset can reach you if you ever need one.');
+  const open = tr('Open this link in the next {days} days. It works once.', { days });
+  const until = change ? ` ${tr('Until you do, the profile keeps its old address.')}` : '';
+  const ignore = change ? tr('If it wasn’t you, ignore this email and nothing changes.') : tr('If you didn’t create a profile, ignore this email.');
+  const text = [why, '', `${open}${until}`, link, '', ignore].join('\n');
   // As in the reset email, the link needs no escaping: APP_URL and a base64url token.
-  const html = `<!doctype html><html><body style="margin:0;padding:24px;background:#f3f4f6;font:16px/1.5 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#0f141b">
-<div style="max-width:480px;margin:0 auto;background:#fff;border:1px solid #e1e4e9;border-radius:10px;padding:24px">
-<p style="margin:0 0 16px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-size:13px;color:#0e7490">Hours to Go</p>
-<p style="margin:0 0 16px">${why}</p>
-<p style="margin:0 0 24px">Open this link in the next ${days} days. It works once. ${until}</p>
-<p style="margin:0 0 24px"><a href="${link}" style="display:inline-block;padding:12px 20px;border-radius:8px;background:#0e7490;color:#fff;font-weight:700;text-decoration:none">${change ? 'Use this email' : 'Confirm my email'}</a></p>
-<p style="margin:0;color:#5b6573;font-size:14px">${ignore}</p>
-</div></body></html>`;
-  return { to, subject: change ? 'Confirm your new email for Hours to Go' : 'Confirm your email for Hours to Go', text, html };
+  const html = page(`<p style="margin:0 0 16px">${why}</p>
+<p style="margin:0 0 24px">${open}${until}</p>
+${button(link, change ? tr('Use this email') : tr('Confirm my email'))}
+<p style="margin:0;color:#5b6573;font-size:14px">${ignore}</p>`);
+  return { to, subject: change ? tr('Confirm your new email for Hours to Go') : tr('Confirm your email for Hours to Go'), text, html };
 }
 
-const whenLeft = (days: number) => (days === 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days`);
-
 /** What's coming up, soonest first, to a pilot who turned reminders on. */
-export function reminderMail(to: string, items: readonly Due[], appLink: string, stopLink: string): Mail {
+export function reminderMail(to: string, items: readonly Due[], appLink: string, stopLink: string, language: Lang = 'en'): Mail {
+  const tr = translator(language);
+  const when = (days: number) => (days === 0 ? tr('today') : days === 1 ? tr('tomorrow') : tr('in {days} days', { days }));
   const first = items[0]!;
-  const subject = items.length === 1 ? `${first.what} runs out ${whenLeft(first.daysLeft)}` : `${items.length} things run out soon, the first ${whenLeft(first.daysLeft)}`;
-  const check = 'Worked out from the dates in your profile, so check them against your own documents.';
-  const why = 'You turned these reminders on in your Hours to Go profile.';
-  const text = [
-    'Coming up in your Hours to Go profile:',
-    '',
-    ...items.map((d) => `- ${d.what}: last day ${dateText(d.until)} (${whenLeft(d.daysLeft)})`),
-    '',
-    check,
-    appLink,
-    '',
-    `${why} To stop them: ${stopLink}`,
-  ].join('\n');
+  const subject = items.length === 1 ? tr('{what} runs out {when}', { what: tr(first.what), when: when(first.daysLeft) }) : tr('{n} things run out soon, the first {when}', { n: items.length, when: when(first.daysLeft) });
+  const lead = tr('Coming up in your Hours to Go profile:');
+  const check = tr('Worked out from the dates in your profile, so check them against your own documents.');
+  const why = tr('You turned these reminders on in your Hours to Go profile.');
+  const lastDay = (d: Due) => tr('last day {date}', { date: dateText(d.until, language) });
+  const text = [lead, '', ...items.map((d) => `- ${tr(d.what)}: ${lastDay(d)} (${when(d.daysLeft)})`), '', check, appLink, '', `${why} ${tr('To stop them:')} ${stopLink}`].join('\n');
   // As in the other emails, the links need no escaping: APP_URL and a base64url token.
-  const rows = items
-    .map((d) => `<li style="margin:0 0 8px"><strong>${escapeHtml(d.what)}</strong><br>Last day ${escapeHtml(dateText(d.until))} (${whenLeft(d.daysLeft)})</li>`)
-    .join('');
-  const html = `<!doctype html><html><body style="margin:0;padding:24px;background:#f3f4f6;font:16px/1.5 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#0f141b">
-<div style="max-width:480px;margin:0 auto;background:#fff;border:1px solid #e1e4e9;border-radius:10px;padding:24px">
-<p style="margin:0 0 16px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-size:13px;color:#0e7490">Hours to Go</p>
-<p style="margin:0 0 12px">Coming up in your profile:</p>
+  const rows = items.map((d) => `<li style="margin:0 0 8px"><strong>${escapeHtml(tr(d.what))}</strong><br>${escapeHtml(lastDay(d))} (${when(d.daysLeft)})</li>`).join('');
+  const html = page(`<p style="margin:0 0 12px">${lead}</p>
 <ul style="margin:0 0 16px;padding:0 0 0 20px">${rows}</ul>
 <p style="margin:0 0 24px">${check}</p>
-<p style="margin:0 0 24px"><a href="${appLink}" style="display:inline-block;padding:12px 20px;border-radius:8px;background:#0e7490;color:#fff;font-weight:700;text-decoration:none">Open Hours to Go</a></p>
-<p style="margin:0;color:#5b6573;font-size:14px">${why} <a href="${stopLink}" style="color:#0e7490">Stop these reminders</a></p>
-</div></body></html>`;
+${button(appLink, tr('Open Hours to Go'))}
+<p style="margin:0;color:#5b6573;font-size:14px">${why} <a href="${stopLink}" style="color:#0e7490">${tr('Stop these reminders')}</a></p>`);
   return { to, subject, text, html };
 }
 

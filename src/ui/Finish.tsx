@@ -2,6 +2,7 @@ import { formatHours, today } from '../model/entry';
 import { about, money, type Cost } from '../rules/cost';
 import type { GoalResult } from '../rules/evaluate';
 import { WINDOW_DAYS, dayText, finishOn, monthText, type Pace } from '../rules/pace';
+import { t } from '../i18n';
 
 interface Props {
   result: GoalResult;
@@ -23,7 +24,7 @@ export function Finish({ result: r, pace, logged, cost }: Props) {
   const minutes = r.plan ? r.plan.dual + r.plan.sim + r.plan.solo : r.minutesToGo;
   if (minutes <= 0) return null;
   const weeks = WINDOW_DAYS / 7;
-  if (!pace) return logged ? <p className="pace hint">A finish date needs two flights logged in the last {weeks} weeks.</p> : null;
+  if (!pace) return logged ? <p className="pace hint">{t('A finish date needs two flights logged in the last')}{' '}{weeks}{' '}{t('weeks.')}</p> : null;
 
   const now = today();
   const at = finishOn(minutes, pace, now);
@@ -32,24 +33,24 @@ export function Finish({ result: r, pace, logged, cost }: Props) {
   return (
     <div className="pace">
       <p>
-        At your pace, {formatHours(pace.perWeek)} h a week,{' '}
+        {t('At your pace,')}{' '}{formatHours(pace.perWeek)}{' '}{t('h a week,')}{' '}
         {at ? (
           <>
-            you’ll reach the minimum around <strong>{monthText(at, now)}</strong>
+            {t('you’ll reach the minimum around')}{' '}<strong>{monthText(at, now)}</strong>
             {typical && r.toAverage && (
               <>
-                , and the {r.toAverage.hours} h average around <strong>{monthText(typical, now)}</strong>
+                {t(', and the')}{' '}{r.toAverage.hours}{' '}{t('h average around')}{' '}<strong>{monthText(typical, now)}</strong>
               </>
             )}
             .
           </>
         ) : (
-          'the minimum is more than 5 years away.'
+          t('the minimum is more than 5 years away.')
         )}
       </p>
-      {monthly !== null && monthly > 0 && <p>That’s about {money(about(monthly))} a month at this pace.</p>}
+      {monthly !== null && monthly > 0 && <p>{t('That’s about')}{' '}{money(about(monthly))}{' '}{t('a month at this pace.')}</p>}
       <p className="hint">
-        From the flights and FTD sessions you logged {pace.whole ? `in the last ${weeks} weeks` : `since ${dayText(pace.since)}`}.
+        {t('From the flights and FTD sessions you logged')}{' '}{pace.whole ? t('in the last {weeks} weeks', { weeks }) : t('since {date}', { date: dayText(pace.since) })}.
       </p>
     </div>
   );

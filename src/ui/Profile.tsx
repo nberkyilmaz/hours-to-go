@@ -3,31 +3,32 @@ import { ApiError, api } from '../api';
 import { readCsv, type CsvRead } from '../model/csv';
 import type { Entry } from '../model/entry';
 import { hasContent, parseLogbook, type Logbook } from '../model/store';
-import { GOALS, STANDARD_421_URL } from '../rules/goals';
+import { GOALS } from '../rules/goals';
 import type { LogbookState } from '../useLogbook';
 import { SignedIn } from './Account';
 import { Feedback } from './Feedback';
 import { exportLogbook, exportSpreadsheet } from './export';
 import { ImportCsv } from './ImportCsv';
 import { MedicalFields } from './Medical';
-import { PRIVACY_URL, STANDARD_CURRENT } from './links';
+import { PRIVACY_URL, STANDARD_CURRENT, STANDARD_URL } from './links';
+import { LanguageSwitch } from './Language';
 import { ShareSection } from './Share';
 import { useSlow, useWake } from './useSlow';
+import { t } from '../i18n';
 
 export function ProfileView({ lb }: { lb: LogbookState }) {
   const { book, mode } = lb;
   return (
     <div className="stack">
-      <h1 className="sr-only">Profile</h1>
+      <h1 className="sr-only">{t('Profile')}</h1>
       <section className="card pad" aria-labelledby="account-title">
-        <h2 id="account-title">Your profile</h2>
+        <h2 id="account-title">{t('Your profile')}</h2>
         {mode.kind === 'account' ? (
           <SignedIn lb={lb} account={mode} />
         ) : (
           <>
             <p className="muted">
-              Right now your logbook is saved in this browser only. Create a free profile to keep it safe and to use it on your phone and
-              your computer.
+              {t('Right now your logbook is saved in this browser only. Create a free profile to keep it safe and to use it on your phone and your computer.')}
             </p>
             <AuthForm lb={lb} />
           </>
@@ -35,8 +36,8 @@ export function ProfileView({ lb }: { lb: LogbookState }) {
       </section>
 
       <section className="card pad" aria-labelledby="held-title">
-        <h2 id="held-title">Licences and ratings you hold</h2>
-        <p className="muted">Tick what you already have. Your PPL date matters: CPL training only counts from that day.</p>
+        <h2 id="held-title">{t('Licences and ratings you hold')}</h2>
+        <p className="muted">{t('Tick what you already have. Your PPL date matters: CPL training only counts from that day.')}</p>
         <ul className="held-list">
           {GOALS.map((g) => {
             const held = book.profile.held[g.id];
@@ -55,11 +56,11 @@ export function ProfileView({ lb }: { lb: LogbookState }) {
                       })
                     }
                   />
-                  <span>{g.name}</span>
+                  <span>{t(g.name)}</span>
                 </label>
                 {held && (
                   <label className="inline-field">
-                    <span>Issued</span>
+                    <span>{t('Issued')}</span>
                     <input
                       type="date"
                       value={held.date}
@@ -71,8 +72,8 @@ export function ProfileView({ lb }: { lb: LogbookState }) {
             );
           })}
         </ul>
-        <MedicalFields label="Medical certificate" profile={book.profile} updateProfile={lb.updateProfile} />
-        {book.profile.medical !== 'none' && <p className="hint">“Valid to” is on your medical certificate. A Category 1 can last longer for private flying, so use the date for the flying you do.</p>}
+        <MedicalFields label={t('Medical certificate')} profile={book.profile} updateProfile={lb.updateProfile} />
+        {book.profile.medical !== 'none' && <p className="hint">{t('“Valid to” is on your medical certificate. A Category 1 can last longer for private flying, so use the date for the flying you do.')}</p>}
       </section>
 
       {mode.kind === 'account' && <ShareSection />}
@@ -83,15 +84,14 @@ export function ProfileView({ lb }: { lb: LogbookState }) {
 
       <section className="card pad muted small">
         <p>
-          Requirements come from Transport Canada{' '}
-          <a href={STANDARD_421_URL} target="_blank" rel="noreferrer">
-            CAR Standard 421
+          {t('Requirements come from Transport Canada')}{' '}
+          <a href={STANDARD_URL} target="_blank" rel="noreferrer">
+            {t('CAR Standard 421')}
           </a>{' '}
-          (text current to {STANDARD_CURRENT}, checked against Transport Canada’s page every night). This app is a study and planning aid, not an official record: your certified personal log and
-          Transport Canada decide what counts. Check anything that matters with your flight training unit.
+          {t('(text current to')}{' '}{STANDARD_CURRENT}{t(', checked against Transport Canada’s page every night). This app is a study and planning aid, not an official record: your certified personal log and Transport Canada decide what counts. Check anything that matters with your flight training unit.')}
         </p>
         <p>
-          <a href={PRIVACY_URL}>Privacy and terms</a>
+          <a href={PRIVACY_URL}>{t('Privacy and terms')}</a> · <LanguageSwitch />
         </p>
       </section>
     </div>
@@ -107,7 +107,7 @@ interface AuthFormProps {
   onTabChange?: (tab: AuthTab) => void;
 }
 
-const SUBMIT: Record<AuthTab, string> = { signup: 'Create profile', signin: 'Sign in', forgot: 'Send reset link' };
+const SUBMIT: Record<AuthTab, string> = { signup: t('Create profile'), signin: t('Sign in'), forgot: t('Send reset link') };
 
 /**
  * Create a profile, sign in, or ask for a password-reset link. On the Profile tab, and on the
@@ -139,9 +139,9 @@ export function AuthForm({ lb, tab: givenTab, onTabChange }: AuthFormProps) {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!/^\S+@\S+\.\S+$/.test(email.trim())) return setError('Enter your email address, like you@example.com.');
-    if (tab !== 'forgot' && password === '') return setError('Enter a password.');
-    if (tab === 'signup' && password.length < 8) return setError('Use at least 8 characters for your password.');
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) return setError(t('Enter your email address, like you@example.com.'));
+    if (tab !== 'forgot' && password === '') return setError(t('Enter a password.'));
+    if (tab === 'signup' && password.length < 8) return setError(t('Use at least 8 characters for your password.'));
     setBusy(true);
     try {
       if (tab === 'forgot') {
@@ -151,7 +151,7 @@ export function AuthForm({ lb, tab: givenTab, onTabChange }: AuthFormProps) {
         await (tab === 'signup' ? lb.signUp(email, password) : lb.signIn(email, password));
       }
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Something went wrong. Try again.');
+      setError(err instanceof ApiError ? err.message : t('Something went wrong. Try again.'));
     } finally {
       setBusy(false);
     }
@@ -159,12 +159,12 @@ export function AuthForm({ lb, tab: givenTab, onTabChange }: AuthFormProps) {
 
   return (
     <>
-      {offline && <p className="warn-text">Can’t reach the server right now, so signing in won’t work until the connection is back.</p>}
+      {offline && <p className="warn-text">{t('Can’t reach the server right now, so signing in won’t work until the connection is back.')}</p>}
       {tab !== 'forgot' && (
         <div
           className="segmented"
           role="tablist"
-          aria-label="Profile"
+          aria-label={t('Profile')}
           onKeyDown={(e) => {
             if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
             e.preventDefault();
@@ -173,36 +173,35 @@ export function AuthForm({ lb, tab: givenTab, onTabChange }: AuthFormProps) {
           }}
         >
           <button type="button" role="tab" aria-selected={tab === 'signup'} tabIndex={tab === 'signup' ? 0 : -1} className={tab === 'signup' ? 'is-on' : ''} onClick={() => setTab('signup')}>
-            Create profile
+            {t('Create profile')}
           </button>
           <button type="button" role="tab" aria-selected={tab === 'signin'} tabIndex={tab === 'signin' ? 0 : -1} className={tab === 'signin' ? 'is-on' : ''} onClick={() => setTab('signin')}>
-            Sign in
+            {t('Sign in')}
           </button>
         </div>
       )}
       {sentTo ? (
         <div className="auth">
           <p className="banner ok" role="status">
-            If there’s a profile for {sentTo}, a link to choose a new password is on its way. It works for an hour. If it hasn’t
-            arrived in a few minutes, check your spam folder.
+            {t('If there’s a profile for')}{' '}{sentTo}{t(', a link to choose a new password is on its way. It works for an hour. If it hasn’t arrived in a few minutes, check your spam folder.')}
           </p>
           <button type="button" className="link" onClick={() => setTab('signin')}>
-            Back to sign in
+            {t('Back to sign in')}
           </button>
         </div>
       ) : (
         <form className="auth" onSubmit={submit} onFocus={wake} noValidate>
-          {tab === 'forgot' && <p className="hint">Enter the email for your profile, and we’ll send you a link to choose a new password.</p>}
+          {tab === 'forgot' && <p className="hint">{t('Enter the email for your profile, and we’ll send you a link to choose a new password.')}</p>}
           <div className="field">
-            <label htmlFor="auth-email">Email</label>
+            <label htmlFor="auth-email">{t('Email')}</label>
             <input id="auth-email" type="email" autoComplete="email" inputMode="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
           {tab !== 'forgot' && (
             <div className="field">
               <span className="label-row">
-                <label htmlFor="auth-password">Password</label>
+                <label htmlFor="auth-password">{t('Password')}</label>
                 <button type="button" className="link" onClick={() => setShowPassword(!showPassword)} aria-pressed={showPassword}>
-                  {showPassword ? 'Hide' : 'Show'}
+                  {showPassword ? t('Hide') : t('Show')}
                 </button>
               </span>
               <input
@@ -214,7 +213,7 @@ export function AuthForm({ lb, tab: givenTab, onTabChange }: AuthFormProps) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-              {tab === 'signup' && <p className="hint auth-length">At least 8 characters.</p>}
+              {tab === 'signup' && <p className="hint auth-length">{t('At least 8 characters.')}</p>}
             </div>
           )}
           {error && (
@@ -222,29 +221,29 @@ export function AuthForm({ lb, tab: givenTab, onTabChange }: AuthFormProps) {
               {error}
             </p>
           )}
-          {tab === 'signup' && local && <p className="hint">Everything you’ve logged on this device moves into your new profile.</p>}
-          {tab === 'signin' && local && <p className="hint">After you sign in you can add what’s on this device to your profile.</p>}
+          {tab === 'signup' && local && <p className="hint">{t('Everything you’ve logged on this device moves into your new profile.')}</p>}
+          {tab === 'signin' && local && <p className="hint">{t('After you sign in you can add what’s on this device to your profile.')}</p>}
           {slow && (
             <p className="hint" role="status">
-              The server is waking up. If nobody has used Hours to Go for a while, this takes up to a minute.
+              {t('The server is waking up. If nobody has used Hours to Go for a while, this takes up to a minute.')}
             </p>
           )}
           <button type="submit" className="btn primary" disabled={busy}>
-            {busy ? 'One moment…' : SUBMIT[tab]}
+            {busy ? t('One moment…') : SUBMIT[tab]}
           </button>
           {tab === 'signup' && (
             <p className="hint">
-              Creating a profile means you agree to the <a href={PRIVACY_URL}>privacy and terms</a>.
+              {t('Creating a profile means you agree to the')}{' '}<a href={PRIVACY_URL}>{t('privacy and terms')}</a>.
             </p>
           )}
           {tab === 'signin' && (
             <button type="button" className="link" onClick={() => setTab('forgot')}>
-              Forgot your password?
+              {t('Forgot your password?')}
             </button>
           )}
           {tab === 'forgot' && (
             <button type="button" className="link" onClick={() => setTab('signin')}>
-              Back to sign in
+              {t('Back to sign in')}
             </button>
           )}
         </form>
@@ -275,36 +274,35 @@ function DataSection({ lb }: { lb: LogbookState }) {
       parsed = null;
     }
     if (!parsed) {
-      setMessage('That file isn’t a Hours to Go export.');
+      setMessage(t('That file isn’t a Hours to Go export.'));
       return;
     }
     const ok = await lb.importLogbook(parsed);
-    if (ok) setMessage('Added the entries from the file that weren’t already here. Nothing was deleted.');
+    if (ok) setMessage(t('Added the entries from the file that weren’t already here. Nothing was deleted.'));
   };
 
   const addCsv = async (fresh: Entry[]) => {
     const ok = await lb.importLogbook({ version: 2, entries: fresh, profile: lb.book.profile });
     if (!ok) return;
     setCsv(null);
-    setMessage(`Added ${fresh.length} ${fresh.length === 1 ? 'line' : 'lines'}. Nothing was deleted.`);
+    setMessage(fresh.length === 1 ? t('Added 1 line. Nothing was deleted.') : t('Added {n} lines. Nothing was deleted.', { n: fresh.length }));
   };
 
   return (
     <section className="card pad" aria-labelledby="data-title">
-      <h2 id="data-title">Your data</h2>
+      <h2 id="data-title">{t('Your data')}</h2>
       <p className="muted">
-        Download a copy any time. The logbook file is the full backup. The spreadsheet opens in Excel, and has the headings to use for bringing in your own. Importing adds
-        entries from either and never deletes anything.
+        {t('Download a copy any time. The logbook file is the full backup. The spreadsheet opens in Excel, and has the headings to use for bringing in your own. Importing adds entries from either and never deletes anything.')}
       </p>
       <div className="row">
         <button type="button" className="btn" onClick={() => exportLogbook(lb.book)}>
-          Export logbook
+          {t('Export logbook')}
         </button>
         <button type="button" className="btn" onClick={() => exportSpreadsheet(lb.book)}>
-          Export for a spreadsheet
+          {t('Export for a spreadsheet')}
         </button>
         <button type="button" className="btn" onClick={() => file.current?.click()}>
-          Import a file
+          {t('Import a file')}
         </button>
         <input
           ref={file}
@@ -321,9 +319,9 @@ function DataSection({ lb }: { lb: LogbookState }) {
           <button
             type="button"
             className="link danger"
-            onClick={() => window.confirm('Erase the whole logbook saved in this browser? This can’t be undone.') && lb.eraseGuest()}
+            onClick={() => window.confirm(t('Erase the whole logbook saved in this browser? This can’t be undone.')) && lb.eraseGuest()}
           >
-            Erase this device’s logbook
+            {t('Erase this device’s logbook')}
           </button>
         )}
       </div>
