@@ -1915,6 +1915,19 @@ button.log-row:hover {
   margin-top: 4px;
 }
 
+.csv-preview {
+  margin-top: 12px;
+}
+
+.csv-preview:focus {
+  outline: none;
+}
+
+.csv-problems {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+
 /* ---- Current to fly ------------------------------------------------- */
 
 .currency {

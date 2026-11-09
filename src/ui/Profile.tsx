@@ -1,11 +1,14 @@
 import { useRef, useState, type FormEvent } from 'react';
 import { ApiError, api } from '../api';
+import { readCsv, type CsvRead } from '../model/csv';
+import type { Entry } from '../model/entry';
 import { hasContent, parseLogbook, type Logbook } from '../model/store';
 import { GOALS, STANDARD_421_URL } from '../rules/goals';
 import type { LogbookState } from '../useLogbook';
 import { SignedIn } from './Account';
 import { Feedback } from './Feedback';
-import { exportLogbook } from './export';
+import { exportLogbook, exportSpreadsheet } from './export';
+import { ImportCsv } from './ImportCsv';
 import { MedicalFields } from './Medical';
 import { PRIVACY_URL, STANDARD_CURRENT } from './links';
 import { useSlow, useWake } from './useSlow';
@@ -250,11 +253,21 @@ export function AuthForm({ lb, tab: givenTab, onTabChange }: AuthFormProps) {
 function DataSection({ lb }: { lb: LogbookState }) {
   const file = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [csv, setCsv] = useState<CsvRead | null>(null);
 
   const importBook = async (f: File) => {
+    setMessage(null);
+    setCsv(null);
+    const text = await f.text().catch(() => '');
+    if (!text.trimStart().startsWith('{')) {
+      const read = readCsv(text);
+      if (typeof read === 'string') setMessage(read);
+      else setCsv(read);
+      return;
+    }
     let parsed: Logbook | null = null;
     try {
-      parsed = parseLogbook(JSON.parse(await f.text()));
+      parsed = parseLogbook(JSON.parse(text));
     } catch {
       parsed = null;
     }
@@ -266,13 +279,26 @@ function DataSection({ lb }: { lb: LogbookState }) {
     if (ok) setMessage('Added the entries from the file that weren’t already here. Nothing was deleted.');
   };
 
+  const addCsv = async (fresh: Entry[]) => {
+    const ok = await lb.importLogbook({ version: 2, entries: fresh, profile: lb.book.profile });
+    if (!ok) return;
+    setCsv(null);
+    setMessage(`Added ${fresh.length} ${fresh.length === 1 ? 'line' : 'lines'}. Nothing was deleted.`);
+  };
+
   return (
     <section className="card pad" aria-labelledby="data-title">
       <h2 id="data-title">Your data</h2>
-      <p className="muted">Download a copy any time. Importing adds entries from a file and never deletes anything.</p>
+      <p className="muted">
+        Download a copy any time. The logbook file is the full backup. The spreadsheet opens in Excel, and has the headings to use for bringing in your own. Importing adds
+        entries from either and never deletes anything.
+      </p>
       <div className="row">
         <button type="button" className="btn" onClick={() => exportLogbook(lb.book)}>
           Export logbook
+        </button>
+        <button type="button" className="btn" onClick={() => exportSpreadsheet(lb.book)}>
+          Export for a spreadsheet
         </button>
         <button type="button" className="btn" onClick={() => file.current?.click()}>
           Import a file
@@ -280,7 +306,7 @@ function DataSection({ lb }: { lb: LogbookState }) {
         <input
           ref={file}
           type="file"
-          accept="application/json,.json"
+          accept="application/json,.json,text/csv,.csv"
           hidden
           onChange={(e) => {
             const f = e.target.files?.[0];
@@ -298,6 +324,7 @@ function DataSection({ lb }: { lb: LogbookState }) {
           </button>
         )}
       </div>
+      {csv && <ImportCsv read={csv} existing={lb.book.entries} onAdd={(fresh) => void addCsv(fresh)} onCancel={() => setCsv(null)} />}
       {message && <p className="hint">{message}</p>}
     </section>
   );

@@ -69,8 +69,8 @@ The owner wants every one of these. Roughly in order of value:
 6. ~~**"Log again"**~~ Done (D51): any flight or FTD session can be flown again from its form.
 7. ~~**Search and filter**~~ Done (D48): by date, aircraft, registration, airports and remarks, and by
    kind of time.
-8. **Spreadsheet export and import (CSV).** Today's export is JSON only this app reads. A CSV
-   opens in Excel, and importing one lets pilots move from their own spreadsheets.
+8. ~~**Spreadsheet export and import (CSV).**~~ Done (D54): opens in Excel, and a pilot's own spreadsheet comes in
+   through a preview, as long as its headings say which column each one is.
 9. **Print or PDF** in paper-log layout, for an examiner or the school.
 10. **Share progress with an instructor** through a read-only link. Later it could bring in whole
     flight schools.
@@ -84,7 +84,7 @@ The owner wants every one of these. Roughly in order of value:
 14. ~~**Cost per month at your pace.**~~ Done (D51): under the finish date.
 15. ~~**Small fixes.**~~ Done: "45 h" no longer splits across lines (D50).
 
-**The order from here** (agreed with the owner on 2026-11-08, who wants all of it): CSV (8), print or
+**The order from here** (agreed with the owner on 2026-11-08, who wants all of it): print or
 PDF (9), a read-only link for an instructor (10), then French (11). The small fixes go in with whatever
 touches them.
 

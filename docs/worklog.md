@@ -911,13 +911,22 @@ shows what was asked for at once, and goes back if the server says no.
 **Checked.** In Edge against a local server: signed up, confirmed, turned it on, ran it, got the email, ran it
 again and got nothing, stopped it from the link signed out, and the switch showed off. A wrong key gets a 401.
 
+## Phase 33: a spreadsheet out and in (2026-11-08)
+
+The logbook now exports as a CSV for Excel, and a pilot's own spreadsheet can come in (D54). It reads a column only
+when the heading says exactly which one it is, and shows what it would add before adding anything.
+
+**Checked.** In Edge on a phone, with a real download and a real file: the file has its byte-order mark and accents,
+a formula in the remarks is defused, importing the same file again adds nothing, and someone's own spreadsheet with a
+bad date and a 12-hour line reports both before anything is added. axe finds nothing on the preview.
+
 ## Where things stand
 
-- 296 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
+- 315 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
   21, offline changes 5, server API 42, the standard's watcher 8, first visit, guest, cost to go,
   finish date, next flight, expiry, password reset, confirm links and feedback 28, the form and
   notices 12, the quick form 14, Progress 9, the logbook 7, first run and trust 10, signed in 6,
-  offline on the screen 5, log again and the cost a month 4, current to fly 17, reminders 21), and the API tests per
+  offline on the screen 5, log again and the cost a month 4, current to fly 17, reminders 21, the spreadsheet 19), and the API tests per
   database also run against a Postgres server through `pg` in CI.
 - Typecheck clean on both configs; `npm audit` clean.
 - Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.

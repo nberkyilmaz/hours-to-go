@@ -5,6 +5,7 @@ coverage/
 
 # Exported logbooks hold personal flight records.
 hours-to-go-*.json
+hours-to-go-*.csv
 
 .DS_Store
 Thumbs.db
