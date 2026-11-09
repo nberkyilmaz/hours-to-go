@@ -8,7 +8,15 @@ import { nextFlights, type FlightCount } from '../rules/next';
 const amount = (c: FlightCount, n: number) => (c.unit === 'hours' ? `${formatHoursUp(n)} h` : String(n));
 
 /** The flight that counts toward the most of what is left (D43). A suggestion to take to the instructor. */
-export function NextFlightCard({ result: r, entries, profile }: { result: GoalResult; entries: readonly Entry[]; profile: Profile }) {
+interface Props {
+  result: GoalResult;
+  entries: readonly Entry[];
+  profile: Profile;
+  /** Opens the form on this flight, once it's been flown. */
+  onFly: (line: Partial<Entry>) => void;
+}
+
+export function NextFlightCard({ result: r, entries, profile, onFly }: Props) {
   const advice = useMemo(() => nextFlights(r.goal, entries, profile, today()), [r.goal, entries, profile]);
   // An empty logbook has its own call to add hours.
   if (!advice || entries.length === 0) return null;
@@ -50,6 +58,9 @@ export function NextFlightCard({ result: r, entries, profile }: { result: GoalRe
         {others.length > 0 && <p className="note">Also useful: {others.map((f) => f.name).join(' · ')}.</p>}
         <p className="note">Worked out from the standard’s minimums, at your usual flight length.</p>
       </details>
+      <button type="button" className="link" onClick={() => onFly(best.line)}>
+        I flew this
+      </button>
       <p className="hint">A suggestion. Your instructor decides what you fly next and when you’re ready for it.</p>
     </section>
   );

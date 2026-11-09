@@ -68,8 +68,7 @@ The owner wants every one of these. Roughly in order of value:
 5. ~~**Offline logging while signed in.**~~ Done: a service worker keeps the app on the device, and
    changes are kept there until the server has them, so a pilot can open it and log with no signal
    (D41). The phone apps needed it too.
-6. **"Log again"**: copy an earlier flight. Students fly the same lesson many times. (The form
-   already starts from the last aircraft, registration and departure.)
+6. ~~**"Log again"**~~ Done (D51): any flight or FTD session can be flown again from its form.
 7. ~~**Search and filter**~~ Done (D48): by date, aircraft, registration, airports and remarks, and by
    kind of time.
 8. **Spreadsheet export and import (CSV).** Today's export is JSON only this app reads. A CSV
@@ -84,7 +83,7 @@ The owner wants every one of these. Roughly in order of value:
 13. ~~**Expiry checks.**~~ Done: a written exam counts for 24 months, a flight test for 12 where the
     standard says so, the medical to its valid-to date, and the flight test needs its 30-day letter
     (D44).
-14. **Cost per month at your pace.** The pace and the price both exist: "about $790 a month".
+14. ~~**Cost per month at your pace.**~~ Done (D51): under the finish date.
 15. ~~**Small fixes.**~~ Done: "45 h" no longer splits across lines (D50).
 
 **The order from here** (agreed with the owner on 2026-11-08, who wants all of it): email reminders
@@ -124,7 +123,7 @@ its decision updated when it's built: F1 with D6 and D10, F5 with D18, F11 with 
 
 **Then, to make it excellent** (the owner wants these too):
 - **A "Landed" shortcut**: long-press the icon and log with one number, or a timer.
-- **"I flew this"** on Your next flight, opening the form already filled in.
+- ~~**"I flew this"**~~ Done (D51): on Your next flight, opening the form already filled in.
 - **Training drawn as a flight plan**, with waypoints: first solo, written exam, flight test.
 - **A what-if slider for pace**: "twice a week: done by February, about $X".
 - **Shareable milestone cards**: "First solo at 14.2 h".

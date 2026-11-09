@@ -109,6 +109,8 @@ export interface NextFlight {
   couldBe: string[];
   /** Dollars, tax included, at the pilot's rates. */
   price: number;
+  /** The logbook line for it, to start the form from. */
+  line: Partial<Entry>;
 }
 
 export type NextAdvice = { status: 'before-solo' } | { status: 'ready'; best: NextFlight; others: NextFlight[] };
@@ -204,6 +206,7 @@ export function nextFlights(goal: Goal, entries: readonly Entry[], profile: Prof
         counts,
         couldBe: tickOffs.filter((r) => r.req.kind === 'milestone' && flight.couldBe?.includes(r.req.key)).map((r) => r.req.label),
         price: priceOf(plan, rates).total,
+        line: flight.line(minutes),
       };
     })
     .filter((f): f is NextFlight => f !== null);

@@ -47,6 +47,8 @@ interface Props {
   onClose: () => void;
   /** Only for a line already logged. */
   onDelete?: (() => void) | undefined;
+  /** Only for a flight or session already logged: starts a new one from it. */
+  onLogAgain?: (() => void) | undefined;
 }
 
 type ColumnText = Record<Column, string>;
@@ -85,13 +87,19 @@ const TITLE: Record<FormLayout, { add: string; edit: string; thing: string }> = 
 /** Reads a box; null when it isn't a number of the right kind. */
 const readCount = (s: string) => (s.trim() === '' ? 0 : /^\d+$/.test(s.trim()) ? Number(s.trim()) : null);
 
-export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave, onClose, onDelete }: Props) {
+export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave, onClose, onDelete, onLogAgain }: Props) {
   const legacy = initial.forward && !initial.breakdown;
   const b0 = initial.breakdown ?? blankBreakdown();
   const [entry, setEntry] = useState<Entry>(initial);
   // Null is the paper columns: a flight that doesn't fit the quick form opens there.
-  const [quick, setQuick] = useState<Quick | null>(() => (layout !== 'flight' ? null : isNew ? blankQuick() : quickFrom(initial)));
-  const [showWhere, setShowWhere] = useState(!initial.aircraft && !initial.registration);
+  const [quick, setQuick] = useState<Quick | null>(() => {
+    if (layout !== 'flight') return null;
+    const flown = quickFrom(initial);
+    if (!isNew) return flown;
+    // A new line can start already filled in: flown again, or the suggested next flight.
+    return flown ? { ...flown, landings: flown.landings || 1 } : blankQuick();
+  });
+  const [showWhere, setShowWhere] = useState((!initial.aircraft && !initial.registration) || (quick?.xc === true && !initial.to));
   const [text, setText] = useState<ColumnText>(() => ({ ...columnText(initial), ...(quick && isNew ? quickText(quick) : {}) }));
   const [soloAnswer, setSoloAnswer] = useState<Answer | null>(legacy ? (initial.solo ? 'all' : null) : b0.solo);
   const [soloText, setSoloText] = useState<SoloText>({
@@ -132,6 +140,22 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
       window.history.back();
     }
     onClose();
+  };
+  /** Leaves for a new form. It must wait for Back to finish, or the new form's history entry is the one undone. */
+  const leaveThen = (next: () => void) => {
+    if (inHistory.current) {
+      inHistory.current = false;
+      const onPop = () => {
+        window.removeEventListener('popstate', onPop);
+        next();
+      };
+      window.addEventListener('popstate', onPop);
+      window.history.back();
+      onClose();
+    } else {
+      onClose();
+      next();
+    }
   };
   /** Cancel, Esc, the backdrop or Back: nothing typed goes without asking. */
   const tryClose = () => {
@@ -658,6 +682,11 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
           )}
 
           {!quick && remarks}
+          {onLogAgain && (
+            <button type="button" className="link sheet-delete" onClick={() => leaveThen(onLogAgain)}>
+              Log this flight again
+            </button>
+          )}
           {onDelete && (
             <button
               type="button"
