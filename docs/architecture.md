@@ -44,6 +44,7 @@ hours-to-go/
 │   │   ├── pace.ts             the time logged a week lately, and when a goal's time left is flown (D40)
 │   │   ├── moment.ts           what a flight just did for the goal, for the message after saving (D46)
 │   │   ├── progress.ts         how far along a goal is, by hours, for the ring (D47)
+│   │   ├── shared.ts           the only figures a read-only link can show (D56)
 │   │   ├── reminders.ts        what's about to run out, and what hasn't been said yet (D53)
 │   │   ├── currency.ts         what a licensed pilot needs to have done recently (D52)
 │   │   └── next.ts             which flight counts toward the most, by trying each against the rules (D43)
@@ -229,6 +230,10 @@ All JSON. Errors are `{ "error": "message for the pilot" }`. The session cookie 
 | `PUT /api/account/reminders` | `{ on }` | signed in; turning on needs a confirmed address and `REMINDERS_KEY` set (D53) |
 | `POST /api/reminders/off` | `{ token }` | no sign-in: the token from the link in a reminder; 204, or 400 if unknown |
 | `POST /api/reminders/run` | `Authorization: Bearer REMINDERS_KEY` | the daily run: `{ checked, sent, failed, waiting }` |
+| `GET /api/account/share` | | signed in: `{ share: { name, expiresAt } }` or `{ share: null }`, never the link |
+| `POST /api/account/share` | `{ name }` | signed in: `{ link, share }`; replaces any earlier link (D56) |
+| `DELETE /api/account/share` | | signed in: 204, and the link stops working |
+| `POST /api/shared` | `{ token }` | no sign-in: the figures in `rules/shared.ts`; 404 if unknown or expired, 429 after 30 wrong in an hour |
 | `DELETE /api/account` | `{ password }` | deletes the user; entries, profile and sessions cascade; 204 |
 | `POST /api/account/confirm` | | emails a new link to confirm the profile's address; 400 already confirmed, 429 after 3 links an hour to one profile or 50 a day in all, 502 if sending fails, 503 without email; 204 |
 | `POST /api/account/email` | `{ email, password }` | emails a link to the new address, which takes over once it is opened; returns `{ user }` with `pendingEmail`. 400 bad or the same address, 401 wrong password, 409 another profile has it, 429/502/503 as above |
@@ -263,6 +268,7 @@ users    (id text pk, email text unique, password_hash text, created_at timestam
           email_confirmed_at timestamptz /* null until a link sent there is opened */)
 sessions (token_hash text pk, user_id → users on delete cascade, expires_at bigint /* ms */)
 password_resets (token_hash text pk, user_id → users on delete cascade, expires_at bigint /* ms */)
+share_links (token_hash text pk, user_id → users unique on delete cascade, name text, expires_at bigint)
 reminders_sent (user_id → users on delete cascade, mark text /* item|date|step */, sent_at timestamptz, pk (user_id, mark))
 email_links (token_hash text pk, user_id → users on delete cascade, email text /* the address it confirms */,
              expires_at bigint /* ms */)

@@ -11,6 +11,7 @@ import { exportLogbook, exportSpreadsheet } from './export';
 import { ImportCsv } from './ImportCsv';
 import { MedicalFields } from './Medical';
 import { PRIVACY_URL, STANDARD_CURRENT } from './links';
+import { ShareSection } from './Share';
 import { useSlow, useWake } from './useSlow';
 
 export function ProfileView({ lb }: { lb: LogbookState }) {
@@ -73,6 +74,8 @@ export function ProfileView({ lb }: { lb: LogbookState }) {
         <MedicalFields label="Medical certificate" profile={book.profile} updateProfile={lb.updateProfile} />
         {book.profile.medical !== 'none' && <p className="hint">“Valid to” is on your medical certificate. A Category 1 can last longer for private flying, so use the date for the flying you do.</p>}
       </section>
+
+      {mode.kind === 'account' && <ShareSection />}
 
       <DataSection lb={lb} />
 

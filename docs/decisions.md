@@ -909,6 +909,28 @@ printed smaller instead.
 **Not claimed:** that an examiner or school will accept it. The screen says to ask them, and it's on the list of
 questions for the flight school. The name is typed on the screen and isn't stored, since a profile has no name.
 
+### D56. A read-only link for an instructor
+On the Profile tab, signed in. It opens with no profile, so an instructor doesn't need one, and shows the pilot's
+progress on what they're working on now.
+
+**What it shows is decided in one place.** `rules/shared.ts` works out the figures on the server and only those are
+sent: the goal, how far along, each requirement's hours or whether it's done. Never logbook lines, registrations,
+exam marks, dates, rates or the email address. A requirement like "Category 3 medical" shows as met or not, which the
+Profile tab and the privacy page both say. The page tells the instructor that nobody has checked these figures.
+
+**The link is the permission, so it's treated like a password.** 256 random bits, of which only a one-way scramble is
+stored, so the pilot sees it once and can make a new one. It's in the fragment, which stays out of server logs and
+referrers. One per pilot: a new one replaces the old. It stops working after 30 days, when the pilot stops sharing, or
+when the profile is deleted. Responses aren't cached, and repeated wrong links from one address are turned away.
+
+Unlike a link in an email, it stays in the address bar, because an instructor is meant to come back to it.
+
+**The name** is typed when the link is made and kept with it, since a profile has no name and an instructor may have
+several students.
+
+**Not yet:** logbook lines for an instructor, or anything that lets them sign off. Both would need the pilot's say-so
+line by line, and instructor accounts.
+
 ## Process
 
 ### D22. Check the UI in a real browser, at phone size, before calling it done
