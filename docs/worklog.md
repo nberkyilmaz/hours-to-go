@@ -786,6 +786,23 @@ didn't have: a recommendation for the flight test, dated within 30 days.
   expired medical and exam say so, and "Can you write the PPAER yet?" comes back. It showed "Valid
   to" wrapping onto two lines on a phone, now fixed.
 
+## Phase 23: an audit of the experience (2026-11-08)
+
+**Owner request.** "I feel like they're not good enough. I need a good, very great audit on how the
+user experience can get better."
+
+**How.** A reviewer who hadn't built the app, with no sight of the reasoning in `decisions.md` until
+the findings were written, walked it in Edge as a new student, a student logging on the apron and a
+licensed pilot, on a frozen copy with a throwaway database. It measured accessibility (axe-core),
+tap targets, scroll heights, taps per flight, keyboard behaviour and speed on slow connections.
+
+**Result** ([ux-audit.md](ux-audit.md)): correct and trustworthy, but it feels like filling in a
+government form. 25 findings in six batches, now the UI and UX plan on the roadmap.
+
+**Checked.** The worst claims were reproduced separately on the same build before being accepted, and
+one detail about the dialog's focus was corrected. Nothing in it has been tried on a real phone, with
+a screen reader, or with students yet, and it says so.
+
 ## Where things stand
 
 - 202 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
