@@ -934,13 +934,22 @@ A4, which is wider. The columns are a little wider now, and a long number prints
 **Checked.** Real PDFs from Edge on Letter and A4, with 81 lines including 12,345 hours brought forward: 4 pages plus
 the remarks page, as counted, no number outside its cell, and axe finds nothing. Not printed on paper.
 
+## Phase 35: a read-only link for an instructor (2026-11-09)
+
+A pilot can make a link that shows an instructor where they stand, with no profile needed to open it (D56). Only
+figures leave the server, never logbook lines, marks or dates.
+
+**Checked.** In Edge, on a local server: a pilot made a link, and a browser with no cookies opened it. The response
+had no registration, remark, airport, date or email in it. The link survived a reload, stopped working the moment the
+pilot stopped sharing, and axe finds nothing on either screen.
+
 ## Where things stand
 
-- 328 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
+- 348 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
   21, offline changes 5, server API 42, the standard's watcher 8, first visit, guest, cost to go,
   finish date, next flight, expiry, password reset, confirm links and feedback 28, the form and
   notices 12, the quick form 14, Progress 9, the logbook 7, first run and trust 10, signed in 6,
-  offline on the screen 5, log again and the cost a month 4, current to fly 17, reminders 21, the spreadsheet 19, the paper log 13), and the API tests per
+  offline on the screen 5, log again and the cost a month 4, current to fly 17, reminders 21, the spreadsheet 19, the paper log 13, the instructor link 20), and the API tests per
   database also run against a Postgres server through `pg` in CI.
 - Typecheck clean on both configs; `npm audit` clean.
 - Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.

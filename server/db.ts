@@ -103,6 +103,15 @@ const MIGRATIONS: string[][] = [
       primary key (user_id, mark)
     )`,
   ],
+  // 4: a read-only link for an instructor, one per profile. Only a one-way scramble of the link is kept.
+  [
+    `create table share_links (
+      token_hash text primary key,
+      user_id text not null unique references users(id) on delete cascade,
+      name text not null,
+      expires_at bigint not null
+    )`,
+  ],
 ];
 
 /**
@@ -381,6 +390,30 @@ export class Store {
   async deleteEntry(userId: string, id: string): Promise<boolean> {
     const rows = await this.db.query('delete from entries where user_id = $1 and id = $2 returning id', [userId, id]);
     return rows.length > 0;
+  }
+
+  /** A new link replaces the profile's old one, which stops working. */
+  async createShare(userId: string, tokenHash: string, name: string, expiresAt: number): Promise<void> {
+    await this.db.query(
+      `insert into share_links (user_id, token_hash, name, expires_at) values ($1, $2, $3, $4)
+       on conflict (user_id) do update set token_hash = excluded.token_hash, name = excluded.name, expires_at = excluded.expires_at`,
+      [userId, tokenHash, name, expiresAt],
+    );
+  }
+
+  async shareOf(userId: string, now: number): Promise<{ name: string; expiresAt: number } | null> {
+    const [row] = await this.db.query<{ name: string; expires_at: string }>('select name, expires_at from share_links where user_id = $1 and expires_at > $2', [userId, now]);
+    return row ? { name: row.name, expiresAt: Number(row.expires_at) } : null;
+  }
+
+  async deleteShare(userId: string): Promise<void> {
+    await this.db.query('delete from share_links where user_id = $1', [userId]);
+  }
+
+  /** Whose progress a link shows, unless it's unknown or has run out. */
+  async sharedBy(tokenHash: string, now: number): Promise<{ userId: string; name: string; expiresAt: number } | null> {
+    const [row] = await this.db.query<{ user_id: string; name: string; expires_at: string }>('select user_id, name, expires_at from share_links where token_hash = $1 and expires_at > $2', [tokenHash, now]);
+    return row ? { userId: row.user_id, name: row.name, expiresAt: Number(row.expires_at) } : null;
   }
 
   /** On with `stop`, the token every reminder carries; off with null. A link in an earlier email keeps working. */

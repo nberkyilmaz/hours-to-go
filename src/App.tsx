@@ -12,6 +12,7 @@ import { ProfileView } from './ui/Profile';
 import { ProgressView } from './ui/Progress';
 import { PrintLog } from './ui/PrintLog';
 import { ResetPassword } from './ui/ResetPassword';
+import { Shared } from './ui/Shared';
 import { StopReminders } from './ui/StopReminders';
 import { Welcome } from './ui/Welcome';
 import { useLogbook, type Sync } from './useLogbook';
@@ -26,12 +27,12 @@ const TABS: { id: Tab; label: string; Icon: () => JSX.Element }[] = [
 
 /** An emailed link: to reset a password, confirm an address, or stop reminders. It opens the page at `#reset=…`, `#confirm=…` or `#stop=…`. */
 interface EmailedLink {
-  kind: 'reset' | 'confirm' | 'stop';
+  kind: 'reset' | 'confirm' | 'stop' | 'share';
   token: string;
 }
 
 function linkInUrl(): EmailedLink | null {
-  const found = /^#(reset|confirm|stop)=([\w-]+)$/.exec(window.location.hash);
+  const found = /^#(reset|confirm|stop|share)=([\w-]+)$/.exec(window.location.hash);
   return found ? { kind: found[1] as EmailedLink['kind'], token: found[2]! } : null;
 }
 
@@ -134,9 +135,10 @@ export function App() {
     document.title = `${TABS.find((t) => t.id === tab)?.label} · Hours to Go`;
   }, [tab]);
 
-  // Out of the address bar and the history once read, so the link isn't bookmarked or shared.
+  // Out of the address bar and the history once read, so the link isn't bookmarked or shared. Except
+  // a read-only link, which an instructor is meant to come back to.
   useEffect(() => {
-    if (link) window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    if (link && link.kind !== 'share') window.history.replaceState(null, '', window.location.pathname + window.location.search);
   }, [link]);
   // A link pasted into a tab that already has the app open changes only the fragment, so the
   // page doesn't load again.
@@ -228,6 +230,13 @@ export function App() {
   if (link?.kind === 'reset') return <ResetPassword token={link.token} lb={lb} onDone={() => setLink(null)} />;
   if (link?.kind === 'confirm') return <ConfirmEmail token={link.token} lb={lb} onDone={() => setLink(null)} />;
   if (link?.kind === 'stop') return <StopReminders token={link.token} lb={lb} onDone={() => setLink(null)} />;
+  if (link?.kind === 'share') {
+    const leave = () => {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      setLink(null);
+    };
+    return <Shared token={link.token} onDone={leave} />;
+  }
   if (lb.mode.kind === 'loading') return <Loading />;
   if (welcoming) return <Welcome lb={lb} />;
   if (hash === '#print') return <PrintLog entries={entries} onBack={() => window.history.back()} />;

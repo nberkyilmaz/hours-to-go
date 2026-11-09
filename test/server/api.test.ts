@@ -25,7 +25,7 @@ async function emptied(url: string): Promise<string> {
   const client = new pg.Client({ connectionString: url });
   await client.connect();
   try {
-    await client.query('drop table if exists migrations, reminders_sent, email_links, password_resets, sessions, entries, profiles, users');
+    await client.query('drop table if exists migrations, share_links, reminders_sent, email_links, password_resets, sessions, entries, profiles, users');
   } finally {
     await client.end();
   }
@@ -58,6 +58,9 @@ async function signUp(email = 'student@example.com', password = 'correct horse')
 }
 
 /** The token from an emailed link, which carries it in the fragment after `#reset=`, `#confirm=` or `#stop=`. */
+/** The token at the end of a read-only link. */
+const shareToken = (link: string) => new URL(link).hash.replace('#share=', '');
+
 function tokenIn(mail: Mail, kind: 'reset' | 'confirm' | 'stop'): string {
   const link = new RegExp(`https://\\S+#${kind}=([\\w-]+)`).exec(mail.text);
   expect(link?.[0].startsWith(APP_URL)).toBe(true);
@@ -88,6 +91,77 @@ describe.each(DATABASES)('on $name', ({ url }) => {
   afterEach(async () => {
     vi.useRealTimers();
     await app.close();
+  });
+
+  describe('a link for an instructor', () => {
+    const create = (cookies: Record<string, string>, name = 'Sam') => app.inject({ method: 'POST', url: '/api/account/share', cookies, payload: { name } });
+    const open = (token: string) => app.inject({ method: 'POST', url: '/api/shared', payload: { token } });
+    const log = (cookies: Record<string, string>) =>
+      app.inject({ method: 'PUT', url: '/api/entries/flight-1', cookies, payload: { ...anEntry(), id: 'flight-1', registration: 'C-GSECRET', remarks: 'A private remark' } });
+
+    it('needs a signed-in pilot to make one', async () => {
+      expect((await app.inject({ method: 'POST', url: '/api/account/share', payload: {} })).statusCode).toBe(401);
+      expect((await app.inject({ method: 'GET', url: '/api/account/share' })).statusCode).toBe(401);
+    });
+
+    it('opens with no sign-in, and shows figures, not the logbook', async () => {
+      const { cookies } = await signUp();
+      await log(cookies);
+      const made = (await create(cookies)).json();
+      expect(made.link.startsWith(`${APP_URL}#share=`)).toBe(true);
+      const res = await open(shareToken(made.link));
+      expect(res.statusCode).toBe(200);
+      expect(res.headers['cache-control']).toBe('no-store');
+      expect(res.json()).toMatchObject({ name: 'Sam', goal: expect.any(String), expiresAt: made.share.expiresAt });
+      expect(res.json().percent).toBeGreaterThan(0);
+      for (const secret of ['C-GSECRET', 'A private remark', 'student@example.com']) expect(res.body).not.toContain(secret);
+    });
+
+    it('says what is out, without the link itself', async () => {
+      const { cookies } = await signUp();
+      expect((await app.inject({ method: 'GET', url: '/api/account/share', cookies })).json()).toEqual({ share: null });
+      const made = (await create(cookies)).json();
+      const res = await app.inject({ method: 'GET', url: '/api/account/share', cookies });
+      expect(res.json()).toEqual({ share: made.share });
+      expect(res.body).not.toContain(shareToken(made.link));
+    });
+
+    it('stops working when replaced', async () => {
+      const { cookies } = await signUp();
+      const first = (await create(cookies)).json();
+      const second = (await create(cookies, 'Sam B')).json();
+      expect((await open(shareToken(first.link))).statusCode).toBe(404);
+      expect((await open(shareToken(second.link))).json().name).toBe('Sam B');
+    });
+
+    it('stops working when the pilot stops it', async () => {
+      const { cookies } = await signUp();
+      const made = (await create(cookies)).json();
+      expect((await app.inject({ method: 'DELETE', url: '/api/account/share', cookies })).statusCode).toBe(204);
+      expect((await open(shareToken(made.link))).statusCode).toBe(404);
+    });
+
+    it('stops working after 30 days', async () => {
+      const { cookies } = await signUp();
+      const made = (await create(cookies)).json();
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(Date.now() + 29 * DAY);
+      expect((await open(shareToken(made.link))).statusCode).toBe(200);
+      vi.setSystemTime(Date.now() + 2 * DAY);
+      expect((await open(shareToken(made.link))).statusCode).toBe(404);
+    });
+
+    it('goes when the profile does', async () => {
+      const { cookies } = await signUp();
+      const made = (await create(cookies)).json();
+      await app.inject({ method: 'DELETE', url: '/api/account', cookies, payload: { password: 'correct horse' } });
+      expect((await open(shareToken(made.link))).statusCode).toBe(404);
+    });
+
+    it('turns away anyone who keeps guessing', async () => {
+      for (let i = 0; i < 30; i++) expect((await open(`wrong-${i}`)).statusCode).toBe(404);
+      expect((await open('wrong-again')).statusCode).toBe(429);
+    });
   });
 
   describe('reminders', () => {

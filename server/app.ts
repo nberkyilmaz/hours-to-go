@@ -5,7 +5,9 @@ import cors from '@fastify/cors';
 import fastifyStatic from '@fastify/static';
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify';
 import { validateEntry } from '../src/model/entry';
+import { today as todayDate } from '../src/model/entry';
 import { parseEntry, parseLogbook, parseProfile } from '../src/model/store';
+import { sharedProgress } from '../src/rules/shared';
 import { Throttle, hashPassword, hashToken, newToken, sameSecret, verifyPassword } from './auth';
 import { Store, type Account, type User } from './db';
 import { alertMail, confirmMail, feedbackMail, resetMail, type SendMail } from './mail';
@@ -45,6 +47,8 @@ const SESSION_DAYS = 90;
 const RESET_MINUTES = 60;
 const CONFIRM_DAYS = 7;
 const FEEDBACK_MAX = 4000;
+const SHARE_DAYS = 30;
+const SHARE_NAME_MAX = 80;
 const ALERTS_PER_HOUR = 5;
 const EMAIL =/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -82,6 +86,8 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   // Links to confirm an address: a few an hour to one profile, and a cap a day in all, as for feedback.
   const linksPerUser = new Throttle(3, 60 * 60_000);
   const linksPerDay = new Throttle(50, 24 * 60 * 60_000);
+  // Wrong share links: nobody can guess one, but there's no reason to let them keep trying.
+  const sharedPerIp = new Throttle(30, 60 * 60_000);
   // Error alerts: a few an hour, so a failure on every request can't flood the owner's inbox or
   // use up the day's emails.
   const alertsPerHour = new Throttle(ALERTS_PER_HOUR, 60 * 60_000);
@@ -364,6 +370,40 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     }
     await store.setReminders(req.user!.id, on ? newToken().token : null);
     return { user: await accountOf(req.user!.id) };
+  });
+
+  app.get('/api/account/share', { preHandler: requireUser }, async (req) => ({ share: await store.shareOf(req.user!.id, Date.now()) }));
+
+  // The link is only known here, as it's made: what's stored is a one-way scramble of it. In the
+  // fragment, like an emailed link, so the token stays out of logs and referrers.
+  app.post('/api/account/share', { preHandler: requireUser }, async (req, reply) => {
+    if (!opts.appUrl) return reply.code(503).send({ error: 'Sharing isn’t available yet.' });
+    const name = String(bodyOf(req).name ?? '').trim().slice(0, SHARE_NAME_MAX);
+    const { token, hash } = newToken();
+    const expiresAt = Date.now() + SHARE_DAYS * 86_400_000;
+    await store.createShare(req.user!.id, hash, name, expiresAt);
+    const link = new URL(opts.appUrl);
+    link.hash = `share=${token}`;
+    return { link: link.toString(), share: { name, expiresAt } };
+  });
+
+  app.delete('/api/account/share', { preHandler: requireUser }, async (req, reply) => {
+    await store.deleteShare(req.user!.id);
+    return reply.code(204).send();
+  });
+
+  // No sign-in: the link is the permission. Only the figures in `sharedProgress` leave here (D56).
+  app.post('/api/shared', async (req, reply) => {
+    if (sharedPerIp.blocked(req.ip)) return reply.code(429).send({ error: 'Too many attempts. Try again later.' });
+    const token = String(bodyOf(req).token ?? '');
+    const link = token ? await store.sharedBy(hashToken(token), Date.now()) : null;
+    if (!link) {
+      sharedPerIp.fail(req.ip);
+      return reply.code(404).send({ error: 'This link has expired or been turned off. Ask for a new one.' });
+    }
+    const book = await store.getLogbook(link.userId);
+    reply.header('cache-control', 'no-store');
+    return sharedProgress(book.entries, book.profile, todayDate(), link.name, link.expiresAt);
   });
 
   // The link in each reminder opens the app, which posts this, so a mail scanner following the link can't.

@@ -1,3 +1,4 @@
+import type { SharedProgress } from './rules/shared';
 import type { Entry } from './model/entry';
 import type { Profile } from './model/profile';
 import type { Logbook } from './model/store';
@@ -45,6 +46,12 @@ export interface Account {
   reminders: boolean;
 }
 
+/** A read-only link that's out: who it says it's from, and when it stops working. */
+export interface ShareInfo {
+  name: string;
+  expiresAt: number;
+}
+
 interface UserReply {
   user: Account;
 }
@@ -61,6 +68,10 @@ export const api = {
   sendConfirmation: () => call<void>('POST', '/api/account/confirm'),
   changeEmail: (email: string, password: string) => call<UserReply>('POST', '/api/account/email', { email, password }),
   cancelEmailChange: () => call<UserReply>('DELETE', '/api/account/email'),
+  share: () => call<{ share: ShareInfo | null }>('GET', '/api/account/share'),
+  createShare: (name: string) => call<{ link: string; share: ShareInfo }>('POST', '/api/account/share', { name }),
+  stopShare: () => call<void>('DELETE', '/api/account/share'),
+  shared: (token: string) => call<SharedProgress>('POST', '/api/shared', { token }),
   setReminders: (on: boolean) => call<UserReply>('PUT', '/api/account/reminders', { on }),
   stopReminders: (token: string) => call<void>('POST', '/api/reminders/off', { token }),
   changePassword: (password: string, newPassword: string) => call<void>('POST', '/api/account/password', { password, newPassword }),

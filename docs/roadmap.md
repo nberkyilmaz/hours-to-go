@@ -72,8 +72,8 @@ The owner wants every one of these. Roughly in order of value:
 8. ~~**Spreadsheet export and import (CSV).**~~ Done (D54): opens in Excel, and a pilot's own spreadsheet comes in
    through a preview, as long as its headings say which column each one is.
 9. ~~**Print or PDF**~~ Done (D55): every line in the paper log's columns, with each page's totals carried forward.
-10. **Share progress with an instructor** through a read-only link. Later it could bring in whole
-    flight schools.
+10. ~~**Share progress with an instructor**~~ Done (D56): a read-only link that shows figures, never logbook lines,
+    for 30 days or until the pilot stops it. Later it could bring in whole flight schools.
 11. **French.** Quebec trains a large share of Canada's pilots, and Transport Canada publishes in
     both languages.
 12. ~~**Next flight.**~~ Done: which flight counts toward the most of what is left, tried against
@@ -84,7 +84,7 @@ The owner wants every one of these. Roughly in order of value:
 14. ~~**Cost per month at your pace.**~~ Done (D51): under the finish date.
 15. ~~**Small fixes.**~~ Done: "45 h" no longer splits across lines (D50).
 
-**The order from here** (agreed with the owner on 2026-11-08, who wants all of it): a read-only link for an instructor (10), then French (11). The small fixes go in with whatever
+**The order from here** (agreed with the owner on 2026-11-08, who wants all of it): French (11). The small fixes go in with whatever
 touches them.
 
 Also wanted some day, if pilots ask: PIC under supervision for the ATPL; Group 2 and Group 4
