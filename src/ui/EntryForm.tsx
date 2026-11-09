@@ -11,6 +11,7 @@ import {
   blankBreakdown,
   derive,
   doubtsAbout,
+  durationText,
   formatHours,
   isTimeColumn,
   parseDuration,
@@ -23,6 +24,7 @@ import {
   type Entry,
   type EntryErrors,
 } from '../model/entry';
+import { blankQuick, quickFrom, quickText, type Quick, type QuickKind } from '../model/quick';
 
 /** Which boxes the form shows. The line underneath is the same in every case. */
 export type FormLayout = 'flight' | 'ftd' | 'forward';
@@ -49,13 +51,6 @@ type ColumnText = Record<Column, string>;
 type SoloText = Record<'soloDay' | 'soloNight' | 'soloXc', string>;
 type AfterText = Record<AfterPplField, string>;
 
-/** Decimal hours when that is exact, otherwise h:mm, so editing never rounds a time away. */
-function durationText(minutes: number): string {
-  if (!minutes) return '';
-  if (minutes % 6 === 0) return formatHours(minutes);
-  return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`;
-}
-
 const countText = (n: number) => (n ? String(n) : '');
 
 function columnText(e: Entry): ColumnText {
@@ -73,6 +68,12 @@ const INSTRUMENT = group('Instrument');
 const LANDINGS = group('Takeoffs & landings');
 const FTD_ONLY: ColumnGroup = { title: 'FTD session', columns: ['ftd', 'approaches'] };
 
+const KINDS: { kind: QuickKind; label: string }[] = [
+  { kind: 'dual', label: 'Dual, with an instructor' },
+  { kind: 'solo', label: 'Solo' },
+  { kind: 'pic', label: 'PIC, with passengers' },
+];
+
 const TITLE: Record<FormLayout, { add: string; edit: string; thing: string }> = {
   flight: { add: 'Log a flight', edit: 'Edit flight', thing: 'flight' },
   ftd: { add: 'Log an FTD session', edit: 'Edit FTD session', thing: 'session' },
@@ -86,7 +87,10 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
   const legacy = initial.forward && !initial.breakdown;
   const b0 = initial.breakdown ?? blankBreakdown();
   const [entry, setEntry] = useState<Entry>(initial);
-  const [text, setText] = useState<ColumnText>(() => columnText(initial));
+  // Null is the paper columns: a flight that doesn't fit the quick form opens there.
+  const [quick, setQuick] = useState<Quick | null>(() => (layout !== 'flight' ? null : isNew ? blankQuick() : quickFrom(initial)));
+  const [showWhere, setShowWhere] = useState(!initial.aircraft && !initial.registration);
+  const [text, setText] = useState<ColumnText>(() => ({ ...columnText(initial), ...(quick && isNew ? quickText(quick) : {}) }));
   const [soloAnswer, setSoloAnswer] = useState<Answer | null>(legacy ? (initial.solo ? 'all' : null) : b0.solo);
   const [soloText, setSoloText] = useState<SoloText>({
     soloDay: durationText(b0.soloDay),
@@ -143,7 +147,27 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
       if (typeof d.showModal === 'function') d.showModal();
       else d.setAttribute('open', '');
     }
-    sheet.current?.focus();
+    // The quick form starts at the time, the one thing that's always needed.
+    (d.querySelector<HTMLElement>('#q-time') ?? sheet.current)?.focus();
+  }, []);
+
+  // A phone's keyboard covers the screen without resizing it, so the sheet follows what's still
+  // visible, and Save stays above the keys.
+  useEffect(() => {
+    const view = window.visualViewport;
+    const d = dialog.current;
+    if (!view || !d) return;
+    const fit = () => {
+      d.style.setProperty('--sheet-height', `${view.height}px`);
+      d.style.setProperty('--sheet-top', `${view.offsetTop}px`);
+    };
+    fit();
+    view.addEventListener('resize', fit);
+    view.addEventListener('scroll', fit);
+    return () => {
+      view.removeEventListener('resize', fit);
+      view.removeEventListener('scroll', fit);
+    };
   }, []);
 
   // After the modal has gone: until then the page behind it can't take focus.
@@ -183,6 +207,13 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
 
   const set = <K extends keyof Entry>(k: K, v: Entry[K]) => setEntry((e) => ({ ...e, [k]: v }));
   const setColumn = (c: Column, v: string) => setText((t) => ({ ...t, [c]: v }));
+  const changeQuick = (next: Partial<Quick>) => {
+    if (!quick) return;
+    const q = { ...quick, ...next };
+    setQuick(q);
+    setText((t) => ({ ...t, ...quickText(q) }));
+    setEntry((e) => ({ ...e, solo: q.kind === 'solo' }));
+  };
   const forward = layout === 'forward';
   const ftd = layout === 'ftd';
 
@@ -248,10 +279,14 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
     if (askSolo && !soloAnswer) errs.soloAnswer = 'Pick one, so the solo requirements count the right time.';
     if (askLandings && soloLandings.trim() === '') errs.soloNightLandings = 'Enter how many were solo (0 if none).';
     if (askAfterPpl && !afterAnswer) errs.afterAnswer = 'Pick one, so the CPL counts only what came after your PPL.';
+    if (quick && !quick.kind) errs.time = 'Choose Dual, Solo or PIC, and enter the time.';
     const all = { ...validateEntry(line), ...errs };
     setErrors(all);
     if (Object.keys(all).length > 0) {
       if (MULTI.some((g) => g.columns.some((c) => all[c]))) setShowMulti(true);
+      // Anything else wrong is in a box the quick form doesn't show.
+      if (Object.keys(all).some((k) => !['time', 'hood', 'date'].includes(k))) setQuick(null);
+      if (all.date) setShowWhere(true);
       setTried((n) => n + 1);
       return;
     }
@@ -289,6 +324,162 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
   const stillDoubtful = doubts.length > 0 && doubts.join() === doubtsAbout(preview, today()).join();
   const timeError = errors.time && <p className="field-error">{errors.time}</p>;
 
+  const whereFields = (
+    <>
+      <div className="grid-2">
+        <Field id="f-date" label={forward ? 'Up to (date)' : 'Date'} error={errors.date}>
+          <input
+            id="f-date"
+            type="date"
+            value={entry.date}
+            onChange={(e) => set('date', e.target.value)}
+            required
+            aria-invalid={errors.date ? true : undefined}
+            aria-describedby={errors.date ? 'f-date-err' : undefined}
+          />
+        </Field>
+        <Field id="f-aircraft" label={ftd ? 'Device' : forward ? 'Aircraft type (blank for all types)' : 'Aircraft type'}>
+          <input
+            id="f-aircraft"
+            list="dl-aircraft"
+            placeholder={ftd ? 'e.g. Redbird FMX' : 'e.g. C172, PA-28'}
+            autoComplete="off"
+            value={entry.aircraft}
+            onChange={(e) => set('aircraft', e.target.value)}
+          />
+        </Field>
+      </div>
+      {layout === 'flight' && (
+        <div className="grid-3">
+          <Field id="f-reg" label="Registration">
+            <input
+              id="f-reg"
+              list="dl-reg"
+              autoComplete="off"
+              autoCapitalize="characters"
+              value={entry.registration}
+              onChange={(e) => set('registration', e.target.value.toUpperCase())}
+            />
+          </Field>
+          <Field id="f-from" label="From">
+            <input id="f-from" list="dl-place" autoComplete="off" autoCapitalize="characters" value={entry.from} onChange={(e) => set('from', e.target.value.toUpperCase())} />
+          </Field>
+          <Field id="f-to" label="To">
+            <input id="f-to" list="dl-place" autoComplete="off" autoCapitalize="characters" value={entry.to} onChange={(e) => set('to', e.target.value.toUpperCase())} />
+          </Field>
+        </div>
+      )}
+    </>
+  );
+
+  const route = entry.from || entry.to ? `${entry.from || '—'} → ${entry.to || '—'}` : '';
+  const where = [entry.date === today() ? 'Today' : entry.date, [entry.aircraft, entry.registration].filter(Boolean).join(' '), route].filter(Boolean).join(' · ');
+
+  const remarks = (
+    <Field id="f-remarks" label="Remarks">
+      <textarea id="f-remarks" rows={2} value={entry.remarks} onChange={(e) => set('remarks', e.target.value)} />
+    </Field>
+  );
+
+  const quickView = quick && (
+    <div className="quick">
+      {showWhere ? (
+        whereFields
+      ) : (
+        <button type="button" className="quick-where" onClick={() => setShowWhere(true)} aria-label={`Change the date, aircraft or route: ${where}`}>
+          <span>{where}</span>
+          <span className="quick-change">Change</span>
+        </button>
+      )}
+      <fieldset className="quick-group">
+        <legend>Who was flying</legend>
+        <div className="choices">
+          {KINDS.map(({ kind, label }) => (
+            <label key={kind} className={`choice${quick.kind === kind ? ' is-on' : ''}`}>
+              <input type="radio" name="q-kind" value={kind} checked={quick.kind === kind} onChange={() => changeQuick({ kind })} />
+              {label}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <div className={`field${errors.time ? ' has-error' : ''}`}>
+        <label htmlFor="q-time">Flight time, in hours</label>
+        <input
+          id="q-time"
+          className="quick-time"
+          inputMode="decimal"
+          placeholder="1.3"
+          autoComplete="off"
+          value={quick.time}
+          onChange={(e) => changeQuick({ time: e.target.value })}
+          aria-invalid={errors.time ? true : undefined}
+        />
+        {timeError}
+      </div>
+      <fieldset className="quick-group">
+        <legend>Also</legend>
+        <div className="choices">
+          <label className={`choice${quick.night ? ' is-on' : ''}`}>
+            <input type="checkbox" checked={quick.night} onChange={(e) => changeQuick({ night: e.target.checked })} />
+            Night
+          </label>
+          <label className={`choice${quick.xc ? ' is-on' : ''}`}>
+            <input
+              type="checkbox"
+              checked={quick.xc}
+              onChange={(e) => {
+                changeQuick({ xc: e.target.checked });
+                if (e.target.checked) {
+                  // A cross-country goes somewhere else, so the pre-filled destination can't be right.
+                  setShowWhere(true);
+                  if (entry.to === entry.from) set('to', '');
+                  requestAnimationFrame(() => document.getElementById('f-to')?.focus());
+                }
+              }}
+            />
+            Cross-country
+          </label>
+          <label className={`choice${quick.hood ? ' is-on' : ''}`}>
+            <input type="checkbox" checked={quick.hood} onChange={(e) => changeQuick({ hood: e.target.checked })} />
+            Hood
+          </label>
+        </div>
+      </fieldset>
+      {quick.hood && (
+        <div className={`field${errors.hood ? ' has-error' : ''}`}>
+          <label htmlFor="q-hood">Time under the hood, in hours</label>
+          <input
+            id="q-hood"
+            className="narrow"
+            inputMode="decimal"
+            placeholder={quick.time || 'All of it'}
+            autoComplete="off"
+            value={quick.hoodTime}
+            onChange={(e) => changeQuick({ hoodTime: e.target.value })}
+            aria-invalid={errors.hood ? true : undefined}
+          />
+          {errors.hood && <p className="field-error">{errors.hood}</p>}
+        </div>
+      )}
+      <div className="quick-landings">
+        <span id="q-landings">Landings</span>
+        <div className="stepper" role="group" aria-labelledby="q-landings">
+          <button type="button" aria-label="One fewer landing" disabled={quick.landings === 0} onClick={() => changeQuick({ landings: quick.landings - 1 })}>
+            −
+          </button>
+          <output aria-live="polite">{quick.landings}</output>
+          <button type="button" aria-label="One more landing" onClick={() => changeQuick({ landings: quick.landings + 1 })}>
+            +
+          </button>
+        </div>
+      </div>
+      {remarks}
+      <button type="button" className="link quick-columns" onClick={() => setQuick(null)}>
+        Paper columns
+      </button>
+    </div>
+  );
+
   return (
     <dialog
       ref={dialog}
@@ -324,51 +515,10 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
           )}
           {ftd && <p className="hint-box">FTD time counts as instrument ground time with an instructor. It is not flight time.</p>}
 
-          <div className="grid-2">
-            <Field id="f-date" label={forward ? 'Up to (date)' : 'Date'} error={errors.date}>
-              <input
-                id="f-date"
-                type="date"
-                value={entry.date}
-                onChange={(e) => set('date', e.target.value)}
-                required
-                aria-invalid={errors.date ? true : undefined}
-                aria-describedby={errors.date ? 'f-date-err' : undefined}
-              />
-            </Field>
-            <Field id="f-aircraft" label={ftd ? 'Device' : forward ? 'Aircraft type (blank for all types)' : 'Aircraft type'}>
-              <input
-                id="f-aircraft"
-                list="dl-aircraft"
-                placeholder={ftd ? 'e.g. Redbird FMX' : 'e.g. C172, PA-28'}
-                autoComplete="off"
-                value={entry.aircraft}
-                onChange={(e) => set('aircraft', e.target.value)}
-              />
-            </Field>
-          </div>
-          {layout === 'flight' && (
-            <div className="grid-3">
-              <Field id="f-reg" label="Registration">
-                <input
-                  id="f-reg"
-                  list="dl-reg"
-                  autoComplete="off"
-                  autoCapitalize="characters"
-                  value={entry.registration}
-                  onChange={(e) => set('registration', e.target.value.toUpperCase())}
-                />
-              </Field>
-              <Field id="f-from" label="From">
-                <input id="f-from" list="dl-place" autoComplete="off" autoCapitalize="characters" value={entry.from} onChange={(e) => set('from', e.target.value.toUpperCase())} />
-              </Field>
-              <Field id="f-to" label="To">
-                <input id="f-to" list="dl-place" autoComplete="off" autoCapitalize="characters" value={entry.to} onChange={(e) => set('to', e.target.value.toUpperCase())} />
-              </Field>
-            </div>
-          )}
+          {quickView}
+          {!quick && whereFields}
 
-          {ftd ? (
+          {quick ? null : ftd ? (
             <section className="form-section">
               <div className="col-groups">{groupInputs(FTD_ONLY)}</div>
               {timeError}
@@ -486,9 +636,7 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
             </section>
           )}
 
-          <Field id="f-remarks" label="Remarks">
-            <textarea id="f-remarks" rows={2} value={entry.remarks} onChange={(e) => set('remarks', e.target.value)} />
-          </Field>
+          {!quick && remarks}
         </div>
 
         <div className="sheet-foot">
@@ -516,7 +664,7 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
                   {doubts.join(' ')}
                 </p>
               )}
-              {!ftd && (
+              {!ftd && !quick && (
                 <span className="line-total">
                   Flight time on this line: <strong>{formatHours(FLIGHT_COLUMNS.reduce((t, c) => t + preview[c], 0))} h</strong>
                 </span>

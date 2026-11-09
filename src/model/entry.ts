@@ -353,6 +353,13 @@ export function formatHours(minutes: number): string {
   return (minutes / 60).toFixed(1);
 }
 
+/** Decimal hours when that is exact, otherwise h:mm, so editing never rounds a time away. */
+export function durationText(minutes: number): string {
+  if (!minutes) return '';
+  if (minutes % 6 === 0) return formatHours(minutes);
+  return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`;
+}
+
 /** Like formatHours but never rounds a shortfall down to zero. */
 export function formatHoursUp(minutes: number): string {
   return (Math.ceil(minutes / 6) / 10).toFixed(1);
