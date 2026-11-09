@@ -1,6 +1,7 @@
 import { addDays, addMonths, afterPplPart, today as todayDate, type Entry } from '../model/entry';
 import { SAMPLE_RATES, type MilestoneRecord, type Profile } from '../model/profile';
 import { examCheck, goalById, passed, type Ctx, type Gate, type Goal, type MilestoneReq, type Plan, type Req, type Section } from './goals';
+import { t } from '../i18n';
 
 export interface ReqResult {
   req: Req;
@@ -81,11 +82,11 @@ function resolveScope(goal: Goal, profile: Profile): ScopeInfo | null {
   const override = profile.trainingStart[goal.id];
   if (override) return { start: override, message: null };
   if (goal.scope.from === 'manual') {
-    return { start: null, message: 'Set the date your course started to count this training.' };
+    return { start: null, message: t('Set the date your course started to count this training.') };
   }
   const ppl = profile.held.ppl;
-  if (!ppl) return { start: null, message: 'This starts counting once you hold your PPL.' };
-  if (!ppl.date) return { start: null, message: 'Add your PPL issue date in Profile. Until then every flight is counted, including PPL training.' };
+  if (!ppl) return { start: null, message: t('This starts counting once you hold your PPL.') };
+  if (!ppl.date) return { start: null, message: t('Add your PPL issue date in Profile. Until then every flight is counted, including PPL training.') };
   return { start: ppl.date, message: null };
 }
 
@@ -100,7 +101,7 @@ function scopedEntries(entries: readonly Entry[], goal: Goal, scope: ScopeInfo |
     const start = scope.start ?? '';
     const unanswered = entries.filter((e) => e.forward && e.date >= start && !e.breakdown?.afterPpl);
     const note = unanswered.length
-      ? `Your paper totals up to ${unanswered.map((e) => e.date).join(', ')} don’t say how much was flown after your PPL, so all of it counts here. Edit that line in the Logbook to answer.`
+      ? t('Your paper totals up to {dates} don’t say how much was flown after your PPL, so all of it counts here. Edit that line in the Logbook to answer.', { dates: unanswered.map((e) => e.date).join(', ') })
       : null;
     return { entries: entries.map((e) => afterPplPart(e, start)).filter((e): e is Entry => e !== null), note };
   }
@@ -169,7 +170,7 @@ function evalReq(req: Req, c: Ctx, goal: Ctx = c): ReqResult {
       const id = req.anyOf.find((g) => c.profile.held[g] !== undefined);
       if (id === undefined) return base;
       const date = c.profile.held[id]?.date;
-      return { ...base, met: true, value: `You hold the ${goalById(id).name}${date ? `, since ${date}` : ''}.` };
+      return { ...base, met: true, value: date ? t('You hold the {goal}, since {date}.', { goal: t(goalById(id).name), date }) : t('You hold the {goal}.', { goal: t(goalById(id).name) }) };
     }
     case 'medical': {
       const right = req.anyOf.includes(c.profile.medical);

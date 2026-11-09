@@ -335,7 +335,7 @@ describe('a forgotten password', () => {
     expect(await screen.findByText(/If there’s a profile for student@example\.com, a link/)).toBeTruthy();
     expect(vi.mocked(fetch)).toHaveBeenCalledWith(
       '/api/auth/forgot',
-      expect.objectContaining({ method: 'POST', body: JSON.stringify({ email: 'student@example.com' }) }),
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ email: 'student@example.com', lang: 'en' }) }),
     );
   });
 

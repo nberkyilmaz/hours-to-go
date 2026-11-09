@@ -99,7 +99,7 @@ describe('signed in', () => {
     expect(screen.getByText('new@example.com')).toBeTruthy();
     expect(vi.mocked(fetch)).toHaveBeenCalledWith(
       '/api/account/email',
-      expect.objectContaining({ method: 'POST', body: JSON.stringify({ email: 'new@example.com', password: 'correct horse' }) }),
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ email: 'new@example.com', password: 'correct horse', lang: 'en' }) }),
     );
     expect(screen.queryByLabelText('New email')).toBeNull();
 

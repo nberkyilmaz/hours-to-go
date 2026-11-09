@@ -3,6 +3,7 @@ import { dateText, today, type Entry } from '../model/entry';
 import type { Profile } from '../model/profile';
 import { currencyOf } from '../rules/currency';
 import { CheckIcon } from './icons';
+import { t } from '../i18n';
 
 interface Props {
   entries: readonly Entry[];
@@ -25,8 +26,8 @@ export function CurrencyCard({ entries, profile, updateProfile }: Props) {
   return (
     <details className="card currency" open={open > 0}>
       <summary>
-        Current to fly
-        <span className={open > 0 ? 'warn-text' : 'muted'}>{open > 0 ? ` · ${open} to sort out` : ' · all good'}</span>
+        {t('Current to fly')}
+        <span className={open > 0 ? 'warn-text' : 'muted'}>{open > 0 ? ` · ${t('{n} to sort out', { n: open })}` : t(' · all good')}</span>
       </summary>
       <ul className="currency-list">
         {items.map((i) => (
@@ -37,13 +38,13 @@ export function CurrencyCard({ entries, profile, updateProfile }: Props) {
             <div>
               <span>
                 {i.label} <span className="cite">{i.cite}</span>
-                <span className="sr-only">{i.current ? ' (current)' : ' (not current)'}</span>
+                <span className="sr-only">{i.current ? t(' (current)') : t(' (not current)')}</span>
               </span>
               {i.note && <p className="note">{i.note}</p>}
-              {i.until && <p className="note muted">{i.current ? `Until ${dateText(i.until)}` : `Ran out on ${dateText(i.until)}`}</p>}
+              {i.until && <p className="note muted">{i.current ? t('Until {date}', { date: dateText(i.until) }) : t('Ran out on {date}', { date: dateText(i.until) })}</p>}
               {i.dateKey && (
                 <label className="inline-field">
-                  <span>Last done</span>
+                  <span>{t('Last done')}</span>
                   <input type="date" value={profile.milestones[i.dateKey]?.date ?? ''} onChange={(e) => setDate(i.dateKey!, e.target.value)} />
                 </label>
               )}
@@ -51,7 +52,7 @@ export function CurrencyCard({ entries, profile, updateProfile }: Props) {
           </li>
         ))}
       </ul>
-      <p className="hint">Counts flights logged one by one, in an aircraft: paper totals can’t show dates, and a simulator only counts at Level B, C or D, which the log can’t tell. A flight review, a Transport Canada seminar and the self-paced study program all count as recurrent training (421.05(2)).</p>
+      <p className="hint">{t('Counts flights logged one by one, in an aircraft: paper totals can’t show dates, and a simulator only counts at Level B, C or D, which the log can’t tell. A flight review, a Transport Canada seminar and the self-paced study program all count as recurrent training (421.05(2)).')}</p>
     </details>
   );
 }

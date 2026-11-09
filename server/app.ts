@@ -5,6 +5,7 @@ import cors from '@fastify/cors';
 import fastifyStatic from '@fastify/static';
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify';
 import { validateEntry } from '../src/model/entry';
+import type { Lang } from '../src/i18n';
 import { today as todayDate } from '../src/model/entry';
 import { parseEntry, parseLogbook, parseProfile } from '../src/model/store';
 import { sharedProgress } from '../src/rules/shared';
@@ -66,6 +67,9 @@ declare module 'fastify' {
 
 const bodyOf = (req: FastifyRequest): Record<string, unknown> =>
   typeof req.body === 'object' && req.body !== null ? (req.body as Record<string, unknown>) : {};
+
+/** The language to email this pilot in: the app says which it's showing them. */
+const langOf = (req: FastifyRequest): Lang => (bodyOf(req).lang === 'fr' ? 'fr' : 'en');
 
 export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   const app = Fastify({ logger: opts.logger ?? false, bodyLimit: 5 * 1024 * 1024, trustProxy: true });
@@ -175,7 +179,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
    * Emails a link that confirms `email` for this profile: its own address, or one it is moving
    * to. In the fragment, like a reset link, so the token stays out of logs.
    */
-  const sendEmailLink = async (user: User, email: string) => {
+  const sendEmailLink = async (user: User, email: string, language: Lang) => {
     const { sendMail, appUrl } = opts;
     if (!sendMail || !appUrl) throw new Error('Email is not set up.');
     linksPerUser.fail(user.id);
@@ -184,11 +188,11 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     await store.createEmailLink(user.id, email, hash, Date.now() + CONFIRM_DAYS * 86_400_000);
     const link = new URL(appUrl);
     link.hash = `confirm=${token}`;
-    await sendMail(confirmMail(email, link.toString(), CONFIRM_DAYS, email !== user.email));
+    await sendMail(confirmMail(email, link.toString(), CONFIRM_DAYS, email !== user.email, language));
   };
 
   /** For a pilot asking for a link: false once it has replied with why one can't be sent. */
-  const emailLinkSent = async (reply: FastifyReply, user: User, email: string): Promise<boolean> => {
+  const emailLinkSent = async (reply: FastifyReply, user: User, email: string, language: Lang): Promise<boolean> => {
     if (!opts.sendMail || !opts.appUrl) {
       await reply.code(503).send({ error: 'Sending email isn’t available yet.' });
       return false;
@@ -198,7 +202,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
       return false;
     }
     try {
-      await sendEmailLink(user, email);
+      await sendEmailLink(user, email, language);
       return true;
     } catch (err) {
       failed(err, 'email link not sent');
@@ -224,7 +228,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     if (!user) return reply.code(409).send({ error: 'An account with that email already exists. Sign in instead.' });
     await startSession(reply, user);
     if (opts.sendMail && opts.appUrl && !linksBlocked(user.id)) {
-      void sendEmailLink(user, user.email).catch((err: unknown) => failed(err, 'confirmation email not sent'));
+      void sendEmailLink(user, user.email, langOf(req)).catch((err: unknown) => failed(err, 'confirmation email not sent'));
     }
     return { user: { email: user.email, confirmed: false, pendingEmail: null, reminders: false } satisfies Account };
   });
@@ -267,7 +271,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
       // In the fragment, which browsers never send to a server, so the token stays out of logs.
       const link = new URL(appUrl);
       link.hash = `reset=${token}`;
-      await sendMail(resetMail(user.email, link.toString(), RESET_MINUTES));
+      await sendMail(resetMail(user.email, link.toString(), RESET_MINUTES, langOf(req)));
     })().catch((err: unknown) => failed(err, 'password reset email not sent'));
     return reply.code(204).send();
   });
@@ -330,7 +334,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   // Sends the link to confirm the profile's own address again.
   app.post('/api/account/confirm', { preHandler: requireUser }, async (req, reply) => {
     if (req.user!.confirmed) return reply.code(400).send({ error: 'Your email is already confirmed.' });
-    if (!(await emailLinkSent(reply, req.user!, req.user!.email))) return reply;
+    if (!(await emailLinkSent(reply, req.user!, req.user!.email, langOf(req)))) return reply;
     return reply.code(204).send();
   });
 
@@ -342,7 +346,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     if (email === req.user!.email) return reply.code(400).send({ error: 'That’s already your email.' });
     if (!(await passwordChecked(req, reply, String(body.password ?? '')))) return reply;
     if (await store.findUserByEmail(email)) return reply.code(409).send({ error: 'Another profile already uses that email.' });
-    if (!(await emailLinkSent(reply, req.user!, email))) return reply;
+    if (!(await emailLinkSent(reply, req.user!, email, langOf(req)))) return reply;
     return { user: await accountOf(req.user!.id) };
   });
 
@@ -368,7 +372,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
       if (!opts.sendMail || !opts.appUrl || !opts.remindersKey) return reply.code(503).send({ error: 'Email reminders aren’t available yet.' });
       if (!req.user!.confirmed) return reply.code(400).send({ error: 'Confirm your email first, so the reminders can reach you.' });
     }
-    await store.setReminders(req.user!.id, on ? newToken().token : null);
+    await store.setReminders(req.user!.id, on ? newToken().token : null, langOf(req));
     return { user: await accountOf(req.user!.id) };
   });
 

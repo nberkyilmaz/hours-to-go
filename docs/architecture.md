@@ -36,6 +36,7 @@ hours-to-go/
 │   │   ├── csv.ts              the logbook as a spreadsheet, out and in (D54)
 │   │   ├── printlog.ts         the logbook as pages, totals carried forward (D55)
 │   │   └── sync.ts             signed in: changes waiting for the server, and the copy on this device (D41)
+│   ├── i18n/                   the words, in English and French: `t`, and the table of French (D57)
 │   ├── rules/
 │   │   ├── goals.ts            the Standard 421 catalogue: every requirement with its paragraph,
 │   │   │                           and each goal's plan of the least time left to pay for

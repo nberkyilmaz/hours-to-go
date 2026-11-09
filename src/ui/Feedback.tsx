@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { ApiError, api } from '../api';
 import { useSlow, useWake } from './useSlow';
+import { t } from '../i18n';
 
 /**
  * A message to the owner: a problem, a question or an idea. It is emailed, with the pilot's
@@ -25,7 +26,7 @@ export function Feedback({ signedInAs }: { signedInAs: string | null }) {
       setSentFrom(signedInAs ?? email.trim());
       setMessage('');
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Something went wrong. Try again.');
+      setError(err instanceof ApiError ? err.message : t('Something went wrong. Try again.'));
     } finally {
       setBusy(false);
     }
@@ -33,31 +34,30 @@ export function Feedback({ signedInAs }: { signedInAs: string | null }) {
 
   return (
     <section className="card pad" aria-labelledby="feedback-title">
-      <h2 id="feedback-title">Send feedback</h2>
+      <h2 id="feedback-title">{t('Send feedback')}</h2>
       <p className="muted">
-        Something not working, a question, or an idea for Hours to Go? Your message goes straight to the developer by email, with your
-        browser’s name to help with problems.
+        {t('Something not working, a question, or an idea for Hours to Go? Your message goes straight to the developer by email, with your browser’s name to help with problems.')}
       </p>
       {sentFrom !== null ? (
         <div className="auth">
           <p className="banner ok" role="status">
-            Thanks, your message was sent.{sentFrom ? ` Any reply will go to ${sentFrom}.` : ''}
+            {t('Thanks, your message was sent.')}{sentFrom ? ` ${t('Any reply will go to {address}.', { address: sentFrom })}` : ''}
           </p>
           <button type="button" className="link" onClick={() => setSentFrom(null)}>
-            Send another message
+            {t('Send another message')}
           </button>
         </div>
       ) : (
         <form className="auth" onSubmit={submit} onFocus={wake}>
           <div className="field">
-            <label htmlFor="feedback-message">Message</label>
+            <label htmlFor="feedback-message">{t('Message')}</label>
             <textarea id="feedback-message" rows={5} maxLength={4000} required value={message} onChange={(e) => setMessage(e.target.value)} />
           </div>
           {signedInAs ? (
-            <p className="hint">Replies go to {signedInAs}.</p>
+            <p className="hint">{t('Replies go to')}{' '}{signedInAs}.</p>
           ) : (
             <div className="field">
-              <label htmlFor="feedback-email">Your email, if you’d like a reply</label>
+              <label htmlFor="feedback-email">{t('Your email, if you’d like a reply')}</label>
               <input id="feedback-email" type="email" autoComplete="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
           )}
@@ -67,11 +67,11 @@ export function Feedback({ signedInAs }: { signedInAs: string | null }) {
             </p>
           )}
           <button type="submit" className="btn primary" disabled={busy}>
-            {busy ? 'Sending…' : 'Send message'}
+            {busy ? t('Sending…') : t('Send message')}
           </button>
           {slow && (
             <p className="hint" role="status">
-              The server is waking up. If nobody has used Hours to Go for a while, this takes up to a minute.
+              {t('The server is waking up. If nobody has used Hours to Go for a while, this takes up to a minute.')}
             </p>
           )}
         </form>

@@ -953,13 +953,30 @@ connection all worked. Nothing signed in: that needs a real account on the produ
 **Problem found:** the print screen had no main landmark, which a scan of the whole page shows and the earlier scan of
 just its contents couldn't. Fixed. The only other thing axe reported was the toast's text during its 0.22 s fade-in.
 
+## Phase 37: French (2026-11-09)
+
+The whole app in Canadian French: every screen, the requirements, the server's messages, the emails and the privacy
+page (D57). About 800 phrases, with the aviation terms taken from Transport Canada's French Standard 421. The owner
+chose to ship it as a best effort and correct it from reviews.
+
+**Problems on the way:** the French medical picker was wider than a small phone, so the page scrolled sideways, and
+two kinds of text were missed at first: hints passed as props, and English plurals in code. A test now fails if text
+on a screen doesn't go through `t`, and it found one more hint the moment it was written. An independent review
+against the French Standard found no error in any number, limit or condition, and 35 things to change, each checked
+against the text: mostly its terms (Transports Canada, formation en vol, contrôle de compétence pilote) and short goal
+names that weren't translated.
+
+**Checked.** In Edge on a 360 px phone with the browser set to French: every screen is in French, no placeholder
+shows, nothing scrolls sideways, and axe finds nothing. Emails are tested in both languages. No French speaker has
+read it yet.
+
 ## Where things stand
 
-- 348 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
+- 376 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
   21, offline changes 5, server API 42, the standard's watcher 8, first visit, guest, cost to go,
   finish date, next flight, expiry, password reset, confirm links and feedback 28, the form and
   notices 12, the quick form 14, Progress 9, the logbook 7, first run and trust 10, signed in 6,
-  offline on the screen 5, log again and the cost a month 4, current to fly 17, reminders 21, the spreadsheet 19, the paper log 13, the instructor link 20), and the API tests per
+  offline on the screen 5, log again and the cost a month 4, current to fly 17, reminders 21, the spreadsheet 19, the paper log 13, the instructor link 20, French 27), and the API tests per
   database also run against a Postgres server through `pg` in CI.
 - Typecheck clean on both configs; `npm audit` clean.
 - Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.

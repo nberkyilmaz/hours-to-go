@@ -2,6 +2,7 @@
  * What logging a flight just did for the goal the pilot is working on (D46). Saving is the one
  * moment the app can give something back, and the rules already know the answer.
  */
+import { shortName } from '../i18n';
 import { derive, type Entry } from '../model/entry';
 import type { Profile } from '../model/profile';
 import { evaluateGoal, flatten, type GoalResult, type ReqResult } from './evaluate';
@@ -33,7 +34,7 @@ export function momentOf(goal: Goal, entries: readonly Entry[], flight: Entry, p
   const metBefore = new Set(results(before).filter((r) => r.met).map((r) => r.req.id));
   const percent = (log: readonly Entry[]) => goalProgress(goal, log, profile, today).percent;
   return {
-    short: goal.short,
+    short: shortName(goal.short),
     was: before.minutesToGo,
     now: after.minutesToGo,
     finished: results(after)

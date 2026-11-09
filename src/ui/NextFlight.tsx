@@ -4,6 +4,7 @@ import type { Profile } from '../model/profile';
 import { about, money } from '../rules/cost';
 import type { GoalResult } from '../rules/evaluate';
 import { nextFlights, type FlightCount } from '../rules/next';
+import { t } from '../i18n';
 
 const amount = (c: FlightCount, n: number) => (c.unit === 'hours' ? `${formatHoursUp(n)} h` : String(n));
 
@@ -24,8 +25,8 @@ export function NextFlightCard({ result: r, entries, profile, onFly }: Props) {
   if (advice.status === 'before-solo') {
     return (
       <section className="next" aria-labelledby="next-title">
-        <h2 id="next-title">Your next flight</h2>
-        <p className="hint">Before your first solo, your school’s lessons set the order. Once a solo is in your log, this suggests the flight that counts toward the most.</p>
+        <h2 id="next-title">{t('Your next flight')}</h2>
+        <p className="hint">{t('Before your first solo, your school’s lessons set the order. Once a solo is in your log, this suggests the flight that counts toward the most.')}</p>
       </section>
     );
   }
@@ -34,34 +35,34 @@ export function NextFlightCard({ result: r, entries, profile, onFly }: Props) {
   const n = best.counts.length;
   return (
     <section className="next" aria-labelledby="next-title">
-      <h2 id="next-title">Your next flight</h2>
+      <h2 id="next-title">{t('Your next flight')}</h2>
       <p>
-        <strong>{best.name}</strong>, {formatHours(best.minutes)} h, about {money(about(best.price))}
+        <strong>{t(best.name)}</strong>, {formatHours(best.minutes)}{' '}{t('h, about')}{' '}{money(about(best.price))}
       </p>
       <details className="next-why">
-        <summary>It counts toward {n === 1 ? '1 requirement' : `${n} requirements`} you still need</summary>
+        <summary>{n === 1 ? t('It counts toward 1 requirement you still need') : t('It counts toward {n} requirements you still need', { n })}</summary>
         <ul className="next-counts">
           {best.counts.map((c) => (
             <li key={c.id}>
-              <span>{c.label}</span>
+              <span>{t(c.label)}</span>
               <span className="next-left">
-                {amount(c, c.before)} → {c.after === 0 ? 'done' : `${amount(c, c.after)} to go`}
+                {amount(c, c.before)} → {c.after === 0 ? t('done') : t('{amount} to go', { amount: amount(c, c.after) })}
               </span>
             </li>
           ))}
         </ul>
         {best.couldBe.map((label) => (
           <p className="note" key={label}>
-            This flight could also be one you still need: {label}.
+            {t('This flight could also be one you still need:')}{' '}{t(label)}.
           </p>
         ))}
-        {others.length > 0 && <p className="note">Also useful: {others.map((f) => f.name).join(' · ')}.</p>}
-        <p className="note">Worked out from the standard’s minimums, at your usual flight length.</p>
+        {others.length > 0 && <p className="note">{t('Also useful:')}{' '}{others.map((f) => t(f.name)).join(' · ')}.</p>}
+        <p className="note">{t('Worked out from the standard’s minimums, at your usual flight length.')}</p>
       </details>
       <button type="button" className="link" onClick={() => onFly(best.line)}>
-        I flew this
+        {t('I flew this')}
       </button>
-      <p className="hint">A suggestion. Your instructor decides what you fly next and when you’re ready for it.</p>
+      <p className="hint">{t('A suggestion. Your instructor decides what you fly next and when you’re ready for it.')}</p>
     </section>
   );
 }

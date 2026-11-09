@@ -1,3 +1,4 @@
+import { dateFormat, decimal, t, type Lang } from '../i18n';
 /**
  * One line of the logbook, with the same columns as a Canadian pilot's
  * personal log.
@@ -308,10 +309,10 @@ export function addDays(date: string, days: number): string {
   return new Date(Date.parse(`${date}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
 }
 
-const LONG_DATE = new Intl.DateTimeFormat('en-CA', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+const LONG_DATE: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' };
 
 /** "March 1, 2028". */
-export const dateText = (date: string) => LONG_DATE.format(new Date(`${date}T00:00:00Z`));
+export const dateText = (date: string, language?: Lang) => dateFormat(LONG_DATE, language).format(new Date(`${date}T00:00:00Z`));
 
 export function blankEntry(forward = false, date: string = today()): Entry {
   const e = {
@@ -350,7 +351,7 @@ export function parseDuration(text: string): number | null {
 
 /** Minutes as decimal hours with one decimal, the way a logbook shows them. */
 export function formatHours(minutes: number): string {
-  return (minutes / 60).toFixed(1);
+  return decimal((minutes / 60).toFixed(1));
 }
 
 /** Decimal hours when that is exact, otherwise h:mm, so editing never rounds a time away. */
@@ -362,7 +363,7 @@ export function durationText(minutes: number): string {
 
 /** Like formatHours but never rounds a shortfall down to zero. */
 export function formatHoursUp(minutes: number): string {
-  return (Math.ceil(minutes / 6) / 10).toFixed(1);
+  return decimal((Math.ceil(minutes / 6) / 10).toFixed(1));
 }
 
 /** Errors by field; `time` is for the line as a whole, the rest name a box or a question. */
@@ -372,20 +373,20 @@ export type EntryErrors = Partial<Record<ErrorKey, string>>;
 export function validateEntry(e: Entry): EntryErrors {
   const err: EntryErrors = {};
   const d = derive(e);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(e.date)) err.date = 'Enter a date.';
-  if (d.total === 0 && e.ftd === 0) err.time = 'Enter the time in one of the flight-time columns, or FTD time.';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(e.date)) err.date = t('Enter a date.');
+  if (d.total === 0 && e.ftd === 0) err.time = t('Enter the time in one of the flight-time columns, or FTD time.');
 
   const dualDay = d.dual - d.dualNight;
   const picDay = d.pic - d.picNight;
-  if (e.xcDayDual > dualDay) err.xcDayDual = 'More than the day dual time on this line.';
-  if (e.xcDayPic > picDay) err.xcDayPic = 'More than the day PIC time on this line.';
-  if (e.xcNightDual > d.dualNight) err.xcNightDual = 'More than the night dual time on this line.';
-  if (e.xcNightPic > d.picNight) err.xcNightPic = 'More than the night PIC time on this line.';
-  if (d.inst > d.total) err.hood = 'Actual plus hood is more than the flight time on this line.';
+  if (e.xcDayDual > dualDay) err.xcDayDual = t('More than the day dual time on this line.');
+  if (e.xcDayPic > picDay) err.xcDayPic = t('More than the day PIC time on this line.');
+  if (e.xcNightDual > d.dualNight) err.xcNightDual = t('More than the night dual time on this line.');
+  if (e.xcNightPic > d.picNight) err.xcNightPic = t('More than the night PIC time on this line.');
+  if (d.inst > d.total) err.hood = t('Actual plus hood is more than the flight time on this line.');
 
-  if (!e.forward && e.solo && d.pic === 0) err.solo = 'Solo needs PIC time on this line.';
+  if (!e.forward && e.solo && d.pic === 0) err.solo = t('Solo needs PIC time on this line.');
   if (asksSoloNightLandings(e) && e.soloNightLandings > e.nightLandings) {
-    err.soloNightLandings = 'Can’t be more than the night takeoffs & landings on this line.';
+    err.soloNightLandings = t('Can’t be more than the night takeoffs & landings on this line.');
   }
   if (e.forward && e.breakdown) Object.assign(err, validateBreakdown(e, e.breakdown, d));
   return err;
@@ -393,27 +394,27 @@ export function validateEntry(e: Entry): EntryErrors {
 
 function validateBreakdown(e: Entry, b: Breakdown, d: Derived): EntryErrors {
   const err: EntryErrors = {};
-  const over = (what: string) => `More than the ${what} in these totals.`;
+  const over = (what: string) => t('More than the {what} in these totals.', { what });
   if (b.solo === 'some') {
-    if (b.soloDay > d.pic - d.picNight) err.soloDay = over('day PIC time');
-    if (b.soloNight > d.picNight) err.soloNight = over('night PIC time');
-    if (b.soloXc > d.xcPic) err.soloXc = over('PIC cross-country');
+    if (b.soloDay > d.pic - d.picNight) err.soloDay = over(t('day PIC time'));
+    if (b.soloNight > d.picNight) err.soloNight = over(t('night PIC time'));
+    if (b.soloXc > d.xcPic) err.soloXc = over(t('PIC cross-country'));
   }
   if (b.afterPpl === 'some') {
     const a = b.after;
     const check = (f: AfterPplField, limit: number, what: string) => {
       if (a[f] > limit) err[`after.${f}`] = over(what);
     };
-    check('dual', d.dual, 'dual time');
-    check('dualNight', Math.min(d.dualNight, a.dual), 'dual night time');
-    check('dualNightXc', Math.min(e.xcNightDual, a.dualNight), 'dual night cross-country');
-    check('dualXc', d.xcDual, 'dual cross-country');
-    check('dualInst', Math.min(d.dualInst, a.dual), 'dual instrument time');
-    check('ftd', e.ftd, 'FTD time');
-    check('solo', d.solo, 'solo time');
-    check('soloNight', Math.min(d.soloNight, a.solo), 'solo night time');
-    check('soloNightLandings', d.soloNightLandings, 'solo night takeoffs & landings');
-    if (a.dualNightXc > a.dualXc && !err['after.dualXc']) err['after.dualXc'] = 'Include the night cross-country here too.';
+    check('dual', d.dual, t('dual time'));
+    check('dualNight', Math.min(d.dualNight, a.dual), t('dual night time'));
+    check('dualNightXc', Math.min(e.xcNightDual, a.dualNight), t('dual night cross-country'));
+    check('dualXc', d.xcDual, t('dual cross-country'));
+    check('dualInst', Math.min(d.dualInst, a.dual), t('dual instrument time'));
+    check('ftd', e.ftd, t('FTD time'));
+    check('solo', d.solo, t('solo time'));
+    check('soloNight', Math.min(d.soloNight, a.solo), t('solo night time'));
+    check('soloNightLandings', d.soloNightLandings, t('solo night takeoffs & landings'));
+    if (a.dualNightXc > a.dualXc && !err['after.dualXc']) err['after.dualXc'] = t('Include the night cross-country here too.');
   }
   return err;
 }
@@ -423,9 +424,9 @@ const LONG_FLIGHT = 8 * 60;
 /** Allowed, but worth asking about once: one mistyped key changes every figure in the app. */
 export function doubtsAbout(e: Entry, today: string): string[] {
   const doubts: string[] = [];
-  if (e.date > today) doubts.push('That date is in the future.');
+  if (e.date > today) doubts.push(t('That date is in the future.'));
   const total = derive(e).total;
-  if (!e.forward && total > LONG_FLIGHT) doubts.push(`${formatHours(total)} h on one flight? Did you mean ${formatHours(Math.round(total / 10))}?`);
+  if (!e.forward && total > LONG_FLIGHT) doubts.push(t('{hours} h on one flight? Did you mean {other}?', { hours: formatHours(total), other: formatHours(Math.round(total / 10)) }));
   return doubts;
 }
 

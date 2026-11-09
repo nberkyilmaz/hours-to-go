@@ -3,7 +3,7 @@ import { dateText, formatHours, formatHoursUp, today, type Entry } from '../mode
 import type { GoalId, MilestoneRecord, Profile } from '../model/profile';
 import { isSnoozed, snooze, type Logbook } from '../model/store';
 import { evaluateGoal, flatten, type ExamResult, type GateResult, type GoalResult, type ReqResult, type SectionResult } from '../rules/evaluate';
-import { GOALS, STANDARD_421_URL, goalById } from '../rules/goals';
+import { GOALS, goalById } from '../rules/goals';
 import { paceOf, type Pace } from '../rules/pace';
 import { progressOf, type GoalProgress } from '../rules/progress';
 import { CostDetail, CostStat, costOf, openRates } from './Cost';
@@ -13,8 +13,9 @@ import { Ring } from './Ring';
 import { MedicalFields } from './Medical';
 import { NextFlightCard } from './NextFlight';
 import { CheckIcon, LockIcon, PlusIcon } from './icons';
-import { STANDARD_CURRENT } from './links';
+import { STANDARD_CURRENT, STANDARD_URL } from './links';
 import { keepUnits } from './text';
+import { shortName, t } from '../i18n';
 
 type UpdateProfile = (fn: (p: Profile) => Profile) => unknown;
 
@@ -64,12 +65,12 @@ export function ProgressView({ book, updateProfile, onAddHours, onFly }: Props) 
         onFly={onFly}
         picker={
           <div className="goal-pick">
-            <label htmlFor="focus">Working on</label>
+            <label htmlFor="focus">{t('Working on')}</label>
             <select id="focus" value={focus.now.goal.id} onChange={(e) => setFocus(e.target.value as GoalId)}>
               {results.map(({ now, progress }) => (
                 <option key={now.goal.id} value={now.goal.id}>
-                  {now.goal.name}
-                  {now.held ? ' (held)' : now === focus.now ? '' : ` · ${progress.percent}%`}
+                  {t(now.goal.name)}
+                  {now.held ? t(' (held)') : now === focus.now ? '' : ` · ${t('{n}%', { n: progress.percent })}`}
                 </option>
               ))}
             </select>
@@ -108,31 +109,31 @@ function FirstStep({ profile, updateProfile, onAddHours, onDone }: { profile: Pr
   return (
     <div className="callout first-step">
       <div>
-        <strong>Start with the hours you already have.</strong>
-        <p>Copy the totals from your paper logbook in a few lines, then log each new flight here.</p>
+        <strong>{t('Start with the hours you already have.')}</strong>
+        <p>{t('Copy the totals from your paper logbook in a few lines, then log each new flight here.')}</p>
       </div>
       <button type="button" className="btn primary" onClick={onAddHours}>
-        <PlusIcon /> Add my hours
+        <PlusIcon />{' '}{t('Add my hours')}
       </button>
       <div className="first-step-more">
         <button type="button" className="link" onClick={onDone}>
-          I’m just starting
+          {t('I’m just starting')}
         </button>
         <button type="button" className="link" aria-expanded={licensed} onClick={() => setLicensed(!licensed)}>
-          I already hold a licence
+          {t('I already hold a licence')}
         </button>
       </div>
       {licensed && (
         <fieldset className="first-step-held">
-          <legend>Tick what you hold</legend>
+          <legend>{t('Tick what you hold')}</legend>
           {GOALS.map((g) => (
             <label key={g.id} className="toggle">
               <input type="checkbox" checked={profile.held[g.id] !== undefined} onChange={(e) => toggle(g.id, e.target.checked)} />
-              <span>{g.name}</span>
+              <span>{t(g.name)}</span>
             </label>
           ))}
           <button type="button" className="btn small" onClick={onDone}>
-            Done
+            {t('Done')}
           </button>
         </fieldset>
       )}
@@ -172,24 +173,24 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
         <div className="goal-title">
           {picker}
           <h1 id="goal-title" className="sr-only">
-            {goal.name}
+            {t(goal.name)}
           </h1>
           <p className="eyebrow">
-            Transport Canada ·{' '}
-            <a href={STANDARD_421_URL} target="_blank" rel="noreferrer">
-              Standard {goal.cite}
+            {t('Transport Canada ·')}{' '}
+            <a href={STANDARD_URL} target="_blank" rel="noreferrer">
+              {t('Standard')}{' '}{goal.cite}
             </a>{' '}
-            · current to {STANDARD_CURRENT}, checked nightly
+            {t('· current to')}{' '}{STANDARD_CURRENT}{t(', checked nightly')}
           </p>
         </div>
         {r.held && (
           <div className="held-box">
             <label>
-              <span>Held since</span>
+              <span>{t('Held since')}</span>
               <input type="date" value={r.held.date} onChange={(e) => setHeld(e.target.value)} />
             </label>
             <button type="button" className="link" onClick={() => setHeld(null)}>
-              Mark as not held
+              {t('Mark as not held')}
             </button>
           </div>
         )}
@@ -197,13 +198,13 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
 
       {holding.length > 0 && (
         <p className="holding">
-          You hold: {holding.map((g) => g.short).join(' · ')}.{' '}
-          <span className="muted">Change this in Profile.</span>
+          {t('You hold:')}{' '}{holding.map((g) => shortName(g.short)).join(' · ')}.{' '}
+          <span className="muted">{t('Change this in Profile.')}</span>
         </p>
       )}
 
       {r.held || r.credited ? (
-        <p className="banner ok">{r.held ? 'You hold this. The requirements are below for reference.' : r.credited}</p>
+        <p className="banner ok">{r.held ? t('You hold this. The requirements are below for reference.') : t(r.credited ?? '')}</p>
       ) : (
         <div className="hero">
           <Ring percent={progress.percent} />
@@ -211,12 +212,12 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
             {progress.need > 0 && (
               <span className="hero-figure">
                 {formatHours(progress.flown)}
-                <small> of {formatHours(progress.need)} h</small>
+                <small>{' '}{t('of')}{' '}{formatHours(progress.need)}{' '}{t('h')}</small>
               </span>
             )}
-            <span className="stat-label">{progress.left > 0 ? `at least ${formatHoursUp(progress.left)} h to go` : progress.need > 0 ? 'All hours flown' : 'No minimum hours'}</span>
+            <span className="stat-label">{progress.left > 0 ? t('at least {hours} h to go', { hours: formatHoursUp(progress.left) }) : progress.need > 0 ? t('All hours flown') : t('No minimum hours')}</span>
             <span className="stat-label">
-              {r.done} of {r.total} requirements met
+              {r.done}{' '}{t('of')}{' '}{r.total}{' '}{t('requirements met')}
             </span>
           </div>
           {cost && <CostStat result={r} cost={cost} profile={profile} onRates={() => openRates(costPanel.current)} />}
@@ -225,20 +226,20 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
       {r.complete && !r.held && !r.credited && (
         <div className="banner ok goal-complete">
           <span>
-            <strong>Every {goal.short} requirement is met.</strong> Time to send in your application.
+            <strong>{t('Every')}{' '}{shortName(goal.short)}{' '}{t('requirement is met.')}</strong>{' '}{t('Time to send in your application.')}
           </span>
           <button type="button" className="btn primary small" onClick={() => setHeld('')}>
-            Mark {goal.short} as held
+            {t('Mark')}{' '}{shortName(goal.short)}{' '}{t('as held')}
           </button>
         </div>
       )}
       <Finish result={r} pace={pace} logged={entries.length > 0} cost={cost} />
       {cost && <CostDetail result={r} cost={cost} profile={profile} updateProfile={updateProfile} panel={costPanel} />}
-      {'unpriced' in goal.cost && !r.held && !r.credited && <p className="note cost-none">{goal.cost.unpriced}</p>}
+      {'unpriced' in goal.cost && !r.held && !r.credited && <p className="note cost-none">{t(goal.cost.unpriced)}</p>}
       <NextFlightCard result={r} entries={entries} profile={profile} onFly={onFly} />
 
       {r.gates.length > 0 && !r.held && (
-        <ul className="gates" aria-label="What is unlocked">
+        <ul className="gates" aria-label={t('What is unlocked')}>
           {r.gates.map((g) => (
             <Gate key={g.gate.label} gate={g} />
           ))}
@@ -252,7 +253,7 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
         if (open.length === 0) return null;
         return (
           <div key={s.section.title} className="req-section">
-            <h2>{s.section.title}</h2>
+            <h2>{t(s.section.title)}</h2>
             <ul className="reqs">
               {open.map((x) => (
                 <ReqRow key={x.req.id} r={x} goalId={goal.id} profile={profile} updateProfile={updateProfile} stays={stays} pin={pin} />
@@ -263,7 +264,7 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
       })}
       {finished.length > 0 && (
         <details className="req-done">
-          <summary>Done ({finished.length})</summary>
+          <summary>{t('Done (')}{finished.length})</summary>
           <ul className="reqs">
             {finished.map((x) => (
               <ReqRow key={x.req.id} r={{ ...x, children: [] }} goalId={goal.id} profile={profile} updateProfile={updateProfile} stays={() => false} pin={pin} />
@@ -273,7 +274,7 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
       )}
       {!r.held && !r.complete && (
         <button type="button" className="link goal-held" onClick={() => setHeld('')}>
-          Mark {goal.short} as held
+          {t('Mark')}{' '}{shortName(goal.short)}{' '}{t('as held')}
         </button>
       )}
     </section>
@@ -281,17 +282,17 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
 }
 
 function shortfall(r: ReqResult): string {
-  if (r.req.kind === 'time') return keepUnits(`${r.req.label}: ${formatHoursUp(r.need - r.have)} h to go`);
-  if (r.req.kind === 'count') return `${r.req.label}: ${r.need - r.have} to go`;
-  return keepUnits(r.req.label);
+  if (r.req.kind === 'time') return keepUnits(`${t(r.req.label)}: ${t('{hours} h to go', { hours: formatHoursUp(r.need - r.have) })}`);
+  if (r.req.kind === 'count') return `${t(r.req.label)}: ${t('{amount} to go', { amount: r.need - r.have })}`;
+  return keepUnits(t(r.req.label));
 }
 
 function Gate({ gate: g }: { gate: GateResult }) {
   const open = g.open.length;
-  const status = g.passed ? 'Passed' : g.met ? (g.gate.exams ? 'You can write it' : 'Unlocked') : `${open} ${open === 1 ? 'thing' : 'things'} left`;
+  const status = g.passed ? t('Passed') : g.met ? (g.gate.exams ? t('You can write it') : t('Unlocked')) : open === 1 ? t('1 thing left') : t('{n} things left', { n: open });
   const title = (
     <>
-      <strong>{g.gate.label}</strong>
+      <strong>{t(g.gate.label)}</strong>
       <span className="gate-status">{status}</span>
     </>
   );
@@ -329,15 +330,15 @@ function ScopeControl({ result: r, profile, updateProfile }: { result: GoalResul
     });
   return (
     <div className="scope">
-      <p>{r.goal.scope?.label}</p>
+      <p>{r.goal.scope && t(r.goal.scope.label)}</p>
       {r.scope?.message && <p className="warn-text">{r.scope.message}</p>}
       <label className="inline-field">
-        <span>Count training from</span>
+        <span>{t('Count training from')}</span>
         <input type="date" value={override || r.scope?.start || ''} onChange={(e) => setStart(e.target.value)} />
       </label>
       {override && (
         <button type="button" className="link" onClick={() => setStart('')}>
-          Use the default
+          {t('Use the default')}
         </button>
       )}
     </div>
@@ -370,12 +371,12 @@ function ReqRow({ r, goalId, profile, updateProfile, stays, pin }: RowProps) {
         <div className="req-body">
           <div className="req-label">
             {req.kind === 'milestone' ? (
-              <label htmlFor={fieldId}>{keepUnits(req.label)}</label>
+              <label htmlFor={fieldId}>{keepUnits(t(req.label))}</label>
             ) : (
-              <span>{keepUnits(req.label)}</span>
+              <span>{keepUnits(t(req.label))}</span>
             )}{' '}
             <span className="cite">{req.cite}</span>
-            <span className="sr-only">{r.met ? ' (met)' : ' (not met)'}</span>
+            <span className="sr-only">{r.met ? t(' (met)') : t(' (not met)')}</span>
           </div>
           {(req.kind === 'time' || req.kind === 'count') && <Meter r={r} />}
           {req.kind === 'milestone' && <MilestoneControls r={r} updateProfile={updateProfile} />}
@@ -388,16 +389,16 @@ function ReqRow({ r, goalId, profile, updateProfile, stays, pin }: RowProps) {
               className="link"
               onClick={() => updateProfile((p) => ({ ...p, held: { ...p.held, [req.anyOf[0]!]: { date: '' } } }))}
             >
-              Mark {goalById(req.anyOf[0]!).short} as held
+              {t('Mark')}{' '}{shortName(goalById(req.anyOf[0]!).short)}{' '}{t('as held')}
             </button>
           )}
-          {req.kind === 'medical' && <MedicalFields label="Your medical" profile={profile} updateProfile={updateProfile} />}
+          {req.kind === 'medical' && <MedicalFields label={t('Your medical')} profile={profile} updateProfile={updateProfile} />}
           {req.kind === 'info' && <p className="info-value">{r.value}</p>}
-          {r.credited && <p className="credit">{r.credited}</p>}
+          {r.credited && <p className="credit">{t(r.credited)}</p>}
           {r.hint && <p className="hint-text">{r.hint}</p>}
           {req.note && (
             <p className="note">
-              {req.reading && <span className="reading">Our reading. Ask your school.</span>} {keepUnits(req.note)}
+              {req.reading && <span className="reading">{t('Our reading. Ask your school.')}</span>} {keepUnits(t(req.note))}
             </p>
           )}
         </div>
@@ -419,23 +420,23 @@ function ExamPanel({ exam }: { exam: ExamResult }) {
   return (
     <details className={`exam-check${exam.ready ? ' is-ready' : ''}`}>
       <summary className="exam-check-title">
-        {exam.ready ? `You can write the ${exam.name}.` : `Can you write the ${exam.name} yet? Not yet: ${left} ${left === 1 ? 'thing' : 'things'} left.`}
+        {exam.ready ? t('You can write the {exam}.', { exam: exam.name }) : left === 1 ? t('Can you write the {exam} yet? Not yet: 1 thing left.', { exam: exam.name }) : t('Can you write the {exam} yet? Not yet: {n} things left.', { exam: exam.name, n: left })}
       </summary>
-      <ul aria-label={`To write the ${exam.name}`}>
+      <ul aria-label={t('To write the {exam}', { exam: exam.name })}>
         {exam.checks.map((c) => (
           <li key={c.req.id} className={c.met ? 'is-met' : ''}>
             <span className="mini-dot" aria-hidden="true">
               {c.met && <CheckIcon />}
             </span>
             <span>
-              {c.req.label} <span className="cite">{c.req.cite}</span>
-              <span className="sr-only">{c.met ? ' (done)' : ' (not yet)'}</span>
+              {t(c.req.label)} <span className="cite">{c.req.cite}</span>
+              <span className="sr-only">{c.met ? t(' (done)') : t(' (not yet)')}</span>
               {checkDetail(c) && <span className="check-detail"> · {checkDetail(c)}</span>}
             </span>
           </li>
         ))}
       </ul>
-      <p className="hint">On the day, bring government photo ID (421.13(2)).</p>
+      <p className="hint">{t('On the day, bring government photo ID (421.13(2)).')}</p>
     </details>
   );
 }
@@ -448,29 +449,29 @@ function Validity({ r }: { r: ReqResult }) {
   const until = dateText(r.until);
   const dated = r.record?.date ? dateText(r.record.date) : '';
   if (r.stale) {
-    if (r.req.kind === 'medical') return <p className="hint-text">Your medical ran out on {until}. Renew it for this to count.</p>;
+    if (r.req.kind === 'medical') return <p className="hint-text">{t('Your medical ran out on')}{' '}{until}{t('. Renew it for this to count.')}</p>;
     if (r.req.kind === 'milestone' && r.req.validMonths !== undefined) {
-      return <p className="hint-text">Dated {dated}, more than {r.req.validMonths} months ago, so it doesn’t count any more. It has to be done again.</p>;
+      return <p className="hint-text">{t('Dated')}{' '}{dated}{t(', more than')}{' '}{r.req.validMonths}{' '}{t('months ago, so it doesn’t count any more. It has to be done again.')}</p>;
     }
-    return <p className="hint-text">Dated {dated}, more than {r.req.kind === 'milestone' ? r.req.maxAgeDays : 0} days ago, so it can’t be used any more. Ask for a new one.</p>;
+    return <p className="hint-text">{t('Dated')}{' '}{dated}{t(', more than')}{' '}{r.req.kind === 'milestone' ? r.req.maxAgeDays : 0}{' '}{t('days ago, so it can’t be used any more. Ask for a new one.')}</p>;
   }
   const days = (Date.parse(r.until) - Date.parse(today())) / 86_400_000;
-  if (days <= SOON_DAYS) return <p className="note"><span className="warn-text">Runs out on {until}.</span></p>;
-  return <p className="note muted">Counts until {until}.</p>;
+  if (days <= SOON_DAYS) return <p className="note"><span className="warn-text">{t('Runs out on')}{' '}{until}.</span></p>;
+  return <p className="note muted">{t('Counts until')}{' '}{until}.</p>;
 }
 
 function checkDetail(c: ReqResult): string {
   switch (c.req.kind) {
     case 'time':
-      return c.met ? `${formatHours(c.have)} h` : `${formatHours(c.have)} of ${formatHours(c.need)} h, ${formatHoursUp(c.need - c.have)} h to go`;
+      return c.met ? `${formatHours(c.have)} h` : t('{have} of {need} h, {left} h to go', { have: formatHours(c.have), need: formatHours(c.need), left: formatHoursUp(c.need - c.have) });
     case 'medical':
-      if (c.stale && c.until) return `ran out on ${dateText(c.until)}`;
-      return c.met ? '' : 'set your medical in Profile';
+      if (c.stale && c.until) return t('ran out on {date}', { date: dateText(c.until) });
+      return c.met ? '' : t('set your medical in Profile');
     case 'milestone':
-      if (c.credited) return c.credited;
-      if (c.stale && c.until) return `ran out on ${dateText(c.until)}`;
-      if (c.met) return c.record?.date ? `ticked ${c.record.date}` : 'ticked';
-      return 'tick it above when you have it';
+      if (c.credited) return t(c.credited);
+      if (c.stale && c.until) return t('ran out on {date}', { date: dateText(c.until) });
+      if (c.met) return c.record?.date ? t('ticked {date}', { date: c.record.date }) : t('ticked');
+      return t('tick it above when you have it');
     default:
       return '';
   }
@@ -489,7 +490,7 @@ function Meter({ r }: { r: ReqResult }) {
       <span className="meter-figures">
         {show(r.have)} / {show(r.need)}
         {isTime ? ' h' : ''}
-        {!r.met && left > 0 && <strong> · {isTime ? `${formatHoursUp(left)} h` : left} to go</strong>}
+        {!r.met && left > 0 && <strong> · {isTime ? `${formatHoursUp(left)} h` : left}{' '}{t('to go')}</strong>}
       </span>
     </div>
   );
@@ -533,12 +534,12 @@ function MilestoneControls({ r, updateProfile }: { r: ReqResult; updateProfile: 
   return (
     <div className="milestone">
       <label className="inline-field">
-        <span>Date</span>
+        <span>{t('Date')}</span>
         <input type="date" value={rec.date} onChange={(e) => set({ ...rec, date: e.target.value })} />
       </label>
       {minScore !== undefined && (
         <label className="inline-field">
-          <span>Mark %</span>
+          <span>{t('Mark %')}</span>
           <input
             type="number"
             inputMode="numeric"
@@ -554,8 +555,8 @@ function MilestoneControls({ r, updateProfile }: { r: ReqResult; updateProfile: 
           />
         </label>
       )}
-      {r.scoreLow && <span className="warn-text">Pass mark is {minScore}%.</span>}
-      {minScore !== undefined && rec.score === undefined && <span className="hint">Enter your overall mark so the app can check it.</span>}
+      {r.scoreLow && <span className="warn-text">{t('Pass mark is')}{' '}{t('{n}%', { n: minScore! })}.</span>}
+      {minScore !== undefined && rec.score === undefined && <span className="hint">{t('Enter your overall mark so the app can check it.')}</span>}
     </div>
   );
 }

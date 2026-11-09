@@ -3,6 +3,7 @@
  * to date (D55). A fixed number of one-line rows, so a page can't spill onto the next and put its totals out of step.
  */
 import { COUNT_COLUMNS, TIME_COLUMNS, type Column, type Entry } from './entry';
+import { t } from '../i18n';
 
 export const ROWS_PER_PAGE = 26;
 /** What fits on a row. Anything longer is cut short there and written out in full after the last page. */
@@ -42,7 +43,7 @@ export function printPages(entries: readonly Entry[], perPage: number = ROWS_PER
 
 /** The remarks a row prints, with what the columns can't show. */
 export function remarksOf(e: Entry): string {
-  return [e.forward ? 'Brought forward' : '', e.solo ? 'Solo' : '', e.remarks.replace(/\s+/g, ' ').trim()].filter(Boolean).join(' · ');
+  return [e.forward ? t('Brought forward') : '', e.solo ? t('Solo') : '', e.remarks.replace(/\s+/g, ' ').trim()].filter(Boolean).join(' · ');
 }
 
 export const remarksCut = (e: Entry) => {

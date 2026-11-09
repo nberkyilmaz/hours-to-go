@@ -10,8 +10,9 @@
  * written in the requirement's note so it is visible in the app rather than
  * buried in code.
  */
-import { addMonths, derive, type Derived, type Entry } from '../model/entry';
+import { addMonths, derive, formatHours, type Derived, type Entry } from '../model/entry';
 import type { GoalId, Medical, Profile } from '../model/profile';
+import { t } from '../i18n';
 
 export const STANDARD_421_URL =
   'https://tc.canada.ca/en/corporate-services/acts-regulations/list-regulations/canadian-aviation-regulations-sor-96-433/standards/standard-421-flight-crew-permits-licences-ratings-canadian-aviation-regulations-cars';
@@ -158,7 +159,7 @@ const sum = (entries: readonly Entry[], key: keyof Derived) => entries.reduce((t
 // The paper log keeps solo inside PIC, so PIC time flown alone but not yet
 // marked as solo is easy to miss. These say how much of it there is.
 const notTicked = (minutes: number, what: string) =>
-  minutes > 0 ? `${fmt(minutes)} of ${what} in your log isn’t counted as solo. If you flew it alone, edit that line in the Logbook and say so.` : null;
+  minutes > 0 ? t('{amount} of {what} in your log isn’t counted as solo. If you flew it alone, edit that line in the Logbook and say so.', { amount: fmt(minutes), what: t(what) }) : null;
 const soloHint = (scope: 'all' | 'scoped') => (c: Ctx) => notTicked(sum(c[scope], 'pic') - sum(c[scope], 'solo'), 'PIC time');
 const soloNightHint = (scope: 'all' | 'scoped') => (c: Ctx) => notTicked(sum(c[scope], 'picNight') - sum(c[scope], 'soloNight'), 'PIC night time');
 const soloXcHint = (c: Ctx) => notTicked(sum(c.all, 'xcPic') - sum(c.all, 'soloXc'), 'PIC cross-country');
@@ -166,12 +167,12 @@ const soloLandingsHint = (scope: 'all' | 'scoped') => (c: Ctx) => {
   // Only lines with PIC night time could hold solo night landings.
   const open = c[scope].reduce((t, e) => t + (derive(e).picNight > 0 ? e.nightLandings - derive(e).soloNightLandings : 0), 0);
   return open > 0
-    ? `${open} night takeoffs & landings on lines with PIC night time aren’t counted as solo. Edit that line in the Logbook and say how many were solo.`
+    ? t('{n} night takeoffs & landings on lines with PIC night time aren’t counted as solo. Edit that line in the Logbook and say how many were solo.', { n: open })
     : null;
 };
 
 const upTo = (minutes: number, hours: number) => Math.min(minutes, hours * 60);
-const fmt = (minutes: number) => `${(minutes / 60).toFixed(1)} h`;
+const fmt = (minutes: number) => `${formatHours(minutes)} h`;
 /** What is still unused of a requirement's allowance of `hours` of ground time. */
 const groundLeft = (entries: readonly Entry[], hours: number) => Math.max(0, hours * 60 - sum(entries, 'ftd'));
 

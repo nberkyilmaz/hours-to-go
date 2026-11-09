@@ -93,6 +93,29 @@ describe.each(DATABASES)('on $name', ({ url }) => {
     await app.close();
   });
 
+  describe('emails in French', () => {
+    it('confirms a sign-up in the language of the app', async () => {
+      await app.inject({ method: 'POST', url: '/api/auth/signup', payload: { email: 'eleve@example.com', password: 'correct horse', lang: 'fr' } });
+      await vi.waitFor(() => expect(sent).toHaveLength(1));
+      expect(sent[0]!.subject).toBe('Confirmez votre courriel pour Hours to Go');
+      expect(sent[0]!.html).toContain('Confirmer mon courriel');
+    });
+
+    it('sends a reset link in the language of the app', async () => {
+      await signUp();
+      await app.inject({ method: 'POST', url: '/api/auth/forgot', payload: { email: 'student@example.com', lang: 'fr' } });
+      await vi.waitFor(() => expect(sent).toHaveLength(1));
+      expect(sent[0]!.subject).toBe('Réinitialisez votre mot de passe Hours to Go');
+    });
+
+    it('stays in English unless told otherwise', async () => {
+      await signUp();
+      await app.inject({ method: 'POST', url: '/api/auth/forgot', payload: { email: 'student@example.com' } });
+      await vi.waitFor(() => expect(sent).toHaveLength(1));
+      expect(sent[0]!.subject).toBe('Reset your Hours to Go password');
+    });
+  });
+
   describe('a link for an instructor', () => {
     const create = (cookies: Record<string, string>, name = 'Sam') => app.inject({ method: 'POST', url: '/api/account/share', cookies, payload: { name } });
     const open = (token: string) => app.inject({ method: 'POST', url: '/api/shared', payload: { token } });
@@ -217,6 +240,16 @@ describe.each(DATABASES)('on $name', ({ url }) => {
       expect((await me(cookies)).json().user.reminders).toBe(false);
       await medicalIn(cookies, 19);
       expect((await run()).json().checked).toBe(0);
+    });
+
+    it('writes to a pilot in the language they turned them on in', async () => {
+      const cookies = await confirmedPilot();
+      await app.inject({ method: 'PUT', url: '/api/account/reminders', cookies, payload: { on: true, lang: 'fr' } });
+      await medicalIn(cookies, 20);
+      await run();
+      expect(sent[0]!.subject).toBe('Votre certificat médical\u00a0: échéance dans 20 jours');
+      expect(sent[0]!.text).toContain('Arrêter'.slice(0, 0) + 'Pour les arrêter');
+      expect(sent[0]!.html).toContain('Arrêter ces rappels');
     });
 
     it('turns down a link it doesn’t know', async () => {

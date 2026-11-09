@@ -3,6 +3,7 @@
  * logging a week, against the time a goal's plan still needs.
  */
 import { derive, type Entry } from '../model/entry';
+import { dateFormat } from '../i18n';
 
 /** Eight weeks: long enough that a fortnight of weather doesn't halve the pace, short enough to show a change. */
 export const WINDOW_DAYS = 56;
@@ -50,15 +51,15 @@ export function finishOn(minutes: number, pace: Pace, today: string): string | n
   return days > LONGEST_DAYS ? null : dateOf(dayOf(today) + days);
 }
 
-const MONTH = new Intl.DateTimeFormat('en-CA', { month: 'long', timeZone: 'UTC' });
-const MONTH_YEAR = new Intl.DateTimeFormat('en-CA', { month: 'long', year: 'numeric', timeZone: 'UTC' });
-const DAY_MONTH = new Intl.DateTimeFormat('en-CA', { day: 'numeric', month: 'long', timeZone: 'UTC' });
+const MONTH: Intl.DateTimeFormatOptions = { month: 'long', timeZone: 'UTC' };
+const MONTH_YEAR: Intl.DateTimeFormatOptions = { month: 'long', year: 'numeric', timeZone: 'UTC' };
+const DAY_MONTH: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', timeZone: 'UTC' };
 
 /** "March", or "March 2027" outside this year: a finish is only ever about a month. */
 export function monthText(date: string, today: string): string {
   const d = new Date(dayOf(date) * DAY);
-  return (date.slice(0, 4) === today.slice(0, 4) ? MONTH : MONTH_YEAR).format(d);
+  return dateFormat(date.slice(0, 4) === today.slice(0, 4) ? MONTH : MONTH_YEAR).format(d);
 }
 
 /** "October 22", for when the pace was measured from. */
-export const dayText = (date: string) => DAY_MONTH.format(new Date(dayOf(date) * DAY));
+export const dayText = (date: string) => dateFormat(DAY_MONTH).format(new Date(dayOf(date) * DAY));

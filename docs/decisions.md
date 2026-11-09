@@ -931,6 +931,32 @@ several students.
 **Not yet:** logbook lines for an instructor, or anything that lets them sign off. Both would need the pilot's say-so
 line by line, and instructor accounts.
 
+### D57. French
+All of it, not only the screens: the requirements, the error messages, the emails and the privacy page. The owner
+chose to ship it as a best effort and fix it from reviews, since nobody French-speaking has read it yet.
+
+**How it works.** English is the source and each phrase is its own key: `t('Log a flight')`. The code reads as it
+did, and a phrase with no translation shows in English rather than breaking. No library, since a table and a function
+are all it needs. The language comes from the browser the first time, and a link on the Welcome and Profile screens
+changes it. Changing it reloads the page, so `t` is a plain function that can be called anywhere, with no context to
+pass around. The table ships with the app (about 22 KB compressed), which also means it works offline.
+
+**The server stays in English,** so what the rules work out on it is the same for everyone. The app translates what
+comes back, because a sentence from the server is its own key too. The exceptions are emails, which go through a
+`translator` for the language the app was in. Reminders keep that language with the switch that turned them on.
+
+**The aviation terms are Transport Canada's,** from the French text of Standard 421, not a dictionary's: double
+commande, commandant de bord (CdB on a column), vol-voyage, test en vol, instruction théorique au sol. An independent
+reviewer checked the requirements against that text.
+
+**Numbers and spreadsheets follow the language.** 1,5 h, 14 500 $, 14 mars 2028. A French spreadsheet uses semicolons,
+decimal commas and French headings, which French Excel expects, and either language's file reads in either language.
+
+**It can't quietly fall behind.** Tests fail if a phrase in the code or the regulatory data has no French, if a
+placeholder is lost, or if text on a screen doesn't go through `t`.
+
+The nightly check of the standard still reads the English page, which is the one the rules were written from.
+
 ## Process
 
 ### D22. Check the UI in a real browser, at phone size, before calling it done

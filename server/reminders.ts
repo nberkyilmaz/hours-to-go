@@ -37,7 +37,7 @@ export async function sendReminders(
     const stop = new URL(appUrl);
     stop.hash = `stop=${w.stop}`;
     try {
-      await sendMail(reminderMail(w.email, w.items, appUrl, stop.toString()));
+      await sendMail(reminderMail(w.email, w.items, appUrl, stop.toString(), w.lang));
       // After sending: if this fails they get it twice, rather than not at all.
       await store.markReminders(w.id, w.marks);
       sent++;

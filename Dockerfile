@@ -1,7 +1,7 @@
 # The API, as Render runs it. The page is not in here: GitHub Pages serves it.
 #
 # The server runs the TypeScript sources with tsx, as it does on a laptop, so there is no build
-# step. It needs only server/, and the logbook model and rules it shares with the page.
+# step. It needs only server/, and the logbook model, rules and words it shares with the page.
 
 FROM node:22-bookworm-slim
 WORKDIR /app
@@ -13,6 +13,7 @@ RUN npm ci --omit=dev && npm cache clean --force
 COPY server ./server
 COPY src/model ./src/model
 COPY src/rules ./src/rules
+COPY src/i18n ./src/i18n
 
 # Run as the unprivileged user the base image provides. Nothing is written to disk: the
 # database is Postgres, named by DATABASE_URL.

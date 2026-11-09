@@ -5,6 +5,7 @@
 import { addMonths, dateText, derive, type Entry } from '../model/entry';
 import type { Profile } from '../model/profile';
 import { PILOT_LICENCE } from './goals';
+import { t } from '../i18n';
 
 export interface CurrencyItem {
   id: string;
@@ -44,7 +45,7 @@ function recent(id: string, label: string, cite: string, lines: readonly Entry[]
     }
   }
   const current = until !== null;
-  return { id, label, cite, current, until, note: current ? null : `${total} of ${need} in the last 6 months` };
+  return { id, label, cite, current, until, note: current ? null : t('{total} of {need} in the last 6 months', { total, need }) };
 }
 
 /** Null unless the pilot holds a licence: until then, currency isn't the question. */
@@ -59,11 +60,11 @@ export function currencyOf(entries: readonly Entry[], profile: Profile, today: s
   const fiveYears = lastFlown ? addMonths(lastFlown, 60) : null;
   items.push({
     id: 'five-years',
-    label: 'Flown as pilot-in-command or co-pilot in the last 5 years',
+    label: t('Flown as pilot-in-command or co-pilot in the last 5 years'),
     cite: '401.05(1)(a)',
     current: fiveYears !== null && today <= fiveYears,
     until: fiveYears,
-    note: lastFlown ? null : 'No flight in your log yet',
+    note: lastFlown ? null : t('No flight in your log yet'),
   });
 
   // Issuing or renewing any licence or rating counts as recurrent training (421.05(2)(f)).
@@ -72,11 +73,11 @@ export function currencyOf(entries: readonly Entry[], profile: Profile, today: s
   const recurrentUntil = recurrent ? addMonths(recurrent, 24) : null;
   items.push({
     id: 'recurrent',
-    label: 'Recurrent training in the last 24 months',
+    label: t('Recurrent training in the last 24 months'),
     cite: '401.05(2)(a)',
     current: recurrentUntil !== null && today <= recurrentUntil,
     until: recurrentUntil,
-    note: recurrent ? null : 'Add the date of your last recurrent training',
+    note: recurrent ? null : t('Add the date of your last recurrent training'),
     dateKey: RECURRENT_KEY,
   });
 
@@ -86,11 +87,11 @@ export function currencyOf(entries: readonly Entry[], profile: Profile, today: s
   const single = flown.filter((e) => derive(e).multi === 0);
   const multi = flown.filter((e) => derive(e).multi > 0);
   const passengers = (suffix: string, name: string, of: readonly Entry[]) => {
-    items.push(recent(`passengers-day${suffix}`, `Passengers by day${name}: 5 takeoffs and landings in 6 months`, '401.05(2)(b)', of, LANDINGS, landings, today));
-    items.push(recent(`passengers-night${suffix}`, `Passengers at night${name}: 5 night takeoffs and landings in 6 months`, '401.05(2)(b)', of, LANDINGS, (e) => e.nightLandings, today));
+    items.push(recent(`passengers-day${suffix}`, t('Passengers by day{class}: 5 takeoffs and landings in 6 months', { class: name }), '401.05(2)(b)', of, LANDINGS, landings, today));
+    items.push(recent(`passengers-night${suffix}`, t('Passengers at night{class}: 5 night takeoffs and landings in 6 months', { class: name }), '401.05(2)(b)', of, LANDINGS, (e) => e.nightLandings, today));
   };
-  passengers('', profile.held.multi || multi.length > 0 ? ', single-engine' : '', single);
-  if (profile.held.multi || multi.length > 0) passengers('-multi', ', multi-engine', multi);
+  passengers('', profile.held.multi || multi.length > 0 ? t(', single-engine') : '', single);
+  if (profile.held.multi || multi.length > 0) passengers('-multi', t(', multi-engine'), multi);
 
   const rating = profile.held.ifr1 ?? profile.held.ifr3;
   if (rating) {
@@ -98,17 +99,17 @@ export function currencyOf(entries: readonly Entry[], profile: Profile, today: s
     const checkUntil = check ? addMonths(check, 24) : null;
     items.push({
       id: 'ifr-check',
-      label: 'Instrument flight test or proficiency check in the last 24 months',
+      label: t('Instrument flight test or proficiency check in the last 24 months'),
       cite: '401.05(3)',
       current: checkUntil !== null && today <= checkUntil,
       until: checkUntil,
-      note: check ? null : 'Add the date of your last test or check',
+      note: check ? null : t('Add the date of your last test or check'),
       dateKey: IFR_CHECK_KEY,
     });
     // Until the first day of the seventh month after the check, the check itself is enough.
     const seventh = check ? `${addMonths(check, 7).slice(0, 7)}-01` : null;
-    const approaches = recent('ifr-approaches', '6 instrument approaches in 6 months', '401.05(3.1)', lines, APPROACHES, (e) => e.approaches, today);
-    if (seventh && today < seventh) items.push({ ...approaches, current: true, until: null, note: `Needed from ${dateText(seventh)}` });
+    const approaches = recent('ifr-approaches', t('6 instrument approaches in 6 months'), '401.05(3.1)', lines, APPROACHES, (e) => e.approaches, today);
+    if (seventh && today < seventh) items.push({ ...approaches, current: true, until: null, note: t('Needed from {date}', { date: dateText(seventh) }) });
     else items.push(approaches);
   }
   return items;

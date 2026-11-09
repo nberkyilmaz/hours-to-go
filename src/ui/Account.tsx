@@ -3,8 +3,9 @@ import { ApiError, type Account } from '../api';
 import type { LogbookState } from '../useLogbook';
 import { useSlow } from './useSlow';
 import { exportLogbook } from './export';
+import { t } from '../i18n';
 
-const describe = (err: unknown) => (err instanceof ApiError ? err.message : 'Something went wrong. Try again.');
+const describe = (err: unknown) => (err instanceof ApiError ? err.message : t('Something went wrong. Try again.'));
 
 /** Sends the link that confirms the profile's address again, and says how that went. */
 function useSendLink(lb: LogbookState) {
@@ -33,18 +34,18 @@ export function ConfirmBanner({ lb, email, onLater }: { lb: LogbookState; email:
   return (
     <div className="banner">
       <span>
-        Confirm your email, so a password reset can reach you if you ever need one. Open the link we sent to {email}.
-        {link.state === 'sent' && ' A new one is on its way.'}
+        {t('Confirm your email, so a password reset can reach you if you ever need one. Open the link we sent to')}{' '}{email}.
+        {link.state === 'sent' && t(' A new one is on its way.')}
         {link.error && <span className="field-error"> {link.error}</span>}
       </span>
       <span className="row">
         {link.state !== 'sent' && (
           <button type="button" className="btn small" disabled={link.state === 'busy'} onClick={() => void link.send()}>
-            {link.state === 'busy' ? 'Sending…' : 'Send a new link'}
+            {link.state === 'busy' ? t('Sending…') : t('Send a new link')}
           </button>
         )}
         <button type="button" className="link" onClick={onLater}>
-          Later
+          {t('Later')}
         </button>
       </span>
     </div>
@@ -71,9 +72,9 @@ function Reminders({ lb, account }: { lb: LogbookState; account: Account }) {
     <div className="reminders">
       <label className="toggle">
         <input type="checkbox" checked={asked ?? account.reminders} disabled={asked !== null || !account.confirmed} onChange={(e) => void change(e.target.checked)} />
-        <span>Email me before my medical, exams or ratings run out</span>
+        <span>{t('Email me before my medical, exams or ratings run out')}</span>
       </label>
-      <p className="hint">{account.confirmed ? '30 and 7 days before, from the dates in your profile. Every email has a link to stop them.' : 'Confirm your email first, so they can reach you.'}</p>
+      <p className="hint">{account.confirmed ? t('30 and 7 days before, from the dates in your profile. Every email has a link to stop them.') : t('Confirm your email first, so they can reach you.')}</p>
       {error && (
         <p className="field-error" role="alert">
           {error}
@@ -101,13 +102,12 @@ export function SignedIn({ lb, account }: { lb: LogbookState; account: Account }
   return (
     <>
       <p>
-        Signed in as <strong>{account.email}</strong>. Your logbook is saved to your profile, so it’s the same on every device you sign in on.
+        {t('Signed in as')}{' '}<strong>{account.email}</strong>{t('. Your logbook is saved to your profile, so it’s the same on every device you sign in on.')}
       </p>
       {account.pendingEmail ? (
         <div className="notice">
           <p>
-            Waiting for you to confirm <strong>{account.pendingEmail}</strong>. Open the link we sent there. Until you do, your profile stays
-            on {account.email}.
+            {t('Waiting for you to confirm')}{' '}<strong>{account.pendingEmail}</strong>{t('. Open the link we sent there. Until you do, your profile stays on')}{' '}{account.email}.
           </p>
           <div className="row">
             <button
@@ -115,7 +115,7 @@ export function SignedIn({ lb, account }: { lb: LogbookState; account: Account }
               className="link"
               onClick={() => lb.cancelEmailChange().catch((err: unknown) => setError(describe(err)))}
             >
-              Cancel the change
+              {t('Cancel the change')}
             </button>
           </div>
         </div>
@@ -123,22 +123,21 @@ export function SignedIn({ lb, account }: { lb: LogbookState; account: Account }
         !account.confirmed && (
           <div className="notice">
             <p>
-              <strong>Confirm your email.</strong> Open the link we sent to {account.email}, so a password reset can reach you if you ever
-              forget your password.
+              <strong>{t('Confirm your email.')}</strong>{' '}{t('Open the link we sent to')}{' '}{account.email}{t(', so a password reset can reach you if you ever forget your password.')}
             </p>
             <div className="row">
               {link.state !== 'sent' && (
                 <button type="button" className="btn small" disabled={link.state === 'busy'} onClick={() => void link.send()}>
-                  {link.state === 'busy' ? 'Sending…' : 'Send a new link'}
+                  {link.state === 'busy' ? t('Sending…') : t('Send a new link')}
                 </button>
               )}
               <button type="button" className="link" onClick={() => show('email')}>
-                Wrong address? Change it
+                {t('Wrong address? Change it')}
               </button>
             </div>
             {link.state === 'sent' && (
               <p className="hint" role="status">
-                A new link is on its way. If it hasn’t arrived in a few minutes, check your spam folder.
+                {t('A new link is on its way. If it hasn’t arrived in a few minutes, check your spam folder.')}
               </p>
             )}
             {link.error && (
@@ -156,18 +155,18 @@ export function SignedIn({ lb, account }: { lb: LogbookState; account: Account }
         </p>
       )}
       <div className="row">
-        <button type="button" className="btn" onClick={() => lb.signOut().catch((err: unknown) => setError(err instanceof ApiError ? err.message : 'Couldn’t sign out.'))}>
-          Sign out
+        <button type="button" className="btn" onClick={() => lb.signOut().catch((err: unknown) => setError(err instanceof ApiError ? err.message : t('Couldn’t sign out.')))}>
+          {t('Sign out')}
         </button>
         <button type="button" className="link" aria-expanded={open === 'email'} onClick={() => show(open === 'email' ? null : 'email')}>
-          Change email
+          {t('Change email')}
         </button>
         <button type="button" className="link" aria-expanded={open === 'password'} onClick={() => show(open === 'password' ? null : 'password')}>
-          Change password
+          {t('Change password')}
         </button>
         {open !== 'delete' && (
           <button type="button" className="link danger" onClick={() => show('delete')}>
-            Delete my profile
+            {t('Delete my profile')}
           </button>
         )}
       </div>
@@ -216,14 +215,14 @@ function ChangeEmail({ lb, onClose }: { lb: LogbookState; onClose: () => void })
   return (
     <form className="subform" onSubmit={submit}>
       <div className="field">
-        <label htmlFor="new-email">New email</label>
+        <label htmlFor="new-email">{t('New email')}</label>
         <input id="new-email" type="email" autoComplete="email" inputMode="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
       </div>
       <div className="field">
-        <label htmlFor="email-password">Password</label>
+        <label htmlFor="email-password">{t('Password')}</label>
         <input id="email-password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
       </div>
-      <p>We’ll send a link to the new address. Your profile moves to it once you open the link.</p>
+      <p>{t('We’ll send a link to the new address. Your profile moves to it once you open the link.')}</p>
       {error && (
         <p className="field-error" role="alert">
           {error}
@@ -231,15 +230,15 @@ function ChangeEmail({ lb, onClose }: { lb: LogbookState; onClose: () => void })
       )}
       <div className="row">
         <button type="submit" className="btn primary" disabled={busy}>
-          {busy ? 'Sending…' : 'Send link'}
+          {busy ? t('Sending…') : t('Send link')}
         </button>
         <button type="button" className="link" onClick={onClose}>
-          Cancel
+          {t('Cancel')}
         </button>
       </div>
       {slow && (
         <p className="hint" role="status">
-          The server is waking up. If nobody has used Hours to Go for a while, this takes up to a minute.
+          {t('The server is waking up. If nobody has used Hours to Go for a while, this takes up to a minute.')}
         </p>
       )}
     </form>
@@ -259,7 +258,7 @@ function ChangePassword({ lb, email, onClose }: { lb: LogbookState; email: strin
     setBusy(true);
     try {
       await lb.changePassword(password, newPassword);
-      onClose('Your password is changed. Any other device signed in to your profile is now signed out.');
+      onClose(t('Your password is changed. Any other device signed in to your profile is now signed out.'));
     } catch (err) {
       setError(describe(err));
       setBusy(false);
@@ -271,11 +270,11 @@ function ChangePassword({ lb, email, onClose }: { lb: LogbookState; email: strin
       {/* For password managers, so they save the new password under the right profile. */}
       <input type="email" autoComplete="username" value={email} readOnly hidden />
       <div className="field">
-        <label htmlFor="current-password">Current password</label>
+        <label htmlFor="current-password">{t('Current password')}</label>
         <input id="current-password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
       </div>
       <div className="field">
-        <label htmlFor="new-password">New password</label>
+        <label htmlFor="new-password">{t('New password')}</label>
         <input
           id="new-password"
           type="password"
@@ -285,7 +284,7 @@ function ChangePassword({ lb, email, onClose }: { lb: LogbookState; email: strin
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
         />
-        <p className="hint">At least 8 characters. You stay signed in here; your other devices are signed out.</p>
+        <p className="hint">{t('At least 8 characters. You stay signed in here; your other devices are signed out.')}</p>
       </div>
       {error && (
         <p className="field-error" role="alert">
@@ -294,15 +293,15 @@ function ChangePassword({ lb, email, onClose }: { lb: LogbookState; email: strin
       )}
       <div className="row">
         <button type="submit" className="btn primary" disabled={busy}>
-          {busy ? 'One moment…' : 'Save new password'}
+          {busy ? t('One moment…') : t('Save new password')}
         </button>
         <button type="button" className="link" onClick={() => onClose(null)}>
-          Cancel
+          {t('Cancel')}
         </button>
       </div>
       {slow && (
         <p className="hint" role="status">
-          The server is waking up. If nobody has used Hours to Go for a while, this takes up to a minute.
+          {t('The server is waking up. If nobody has used Hours to Go for a while, this takes up to a minute.')}
         </p>
       )}
     </form>
@@ -324,12 +323,12 @@ function DeleteProfile({ lb, onClose }: { lb: LogbookState; onClose: () => void 
 
   return (
     <form className="danger-zone" onSubmit={remove}>
-      <p>This permanently deletes your profile and every entry in it.</p>
+      <p>{t('This permanently deletes your profile and every entry in it.')}</p>
       <button type="button" className="link" onClick={() => exportLogbook(lb.book)}>
-        Export a copy of your logbook first
+        {t('Export a copy of your logbook first')}
       </button>
       <div className="field">
-        <label htmlFor="delete-password">Password</label>
+        <label htmlFor="delete-password">{t('Password')}</label>
         <input id="delete-password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
       </div>
       {error && (
@@ -339,10 +338,10 @@ function DeleteProfile({ lb, onClose }: { lb: LogbookState; onClose: () => void 
       )}
       <div className="row">
         <button type="submit" className="btn danger">
-          Delete permanently
+          {t('Delete permanently')}
         </button>
         <button type="button" className="link" onClick={onClose}>
-          Keep my profile
+          {t('Keep my profile')}
         </button>
       </div>
     </form>

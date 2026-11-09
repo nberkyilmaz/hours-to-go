@@ -2,6 +2,7 @@ import type { SharedProgress } from './rules/shared';
 import type { Entry } from './model/entry';
 import type { Profile } from './model/profile';
 import type { Logbook } from './model/store';
+import { lang, t } from './i18n';
 
 export class ApiError extends Error {
   constructor(
@@ -27,13 +28,14 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
   try {
     res = await fetch(API + path, init);
   } catch {
-    throw new ApiError('Can’t reach the server. Check your connection and try again.', 0);
+    throw new ApiError(t('Can’t reach the server. Check your connection and try again.'), 0);
   }
   if (res.status === 204) return undefined as T;
   const data: unknown = await res.json().catch(() => null);
   if (!res.ok) {
-    const message = typeof data === 'object' && data !== null && 'error' in data ? String(data.error) : `Something went wrong (${res.status}).`;
-    throw new ApiError(message, res.status);
+    const message = typeof data === 'object' && data !== null && 'error' in data ? String(data.error) : t('Something went wrong ({status}).', { status: res.status });
+    // The server says it in English, and the sentence is its own key.
+    throw new ApiError(t(message), res.status);
   }
   return data as T;
 }
@@ -59,20 +61,20 @@ interface UserReply {
 export const api = {
   health: () => call<{ ok: boolean }>('GET', '/api/health'),
   me: () => call<UserReply>('GET', '/api/me'),
-  signup: (email: string, password: string) => call<UserReply>('POST', '/api/auth/signup', { email, password }),
+  signup: (email: string, password: string) => call<UserReply>('POST', '/api/auth/signup', { email, password, lang: lang() }),
   login: (email: string, password: string) => call<UserReply>('POST', '/api/auth/login', { email, password }),
   logout: () => call<void>('POST', '/api/auth/logout'),
-  forgotPassword: (email: string) => call<void>('POST', '/api/auth/forgot', { email }),
+  forgotPassword: (email: string) => call<void>('POST', '/api/auth/forgot', { email, lang: lang() }),
   resetPassword: (token: string, password: string) => call<UserReply>('POST', '/api/auth/reset', { token, password }),
   confirmEmail: (token: string) => call<{ email: string; changed: boolean }>('POST', '/api/auth/confirm', { token }),
-  sendConfirmation: () => call<void>('POST', '/api/account/confirm'),
-  changeEmail: (email: string, password: string) => call<UserReply>('POST', '/api/account/email', { email, password }),
+  sendConfirmation: () => call<void>('POST', '/api/account/confirm', { lang: lang() }),
+  changeEmail: (email: string, password: string) => call<UserReply>('POST', '/api/account/email', { email, password, lang: lang() }),
   cancelEmailChange: () => call<UserReply>('DELETE', '/api/account/email'),
   share: () => call<{ share: ShareInfo | null }>('GET', '/api/account/share'),
   createShare: (name: string) => call<{ link: string; share: ShareInfo }>('POST', '/api/account/share', { name }),
   stopShare: () => call<void>('DELETE', '/api/account/share'),
   shared: (token: string) => call<SharedProgress>('POST', '/api/shared', { token }),
-  setReminders: (on: boolean) => call<UserReply>('PUT', '/api/account/reminders', { on }),
+  setReminders: (on: boolean) => call<UserReply>('PUT', '/api/account/reminders', { on, lang: lang() }),
   stopReminders: (token: string) => call<void>('POST', '/api/reminders/off', { token }),
   changePassword: (password: string, newPassword: string) => call<void>('POST', '/api/account/password', { password, newPassword }),
   deleteAccount: (password: string) => call<void>('DELETE', '/api/account', { password }),

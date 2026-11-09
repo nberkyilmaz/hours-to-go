@@ -16,13 +16,14 @@ import { Shared } from './ui/Shared';
 import { StopReminders } from './ui/StopReminders';
 import { Welcome } from './ui/Welcome';
 import { useLogbook, type Sync } from './useLogbook';
+import { t } from './i18n';
 
 type Tab = 'progress' | 'log' | 'profile';
 
 const TABS: { id: Tab; label: string; Icon: () => JSX.Element }[] = [
-  { id: 'progress', label: 'Progress', Icon: ProgressIcon },
-  { id: 'log', label: 'Logbook', Icon: BookIcon },
-  { id: 'profile', label: 'Profile', Icon: UserIcon },
+  { id: 'progress', label: t('Progress'), Icon: ProgressIcon },
+  { id: 'log', label: t('Logbook'), Icon: BookIcon },
+  { id: 'profile', label: t('Profile'), Icon: UserIcon },
 ];
 
 /** An emailed link: to reset a password, confirm an address, or stop reminders. It opens the page at `#reset=…`, `#confirm=…` or `#stop=…`. */
@@ -51,13 +52,13 @@ function Loading() {
   return (
     <div className="loading" role="status">
       <Mark size={44} />
-      <span className="loading-title">Loading your logbook…</span>
-      {slow && <span>If nobody has opened Hours to Go for a while, its server takes up to a minute to wake up.</span>}
+      <span className="loading-title">{t('Loading your logbook…')}</span>
+      {slow && <span>{t('If nobody has opened Hours to Go for a while, its server takes up to a minute to wake up.')}</span>}
     </div>
   );
 }
 
-const changes = (n: number) => (n === 1 ? '1 change' : `${n} changes`);
+const changes = (n: number) => (n === 1 ? t('1 change') : t('{n} changes', { n }));
 
 /**
  * Signed in: whether the profile has everything (D41). On a phone it says only "Saved", "Saving…"
@@ -65,24 +66,24 @@ const changes = (n: number) => (n === 1 ? '1 change' : `${n} changes`);
  */
 function SaveState({ sync, onClick }: { sync: Sync; onClick: () => void }) {
   if (sync.offline) {
-    const label = sync.pending > 0 ? `Offline. ${changes(sync.pending)} kept on this device` : 'Offline';
+    const label = sync.pending > 0 ? t('Offline. {changes} kept on this device', { changes: changes(sync.pending) }) : t('Offline');
     return (
       <button type="button" className="save-state is-offline" aria-label={label} onClick={onClick}>
         {/* No wider than "Saved to your profile", so going offline doesn't move the top bar. */}
-        <CloudOffIcon /> Offline<span className="save-more">{sync.pending > 0 ? ` · ${sync.pending} to save` : ''}</span>
+        <CloudOffIcon />{' '}{t('Offline')}<span className="save-more">{sync.pending > 0 ? ` · ${t('{n} to save', { n: sync.pending })}` : ''}</span>
       </button>
     );
   }
   if (sync.pending > 0) {
     return (
-      <button type="button" className="save-state is-saving" aria-label="Saving to your profile" onClick={onClick}>
-        <CloudUpIcon /> Saving<span className="save-more"> to your profile</span>…
+      <button type="button" className="save-state is-saving" aria-label={t('Saving to your profile')} onClick={onClick}>
+        <CloudUpIcon />{' '}{t('Saving')}<span className="save-more">{' '}{t('to your profile')}</span>…
       </button>
     );
   }
   return (
-    <button type="button" className="save-state" aria-label="Saved to your profile" onClick={onClick}>
-      <CloudCheckIcon /> Saved<span className="save-more"> to your profile</span>
+    <button type="button" className="save-state" aria-label={t('Saved to your profile')} onClick={onClick}>
+      <CloudCheckIcon />{' '}{t('Saved')}<span className="save-more">{' '}{t('to your profile')}</span>
     </button>
   );
 }
@@ -107,11 +108,11 @@ function Toast({ toast, onUndo, onProgress, onDone }: { toast: Toast; onUndo: ()
       <span className="toast-actions">
         {toast.progress && (
           <button type="button" className="link" onClick={onProgress}>
-            See progress
+            {t('See progress')}
           </button>
         )}
         <button type="button" className="link" onClick={onUndo}>
-          Undo
+          {t('Undo')}
         </button>
       </span>
     </div>
@@ -189,11 +190,11 @@ export function App() {
       setToast({
         text: (
           <>
-            <strong>{formatHours(d.total || entry.ftd)} h logged.</strong>
-            {moment?.firstSolo && ' Your first solo. Congratulations!'}
-            {moment?.complete ? ` Every ${moment.short} requirement is met.` : moment && moment.now < moment.was ? ` ${moment.short}: ${formatHoursUp(moment.now)} h to go, was ${formatHoursUp(moment.was)}.` : ''}
-            {moment?.halfway && !moment.complete && ' Halfway there.'}
-            {moment && moment.finished.length > 0 && !moment.complete ? ` Done: ${moment.finished[0]}.` : ''}
+            <strong>{formatHours(d.total || entry.ftd)}{' '}{t('h logged.')}</strong>
+            {moment?.firstSolo && t(' Your first solo. Congratulations!')}
+            {moment?.complete ? ` ${t('Every {goal} requirement is met.', { goal: moment.short })}` : moment && moment.now < moment.was ? ` ${t('{goal}: {now} h to go, was {was}.', { goal: moment.short, now: formatHoursUp(moment.now), was: formatHoursUp(moment.was) })}` : ''}
+            {moment?.halfway && !moment.complete && t(' Halfway there.')}
+            {moment && moment.finished.length > 0 && !moment.complete ? ` ${t('Done: {what}.', { what: t(moment.finished[0]!) })}` : ''}
           </>
         ),
         undo: () => void lb.removeEntry(entry.id),
@@ -206,7 +207,7 @@ export function App() {
   const deleteEntry = (entry: Entry) => {
     void lb.removeEntry(entry.id);
     setToast({
-      text: <>Deleted the {[entry.date, entry.aircraft, entry.registration].filter(Boolean).join(' ')} entry.</>,
+      text: <>{t('Deleted the')}{' '}{[entry.date, entry.aircraft, entry.registration].filter(Boolean).join(' ')}{' '}{t('entry.')}</>,
       undo: () => void lb.saveEntry(entry),
       progress: false,
     });
@@ -247,25 +248,24 @@ export function App() {
   // One notice at a time, the most pressing first: a stack of them pushed the app off the first screen.
   const notices: JSX.Element[] = [];
   if (mode.kind === 'guest' && mode.offline) {
-    notices.push(<div className="banner warn">Can’t reach the server. You’re working on this device only; sign in again once you’re back online.</div>);
+    notices.push(<div className="banner warn">{t('Can’t reach the server. You’re working on this device only; sign in again once you’re back online.')}</div>);
   }
   if (mode.kind === 'guest' && !lb.storageOk) {
-    notices.push(<div className="banner warn">This browser isn’t letting the app save. Create a profile, or export your logbook so you don’t lose it.</div>);
+    notices.push(<div className="banner warn">{t('This browser isn’t letting the app save. Create a profile, or export your logbook so you don’t lose it.')}</div>);
   }
   if (mode.kind === 'account' && lb.sync.offline && lb.sync.pending > 0) {
     notices.push(
       <div className="banner" role="status">
-        You’re offline.{' '}
-        {lb.sync.pending === 1 ? 'Your change is kept on this device and goes' : `Your ${lb.sync.pending} changes are kept on this device and go`}{' '}
-        to your profile when you’re back online.
+        {t('You’re offline.')}{' '}
+        {lb.sync.pending === 1 ? t('Your change is kept on this device and goes') : t('Your {n} changes are kept on this device and go', { n: lb.sync.pending })}{' '}
+        {t('to your profile when you’re back online.')}
       </div>,
     );
   }
   if (mode.kind === 'account' && !lb.storageOk) {
     notices.push(
       <div className="banner warn">
-        This browser isn’t letting the app keep changes on this device. They go straight to your profile, so keep the app open until it says
-        Saved.
+        {t('This browser isn’t letting the app keep changes on this device. They go straight to your profile, so keep the app open until it says Saved.')}
       </div>,
     );
   }
@@ -273,15 +273,14 @@ export function App() {
     notices.push(
       <div className="banner">
         <span>
-          This device has {strandedCount} {strandedCount === 1 ? 'entry' : 'entries'} saved before you signed in. Add them to your profile?
-          Entries already in your profile are not duplicated.
+          {strandedCount === 1 ? t('This device has 1 entry') : t('This device has {n} entries', { n: strandedCount })}{' '}{t('saved before you signed in. Add them to your profile? Entries already in your profile are not duplicated.')}
         </span>
         <span className="row">
           <button type="button" className="btn small primary" onClick={() => void lb.moveGuestIntoAccount()}>
-            Add to my profile
+            {t('Add to my profile')}
           </button>
           <button type="button" className="link" onClick={() => setHideStranded(true)}>
-            Not now
+            {t('Not now')}
           </button>
         </span>
       </div>,
@@ -291,7 +290,7 @@ export function App() {
     notices.push(
       // The top bar's Create profile is right above it, so it needs no button of its own.
       <div className="banner">
-        <span>Your logbook is only on this device. Save it to a free profile so you can’t lose it.</span>
+        <span>{t('Your logbook is only on this device. Save it to a free profile so you can’t lose it.')}</span>
         <button
           type="button"
           className="link"
@@ -300,7 +299,7 @@ export function App() {
             setHideGuestNudge(true);
           }}
         >
-          Later
+          {t('Later')}
         </button>
       </div>,
     );
@@ -324,9 +323,9 @@ export function App() {
       <header className="topbar">
         <div className="brand">
           <Mark />
-          <span>Hours to Go</span>
+          <span>{t('Hours to Go')}</span>
         </div>
-        <nav className="tabs" aria-label="Sections">
+        <nav className="tabs" aria-label={t('Sections')}>
           {TABS.map(({ id, label, Icon }) => (
             <button key={id} type="button" className="tab" aria-current={tab === id ? 'page' : undefined} onClick={() => (tab === id ? toTop() : setTab(id))}>
               <Icon />
@@ -335,15 +334,15 @@ export function App() {
           ))}
         </nav>
         <button type="button" className="btn primary small topbar-log" onClick={() => startEntry('flight')}>
-          <PlusIcon /> Log a flight
+          <PlusIcon />{' '}{t('Log a flight')}
         </button>
         {mode.kind === 'account' ? (
           <SaveState sync={lb.sync} onClick={() => setTab('profile')} />
         ) : (
           <div className="topbar-end">
-            <span className="save-state is-local">Saved on this device only</span>
+            <span className="save-state is-local">{t('Saved on this device only')}</span>
             <button type="button" className="btn primary small" onClick={() => setTab('profile')}>
-              Create profile
+              {t('Create profile')}
             </button>
           </div>
         )}
@@ -354,7 +353,7 @@ export function App() {
           <div className="banner danger" role="alert">
             <span>{lb.error}</span>
             <button type="button" className="link" onClick={lb.dismissError}>
-              Dismiss
+              {t('Dismiss')}
             </button>
           </div>
         )}
@@ -362,7 +361,7 @@ export function App() {
           <div className="banner ok slim" role="status">
             <span>{lb.notice}</span>
             <button type="button" className="link" onClick={lb.dismissNotice}>
-              Dismiss
+              {t('Dismiss')}
             </button>
           </div>
         )}
@@ -403,7 +402,7 @@ export function App() {
           }}
         />
       ) : (
-        <button type="button" className="fab" aria-label="Log a flight" onClick={() => startEntry('flight')}>
+        <button type="button" className="fab" aria-label={t('Log a flight')} onClick={() => startEntry('flight')}>
           <PlusIcon />
         </button>
       )}
