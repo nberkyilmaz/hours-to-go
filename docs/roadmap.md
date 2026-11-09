@@ -84,7 +84,7 @@ The owner wants every one of these. Roughly in order of value:
 14. ~~**Cost per month at your pace.**~~ Done (D51): under the finish date.
 15. ~~**Small fixes.**~~ Done: "45 h" no longer splits across lines (D50).
 
-**The order from here** (agreed with the owner on 2026-11-08, who wants all of it): the four ideas below (a what-if pace slider, a "Landed" timer, training drawn as a flight plan, shareable milestone cards). The small fixes go in with whatever
+**The order from here** (agreed with the owner on 2026-11-08, who wants all of it): the list is done, apart from what a French-speaking pilot and real students turn up. The extras it grew are in as well: a what-if pace slider (D58), a flight clock (D59), the route (D60) and cards to share (D61). The small fixes go in with whatever
 touches them.
 
 Also wanted some day, if pilots ask: PIC under supervision for the ATPL; Group 2 and Group 4

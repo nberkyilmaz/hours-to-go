@@ -2218,6 +2218,10 @@ button.log-row:hover {
   font-size: 15px;
 }
 
+.share-progress {
+  margin: 8px 0 0;
+}
+
 /* ---- The flight clock (D59) ------------------------------------------ */
 
 .flight-clock span:first-child {
