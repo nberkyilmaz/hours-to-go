@@ -10,8 +10,8 @@ rating the app shows each requirement, how much you have, how much is left, what
 (writing the exam, booking the flight test), and the paragraph of the standard it comes from.
 It also prices what is left at your school's aeroplane, instructor and simulator rates, with
 the arithmetic shown ([docs/decisions.md](docs/decisions.md), D39), and says when you'll have it
-flown at the pace of your last 8 weeks (D40). It opens and logs with no signal, and saves when the
-connection comes back (D41).
+flown at the pace of your last 8 weeks (D40), and which flight would count toward the most of what
+is left (D43). It opens and logs with no signal, and saves when the connection comes back (D41).
 
 It runs in a browser on a computer or a phone, and can be added to a phone's home screen. It is
 published at <https://nberkyilmaz.com/hours-to-go/>; [docs/deploy.md](docs/deploy.md) says how.

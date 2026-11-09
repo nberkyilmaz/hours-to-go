@@ -83,6 +83,8 @@ The owner wants every one of these. Roughly in order of value:
 Also wanted some day, if pilots ask: PIC under supervision for the ATPL; Group 2 and Group 4
 instrument ratings, helicopters; other authorities (a second `goals` file and an authority setting
 in the profile); instructor sign-off on milestones (today the pilot ticks them).
+12. ~~**Next flight.**~~ Done: which flight counts toward the most of what is left, tried against
+    the real rules, with a note that the instructor decides (D43).
 
 ### 4. Going public
 
@@ -117,6 +119,9 @@ These are interpretations the app shows in its notes; the owner's FTU can settle
   everything after the PPL issue date counts.)
 - For the cost to go (D39): are the hours past the PPL's 17 h dual and 12 h solo mostly dual, and
   does the school charge GST/HST on CPL and IFR training up to the minimum hours?
+- For the next flight (D43): does the order it assumes match the school's: nothing suggested before
+  the first solo, solo cross-country after 3 h of dual cross-country, solo night after 5 h of dual
+  at night? And can a PPL student's hood time on a dual cross-country count toward both?
 
 The logbook-photo import was dropped by the owner (decision D24); pilots type their totals in.
 

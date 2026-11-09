@@ -170,7 +170,7 @@ function evalReq(req: Req, c: Ctx, goal: Ctx = c): ReqResult {
   }
 }
 
-function flatten(results: readonly ReqResult[]): ReqResult[] {
+export function flatten(results: readonly ReqResult[]): ReqResult[] {
   return results.flatMap((r) => [r, ...flatten(r.children)]);
 }
 

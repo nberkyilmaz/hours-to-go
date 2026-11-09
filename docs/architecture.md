@@ -37,11 +37,13 @@ hours-to-go/
 │   │   │                           and each goal's plan of the least time left to pay for
 │   │   ├── evaluate.ts         turns a logbook + profile into progress per goal
 │   │   ├── cost.ts             prices a plan at the school's rates; money formatting (D39)
-│   │   └── pace.ts             the time logged a week lately, and when a goal's time left is flown (D40)
+│   │   ├── pace.ts             the time logged a week lately, and when a goal's time left is flown (D40)
+│   │   └── next.ts             which flight counts toward the most, by trying each against the rules (D43)
 │   └── ui/
 │       ├── Progress.tsx        goal detail, gates, requirement rows, milestone tick-offs, goal cards
 │       ├── Cost.tsx            the price beside the hours, how it is worked out, the rates form
 │       ├── Finish.tsx          when the goal's minimum is flown at the pilot's pace
+│       ├── NextFlight.tsx      the flight to fly next, what it counts toward, and that the instructor decides
 │       ├── Welcome.tsx         a first visit: what the app is, the sign-up form, go on without (D27)
 │       ├── Logbook.tsx         empty state, totals tiles, column totals, by-type table, entry list/cards
 │       ├── EntryForm.tsx       the flight / FTD / paper-totals form and its questions
@@ -191,6 +193,12 @@ over the last 8 weeks, from flights logged one by one: after the latest paper to
 first flight, over 14 days at least, with two flights at least; else null. `finishOn(minutes, pace,
 today)` is the day that much more is flown, or null past five years. `Finish.tsx` takes the plan's
 time left (D4's figure for a goal with no plan) and shows the month.
+
+**The next flight** (`next.ts`). `nextFlights(goal, entries, profile, today)` adds each kind of
+flight to the log and runs `evaluateGoal` on it. It keeps the ones the pilot would be flying yet and
+that bring the plan's total down by no more than they last, drops any another does as well for no
+more money, and ranks the rest: plan saved, requirements counted toward, finished, minutes, price.
+Null for a goal done or not priced, or when nothing helps; `before-solo` until a solo or a licence.
 
 ## API (`server/app.ts`)
 

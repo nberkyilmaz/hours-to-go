@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react';
-import { formatHours, formatHoursUp, today } from '../model/entry';
+import { formatHours, formatHoursUp, today, type Entry } from '../model/entry';
 import { MEDICAL_LABEL, type GoalId, type Medical, type MilestoneRecord, type Profile } from '../model/profile';
 import type { Logbook } from '../model/store';
 import { evaluateGoal, type ExamResult, type GateResult, type GoalResult, type ReqResult } from '../rules/evaluate';
@@ -7,6 +7,7 @@ import { GOALS, STANDARD_421_URL, goalById } from '../rules/goals';
 import { paceOf, type Pace } from '../rules/pace';
 import { CostDetail, CostStat, costOf, openRates } from './Cost';
 import { Finish } from './Finish';
+import { NextFlightCard } from './NextFlight';
 import { CheckIcon, LockIcon, PlusIcon } from './icons';
 
 type UpdateProfile = (fn: (p: Profile) => Profile) => unknown;
@@ -49,7 +50,7 @@ export function ProgressView({ book, updateProfile, onAddHours }: Props) {
         </select>
       </div>
 
-      <GoalDetail result={focus} profile={book.profile} updateProfile={updateProfile} pace={pace} logged={book.entries.length > 0} />
+      <GoalDetail result={focus} profile={book.profile} updateProfile={updateProfile} pace={pace} entries={book.entries} />
 
       <section aria-labelledby="all-goals">
         <h2 id="all-goals" className="section-title">
@@ -92,10 +93,10 @@ interface DetailProps {
   profile: Profile;
   updateProfile: UpdateProfile;
   pace: Pace | null;
-  logged: boolean;
+  entries: readonly Entry[];
 }
 
-function GoalDetail({ result: r, profile, updateProfile, pace, logged }: DetailProps) {
+function GoalDetail({ result: r, profile, updateProfile, pace, entries }: DetailProps) {
   const { goal } = r;
   const holding = GOALS.filter((g) => g.id !== goal.id && profile.held[g.id] !== undefined);
   const cost = costOf(r, profile);
@@ -161,9 +162,10 @@ function GoalDetail({ result: r, profile, updateProfile, pace, logged }: DetailP
           {cost && <CostStat result={r} cost={cost} profile={profile} onRates={() => openRates(costPanel.current)} />}
         </div>
       )}
-      <Finish result={r} pace={pace} logged={logged} />
+      <Finish result={r} pace={pace} logged={entries.length > 0} />
       {cost && <CostDetail result={r} cost={cost} profile={profile} updateProfile={updateProfile} panel={costPanel} />}
       {'unpriced' in goal.cost && !r.held && !r.credited && <p className="note cost-none">{goal.cost.unpriced}</p>}
+      <NextFlightCard result={r} entries={entries} profile={profile} />
 
       {r.gates.length > 0 && !r.held && (
         <ul className="gates" aria-label="What is unlocked">

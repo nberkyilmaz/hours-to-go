@@ -975,6 +975,53 @@ button:focus-visible {
   margin-top: 2px;
 }
 
+/* The next flight: a suggestion, under the hours, the price and the finish date. */
+.next {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  font-size: 15px;
+}
+
+.next h3 {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 0;
+}
+
+.next p {
+  margin: 6px 0 0;
+}
+
+.next-counts {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+}
+
+/* The figures sit at the right when they fit, and on a line of their own on a phone. */
+.next-counts li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 12px;
+  padding: 5px 0;
+  border-top: 1px solid var(--border);
+}
+
+.next-counts li > :first-child {
+  flex: 1 1 220px;
+}
+
+.next-left {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
 .cost {
   margin-top: 12px;
   padding: 12px 14px;

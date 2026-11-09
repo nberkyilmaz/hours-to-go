@@ -196,6 +196,28 @@ describe('the app as a guest', () => {
     }
   });
 
+  it('suggests the flight that counts toward the most, once there is a solo in the log', async () => {
+    const flights = (n: number, hours: Parameters<typeof line>[1], extra = {}) => Array.from({ length: n }, () => line('2026-10-01', hours, extra));
+    saveGuestLogbook({ ...emptyLogbook(), entries: flights(14, { seDayDual: 1.5 }) });
+    render(<App />);
+    expect(await screen.findByText(/Before your first solo, your school’s lessons set the order/)).toBeTruthy();
+
+    cleanup();
+    saveGuestLogbook({ ...emptyLogbook(), entries: [...flights(14, { seDayDual: 1.5 }), ...flights(4, { seDayPic: 1.5 }, { solo: true })] });
+    render(<App />);
+    const card = (await screen.findByRole('region', { name: 'Your next flight' })) as HTMLElement;
+    expect(card.textContent).toContain('Dual cross-country, a third under the hood, 1.5 h, about $530');
+    expect(card.textContent).toContain('It counts toward 3 requirements you still need:');
+    expect(card.textContent).toContain('3 h dual cross-country3.0 h → 1.5 h to go');
+    expect(card.textContent).toContain('Also useful: Solo, local area · Dual, all under the hood.');
+    expect(card.textContent).toContain('Your instructor decides what you fly next');
+
+    // A goal the app can't price has nothing to compare.
+    fireEvent.change(screen.getByLabelText('Working on'), { target: { value: 'multi' } });
+    await screen.findByText(/so there is nothing to price/);
+    expect(screen.queryByRole('region', { name: 'Your next flight' })).toBeNull();
+  });
+
   it('says why a rating has no price', async () => {
     render(<App />);
     fireEvent.change(await screen.findByLabelText('Working on'), { target: { value: 'multi' } });

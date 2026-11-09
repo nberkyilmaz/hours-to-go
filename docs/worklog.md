@@ -727,11 +727,44 @@ id for each section and marks amendments in the text. The owner's note said 68 c
   421.26(4), listed the seven PPL requirements resting on it, and showed the line. Restored, it says
   no change.
 
+## Phase 21: the next flight (2026-11-08)
+
+**Owner request.** A planner that picks the next flight closing the most requirements, since one
+flight can count toward several. The instructor's questions are still open, so the owner asked for
+it with a clear note that the instructor decides.
+
+**Built** (D43):
+- `src/rules/next.ts`: each kind of flight is added to the log and the real rules are run on it,
+  so it has no rules of its own. It ranks by how much closer the goal gets, then requirements
+  counted toward, then those finished, minutes and price.
+- A card under the price: the flight, what it costs, each requirement with its before and after, a
+  tick-off it could also be, up to two others, and that the instructor decides.
+- `flatten` and `PILOT_LICENCE` are exported for it.
+
+**Problems on the way:**
+1. *On the numbers alone, a first-lesson student would be told to fly a solo cross-country.* The
+   standard has no order, schools do. Nothing is suggested before a solo or a licence, and solo
+   cross-country and solo night wait for their dual time.
+2. *The check for double counting missed a case.* "Takes off no more than it lasts" only catches a
+   flight mixing hood and cross-country on the CPL while the instrument time is what limits the plan.
+   The standard says that time is on top of the cross-country at any stage, so the mixed flight
+   is now offered only for the PPL and IFR, and the check stays as a backstop.
+
+**Checked:**
+- 13 new tests: before the first solo, what a flight counts toward, the order held back, flights that
+  no longer help, flights another does as well, the night rating and its landings, the CPL's
+  double counting, the FTD rate, nothing to suggest, every suggestion for every goal staying
+  within its length, the usual length, and the card on the screen.
+- **In Edge**, as a guest logging flights in the app: before a solo it says the school sets the order;
+  after one, the mixed cross-country for 1.5 h and about $530, counting toward 4 requirements. A
+  phone at 390, 360 and 320 px and a desktop, light and dark, no sideways scroll and no page errors.
+
 ## Where things stand
 
-- 174 tests pass (rules 37, cost to go 16, finish date 8, logbook model 21, offline changes 5,
-  server API 42, the standard's watcher 8, first visit, guest, cost to go, finish date, password reset, confirm links and
-  feedback 26, signed in 6, offline on the screen 5), and the API tests per
+- 187 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, logbook model 21, offline
+  changes 5, server API 42, the standard's watcher 8, first visit, guest, cost to go, finish date,
+  next flight, password reset, confirm links and feedback 27, signed in 6, offline on the screen 5),
+  and the API tests per
   database also run against a Postgres server through `pg` in CI.
 - Typecheck clean on both configs; `npm audit` clean.
 - Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.
