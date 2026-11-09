@@ -794,6 +794,24 @@ and totals. 340 flights was 65 screens with no way to find one.
 Turned down: a virtualised list (340 flights opens in about 200 ms, so it would add complexity for
 nothing), and infinite scroll (a logbook is a record, and it should all be there).
 
+### D49. First run and trust
+- **The welcome shows what the app does before asking for anything**: a small picture of the ring and the
+  hours. It still recommends a profile (D27), and both that and going on without one fit on a phone's first
+  screen. The message that the server is waking moved above the button, where it's seen.
+- **An empty logbook asks where the pilot is**: add hours, just starting, or already licensed. Everyone used
+  to open as a student starting a PPL, and a licensed pilot had to discover Profile to say otherwise.
+- **The numbers say how current they are, beside them**: "current to NSA 2025-008, checked nightly". It was
+  only in Profile's footer.
+- **Our readings are labelled.** Where the app interprets the standard (the questions for the instructor),
+  the note says "Our reading. Ask your school.", so it doesn't read as fact.
+- **The paper columns explain themselves**, in a fold at the top. The quick form uses plain words.
+- **Account actions say what happened**: how many entries moved into a new profile, that a profile was
+  deleted. The password can be shown, the forms say what's wrong in their own words rather than browser
+  bubbles, and the export is offered at the point of deleting.
+
+Turned down: a province picker for tax and regional sample rates (the audit's F14). D39 already turned it
+down: whether provincial tax applies to flight training varies, and the school's invoice is what counts.
+
 ## Process
 
 ### D22. Check the UI in a real browser, at phone size, before calling it done

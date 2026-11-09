@@ -3,6 +3,7 @@ import type { LogbookState } from '../useLogbook';
 import { BookIcon, CiteIcon, Mark, ProgressIcon } from './icons';
 import { PRIVACY_URL } from './links';
 import { AuthForm, type AuthTab } from './Profile';
+import { Ring } from './Ring';
 
 const POINTS = [
   { Icon: BookIcon, title: 'Start from your paper logbook', text: 'Copy your totals in a few lines, then log each flight as you fly it.' },
@@ -27,7 +28,17 @@ export function Welcome({ lb }: { lb: LogbookState }) {
           </div>
           <p className="kicker">For student pilots in Canada</p>
           <h1>Know exactly how many hours you have to go.</h1>
-          <p className="lede">Log your flights and see what’s left for each Transport Canada licence and rating, from the PPL to the ATPL.</p>
+          <p className="lede">Log your flights and see what’s left for every Transport Canada licence and rating.</p>
+          <div className="welcome-preview">
+            <Ring percent={58} label="An example: 58% of the way to a licence" />
+            <div>
+              <strong>
+                26.1 <small>of 45.0 h</small>
+              </strong>
+              <span>18.9 h to go, about $5,800 left</span>
+              <span>Next flight: dual cross-country</span>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -36,7 +47,7 @@ export function Welcome({ lb }: { lb: LogbookState }) {
           {tab === 'signup' && (
             <>
               <h2 id="welcome-title">Create your free profile</h2>
-              <p className="muted">Your logbook is saved to your profile, so it’s safe, and it’s the same on your phone and your computer.</p>
+              <p className="muted">Your logbook is safe, and the same on your phone and your computer.</p>
             </>
           )}
           {tab === 'signin' && (

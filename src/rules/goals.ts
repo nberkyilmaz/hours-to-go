@@ -32,6 +32,8 @@ interface Base {
   /** Paragraph of Standard 421 the requirement comes from. */
   cite: string;
   note?: string;
+  /** The note is this app's reading of the standard, for the pilot's school to confirm. */
+  reading?: boolean;
   /** Returns the reason when a credit in the standard satisfies the requirement. */
   credit?: (c: Ctx) => string | null;
   /** While unmet, points at time in the log that may belong here but isn't counted. */
@@ -437,6 +439,7 @@ const night: Goal = {
         }),
         time('night-inst', '10 h dual instrument time, up to 5 h of it on the ground', 10,
           (c) => sum(c.all, 'dualInst') + upTo(sum(c.all, 'ftd'), 5), '421.42(1)(a)(ii)–(iii)', {
+            reading: true,
             note: 'Must be on top of the 10 night hours: hood time flown at night can’t count toward both. This counts every dual instrument hour in your log, including PPL training.',
           }),
       ],
@@ -477,6 +480,7 @@ const vfrott: Goal = {
       reqs: [
         time('vfrott-inst', '15 h dual instrument time, up to 5 h of it on the ground', 15,
           (c) => sum(c.all, 'dualInst') + upTo(sum(c.all, 'ftd'), 5), '421.44(3)', {
+            reading: true,
             note: 'Counts every dual instrument hour in your log. Training is to the VFR OTT standard, so ask your FTU which earlier hours they credit.',
           }),
       ],
@@ -556,7 +560,8 @@ const cpl: Goal = {
         }),
         time('cpl-solo', '30 h solo', 30, (c) => sum(c.scoped, 'solo'), '421.30(4)(a)(ii)(B)', {
           hint: soloHint('scoped'),
-          note: 'Solo means you were the only person on board.',
+          reading: true,
+            note: 'Solo means you were the only person on board.',
           sub: [
             milestone('xc-cpl-300', 'Solo cross-country of at least 300 NM with full-stop landings at 3 aerodromes other than the departure, one of them at least 250 NM straight-line from it', '421.30(4)(a)(ii)(B)(I)'),
             time('cpl-solo-night', '5 h solo at night', 5, (c) => sum(c.scoped, 'soloNight'), '421.30(4)(a)(ii)(B)(II)', {
@@ -675,7 +680,8 @@ function instrument(group: 1 | 3): Goal {
               sub: [
                 time('ifr-dual-inst', '15 h dual instrument flight time, at least 5 h with a flight instructor', 15,
                   (c) => sum(c.all, 'dualInst'), '421.46(2)(b)(ii)(A), (C)', {
-                    note: 'Counted in the aeroplane only. FTD time already counts above as ground time; ask your FTU whether they also credit FTD dual here.',
+                    reading: true,
+            note: 'Counted in the aeroplane only. FTD time already counts above as ground time; ask your FTU whether they also credit FTD dual here.',
                   }),
                 milestone('xc-ifr-100', 'Dual cross-country of at least 100 NM in actual or simulated IMC, on an IFR flight plan, with an approach to minima at 2 different places', '421.46(2)(b)(ii)(D)'),
               ],

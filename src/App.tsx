@@ -340,6 +340,14 @@ export function App() {
             </button>
           </div>
         )}
+        {lb.notice && (
+          <div className="banner ok slim" role="status">
+            <span>{lb.notice}</span>
+            <button type="button" className="link" onClick={lb.dismissNotice}>
+              Dismiss
+            </button>
+          </div>
+        )}
         {notices[0]}
 
         {tab === 'progress' && (
