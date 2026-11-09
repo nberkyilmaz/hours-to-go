@@ -21,9 +21,10 @@ interface Props {
   book: Logbook;
   updateProfile: UpdateProfile;
   onAddHours: () => void;
+  onFly: (line: Partial<Entry>) => void;
 }
 
-export function ProgressView({ book, updateProfile, onAddHours }: Props) {
+export function ProgressView({ book, updateProfile, onAddHours, onFly }: Props) {
   const results = useMemo(
     () => GOALS.map((g) => {
       const now = evaluateGoal(g, book.entries, book.profile);
@@ -57,6 +58,7 @@ export function ProgressView({ book, updateProfile, onAddHours }: Props) {
         updateProfile={updateProfile}
         pace={pace}
         entries={book.entries}
+        onFly={onFly}
         picker={
           <div className="goal-pick">
             <label htmlFor="focus">Working on</label>
@@ -83,6 +85,7 @@ interface DetailProps {
   pace: Pace | null;
   entries: readonly Entry[];
   picker: ReactNode;
+  onFly: (line: Partial<Entry>) => void;
 }
 
 /**
@@ -140,7 +143,7 @@ const hoursFirst = (sections: readonly SectionResult[]) => [...sections.filter((
 /** Nothing left to do in it. An info row is a figure to read, not something to finish. */
 const isDone = (r: ReqResult): boolean => r.req.kind !== 'info' && r.met && r.children.every(isDone);
 
-function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries, picker }: DetailProps) {
+function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries, picker, onFly }: DetailProps) {
   const { goal } = r;
   const holding = GOALS.filter((g) => g.id !== goal.id && profile.held[g.id] !== undefined);
   const cost = costOf(r, profile);
@@ -226,10 +229,10 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
           </button>
         </div>
       )}
-      <Finish result={r} pace={pace} logged={entries.length > 0} />
+      <Finish result={r} pace={pace} logged={entries.length > 0} cost={cost} />
       {cost && <CostDetail result={r} cost={cost} profile={profile} updateProfile={updateProfile} panel={costPanel} />}
       {'unpriced' in goal.cost && !r.held && !r.credited && <p className="note cost-none">{goal.cost.unpriced}</p>}
-      <NextFlightCard result={r} entries={entries} profile={profile} />
+      <NextFlightCard result={r} entries={entries} profile={profile} onFly={onFly} />
 
       {r.gates.length > 0 && !r.held && (
         <ul className="gates" aria-label="What is unlocked">

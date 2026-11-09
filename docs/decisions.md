@@ -819,6 +819,14 @@ darker track. The paper columns are headed groups rather than outlined boxes ins
 on the same line as its "h", and the small motion there is (the ring, the message after saving) stops for
 anyone who has asked their device for less.
 
+### D51. Starting a flight from one you know
+- **Log this flight again**, in any logged flight or FTD session: a new line with today's date, the same
+  times and route, and no remarks. Students fly the same lesson many times.
+- **I flew this** on Your next flight opens the form already filled in with that flight, so the app's
+  suggestion becomes the input.
+- **What the pace costs a month**, under the finish date: the same hours and rates as the price, spread at
+  the pilot's pace. It's what a student actually budgets.
+
 ## Process
 
 ### D22. Check the UI in a real browser, at phone size, before calling it done

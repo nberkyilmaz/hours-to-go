@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { blankEntry, derive, formatHours, formatHoursUp, isFtdOnly, today, type Entry } from './model/entry';
+import { blankEntry, derive, formatHours, formatHoursUp, isFtdOnly, newId, today, type Entry } from './model/entry';
 import { hasContent, isSnoozed, snooze } from './model/store';
 import { ConfirmBanner } from './ui/Account';
 import { ConfirmEmail } from './ui/ConfirmEmail';
@@ -158,7 +158,7 @@ export function App() {
   }, [entries]);
 
   const closeDraft = useCallback(() => setDraft(null), []);
-  const startEntry = (layout: FormLayout) => {
+  const startEntry = (layout: FormLayout, filled?: Partial<Entry>) => {
     const entry = blankEntry(layout === 'forward');
     const newest = [...entries].filter((e) => !e.forward).sort((a, b) => (a.date < b.date ? 1 : -1));
     // Most students fly the same aircraft from the same field, so start from the last one.
@@ -166,8 +166,13 @@ export function App() {
     // Most flights come back where they left from; a cross-country says otherwise.
     if (last && layout === 'flight') Object.assign(entry, { aircraft: last.aircraft, registration: last.registration, from: last.from, to: last.from });
     if (last && layout === 'ftd') entry.aircraft = last.aircraft;
+    if (filled) Object.assign(entry, filled);
+    // A cross-country goes somewhere else, so the pilot says where.
+    if (filled?.xcDayDual || filled?.xcDayPic || filled?.xcNightDual || filled?.xcNightPic) entry.to = '';
     setDraft({ entry, isNew: true, layout });
   };
+  /** The same flight again: students fly the same lesson many times. */
+  const logAgain = (e: Entry) => setDraft({ entry: { ...e, id: newId(), date: today(), remarks: '' }, isNew: true, layout: isFtdOnly(e) ? 'ftd' : 'flight' });
   const editEntry = (entry: Entry) =>
     setDraft({ entry, isNew: false, layout: entry.forward ? 'forward' : isFtdOnly(entry) ? 'ftd' : 'flight' });
 
@@ -358,6 +363,7 @@ export function App() {
               setTab('log');
               startEntry('forward');
             }}
+            onFly={(line) => startEntry('flight', line)}
           />
         )}
         {tab === 'log' && (
@@ -399,6 +405,7 @@ export function App() {
           pplDate={book.profile.held.ppl?.date}
           onSave={saveEntry}
           onDelete={draft.isNew ? undefined : () => deleteEntry(draft.entry)}
+          onLogAgain={draft.isNew || draft.entry.forward ? undefined : () => logAgain(draft.entry)}
           onClose={closeDraft}
         />
       )}
