@@ -779,6 +779,21 @@ bar 3 screens down, what's unlocked repeated three times, and a bar saying 25% t
   by accident, to the end. When every requirement is met it comes back as the thing to do.
 - **Milestones get a moment**: first solo, passing half way, finishing a requirement, finishing the goal.
 
+### D48. A logbook that scales
+A flight row was 157 px tall on a phone, four to a screen, with nothing on the first screen but buttons
+and totals. 340 flights was 65 screens with no way to find one.
+
+- **Two lines a flight**: "Nov 8 C172 C-GABC" and "CYKF → CYSN Dual 1.3 4 landings", with the total at
+  the right. A tap opens it; Delete moved into the form, with Undo (D46), so it isn't 12 px from Edit on
+  every row.
+- **Months**, each with its flight time, so the year can come off every row.
+- **Search and filters** appear from six entries. Every word typed must be on the line, in any order:
+  date, aircraft, registration, airports or remarks.
+- **Three totals on top**, the rest one fold away. The columns with nothing in them stay out of the table.
+
+Turned down: a virtualised list (340 flights opens in about 200 ms, so it would add complexity for
+nothing), and infinite scroll (a logbook is a record, and it should all be there).
+
 ## Process
 
 ### D22. Check the UI in a real browser, at phone size, before calling it done

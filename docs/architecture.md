@@ -32,6 +32,7 @@ hours-to-go/
 │   │   │                           the school's rates and the sample ones (D39)
 │   │   ├── store.ts            parsing (and converting old lines), merging, guest localStorage
 │   │   ├── quick.ts            the quick form's choices, and which paper columns they fill (D46)
+│   │   ├── search.ts           finding a flight, and the logbook by month (D48)
 │   │   └── sync.ts             signed in: changes waiting for the server, and the copy on this device (D41)
 │   ├── rules/
 │   │   ├── goals.ts            the Standard 421 catalogue: every requirement with its paragraph,

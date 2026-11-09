@@ -70,8 +70,8 @@ The owner wants every one of these. Roughly in order of value:
    (D41). The phone apps needed it too.
 6. **"Log again"**: copy an earlier flight. Students fly the same lesson many times. (The form
    already starts from the last aircraft, registration and departure.)
-7. **Search and filter** the logbook by date, aircraft type and registration; the list grows to
-   hundreds of lines.
+7. ~~**Search and filter**~~ Done (D48): by date, aircraft, registration, airports and remarks, and by
+   kind of time.
 8. **Spreadsheet export and import (CSV).** Today's export is JSON only this app reads. A CSV
    opens in Excel, and importing one lets pilots move from their own spreadsheets.
 9. **Print or PDF** in paper-log layout, for an examiner or the school.
@@ -112,7 +112,7 @@ government form. The batches, with its finding numbers:
   real phone).
 - ~~**C. Progress at a glance.**~~ Done (D47): a ring first and a short "what's left" list (F5),
   achievements (F16), one goal switcher (F17), the price's sample rates said out loud (F14).
-- **D. A logbook that scales** (3 to 4 days): compact rows, month headers, search and filter (F10,
+- ~~**D. A logbook that scales.**~~ Done (D48): compact rows, month headers, search and filter (F10,
   and feature 7 above), plain words on the rows (F15).
 - **E. First run and trust** (about a week): show the product before asking for a password (F11), ask
   who the pilot is (F12), explain the terms (F15), put the trust details by the numbers (F18), and

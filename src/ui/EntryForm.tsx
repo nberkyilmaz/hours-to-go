@@ -45,6 +45,8 @@ interface Props {
   /** Resolves true once saved; the form stays open otherwise. */
   onSave: (entry: Entry) => Promise<true | null>;
   onClose: () => void;
+  /** Only for a line already logged. */
+  onDelete?: (() => void) | undefined;
 }
 
 type ColumnText = Record<Column, string>;
@@ -83,7 +85,7 @@ const TITLE: Record<FormLayout, { add: string; edit: string; thing: string }> = 
 /** Reads a box; null when it isn't a number of the right kind. */
 const readCount = (s: string) => (s.trim() === '' ? 0 : /^\d+$/.test(s.trim()) ? Number(s.trim()) : null);
 
-export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave, onClose }: Props) {
+export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave, onClose, onDelete }: Props) {
   const legacy = initial.forward && !initial.breakdown;
   const b0 = initial.breakdown ?? blankBreakdown();
   const [entry, setEntry] = useState<Entry>(initial);
@@ -637,6 +639,18 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
           )}
 
           {!quick && remarks}
+          {onDelete && (
+            <button
+              type="button"
+              className="link danger sheet-delete"
+              onClick={() => {
+                leave();
+                onDelete();
+              }}
+            >
+              Delete this entry
+            </button>
+          )}
         </div>
 
         <div className="sheet-foot">
