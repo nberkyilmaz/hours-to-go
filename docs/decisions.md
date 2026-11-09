@@ -939,7 +939,7 @@ chose to ship it as a best effort and fix it from reviews, since nobody French-s
 did, and a phrase with no translation shows in English rather than breaking. No library, since a table and a function
 are all it needs. The language comes from the browser the first time, and a link on the Welcome and Profile screens
 changes it. Changing it reloads the page, so `t` is a plain function that can be called anywhere, with no context to
-pass around. The table ships with the app (about 20 KB compressed), which also means it works offline.
+pass around. The table ships with the app (about 22 KB compressed), which also means it works offline.
 
 **The server stays in English,** so what the rules work out on it is the same for everyone. The app translates what
 comes back, because a sentence from the server is its own key too. The exceptions are emails, which go through a

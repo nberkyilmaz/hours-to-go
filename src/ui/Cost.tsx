@@ -108,7 +108,7 @@ export function CostDetail({ result: r, cost, profile, updateProfile, panel }: P
           ))}
           {cost.tax > 0 && (
             <tr>
-              <th scope="row">{t('Tax,')}{' '}{rates.tax}%</th>
+              <th scope="row">{t('Tax,')}{' '}{t('{n}%', { n: rates.tax })}</th>
               <td />
               <td>{money(cost.tax)}</td>
             </tr>

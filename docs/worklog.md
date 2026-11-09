@@ -961,7 +961,10 @@ chose to ship it as a best effort and correct it from reviews.
 
 **Problems on the way:** the French medical picker was wider than a small phone, so the page scrolled sideways, and
 two kinds of text were missed at first: hints passed as props, and English plurals in code. A test now fails if text
-on a screen doesn't go through `t`, and it found one more hint the moment it was written.
+on a screen doesn't go through `t`, and it found one more hint the moment it was written. An independent review
+against the French Standard found no error in any number, limit or condition, and 35 things to change, each checked
+against the text: mostly its terms (Transports Canada, formation en vol, contrôle de compétence pilote) and short goal
+names that weren't translated.
 
 **Checked.** In Edge on a 360 px phone with the browser set to French: every screen is in French, no placeholder
 shows, nothing scrolls sideways, and axe finds nothing. Emails are tested in both languages. No French speaker has

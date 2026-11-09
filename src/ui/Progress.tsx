@@ -15,7 +15,7 @@ import { NextFlightCard } from './NextFlight';
 import { CheckIcon, LockIcon, PlusIcon } from './icons';
 import { STANDARD_CURRENT, STANDARD_URL } from './links';
 import { keepUnits } from './text';
-import { t } from '../i18n';
+import { shortName, t } from '../i18n';
 
 type UpdateProfile = (fn: (p: Profile) => Profile) => unknown;
 
@@ -70,7 +70,7 @@ export function ProgressView({ book, updateProfile, onAddHours, onFly }: Props) 
               {results.map(({ now, progress }) => (
                 <option key={now.goal.id} value={now.goal.id}>
                   {t(now.goal.name)}
-                  {now.held ? t(' (held)') : now === focus.now ? '' : ` · ${progress.percent}%`}
+                  {now.held ? t(' (held)') : now === focus.now ? '' : ` · ${t('{n}%', { n: progress.percent })}`}
                 </option>
               ))}
             </select>
@@ -198,7 +198,7 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
 
       {holding.length > 0 && (
         <p className="holding">
-          {t('You hold:')}{' '}{holding.map((g) => g.short).join(' · ')}.{' '}
+          {t('You hold:')}{' '}{holding.map((g) => shortName(g.short)).join(' · ')}.{' '}
           <span className="muted">{t('Change this in Profile.')}</span>
         </p>
       )}
@@ -226,10 +226,10 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
       {r.complete && !r.held && !r.credited && (
         <div className="banner ok goal-complete">
           <span>
-            <strong>{t('Every')}{' '}{goal.short}{' '}{t('requirement is met.')}</strong>{' '}{t('Time to send in your application.')}
+            <strong>{t('Every')}{' '}{shortName(goal.short)}{' '}{t('requirement is met.')}</strong>{' '}{t('Time to send in your application.')}
           </span>
           <button type="button" className="btn primary small" onClick={() => setHeld('')}>
-            {t('Mark')}{' '}{goal.short}{' '}{t('as held')}
+            {t('Mark')}{' '}{shortName(goal.short)}{' '}{t('as held')}
           </button>
         </div>
       )}
@@ -274,7 +274,7 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
       )}
       {!r.held && !r.complete && (
         <button type="button" className="link goal-held" onClick={() => setHeld('')}>
-          {t('Mark')}{' '}{goal.short}{' '}{t('as held')}
+          {t('Mark')}{' '}{shortName(goal.short)}{' '}{t('as held')}
         </button>
       )}
     </section>
@@ -389,7 +389,7 @@ function ReqRow({ r, goalId, profile, updateProfile, stays, pin }: RowProps) {
               className="link"
               onClick={() => updateProfile((p) => ({ ...p, held: { ...p.held, [req.anyOf[0]!]: { date: '' } } }))}
             >
-              {t('Mark')}{' '}{goalById(req.anyOf[0]!).short}{' '}{t('as held')}
+              {t('Mark')}{' '}{shortName(goalById(req.anyOf[0]!).short)}{' '}{t('as held')}
             </button>
           )}
           {req.kind === 'medical' && <MedicalFields label={t('Your medical')} profile={profile} updateProfile={updateProfile} />}
@@ -555,7 +555,7 @@ function MilestoneControls({ r, updateProfile }: { r: ReqResult; updateProfile: 
           />
         </label>
       )}
-      {r.scoreLow && <span className="warn-text">{t('Pass mark is')}{' '}{minScore}%.</span>}
+      {r.scoreLow && <span className="warn-text">{t('Pass mark is')}{' '}{t('{n}%', { n: minScore! })}.</span>}
       {minScore !== undefined && rec.score === undefined && <span className="hint">{t('Enter your overall mark so the app can check it.')}</span>}
     </div>
   );

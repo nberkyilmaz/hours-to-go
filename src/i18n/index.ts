@@ -5,7 +5,7 @@
  * The language is settled when the page loads, and changing it reloads the page, so `t` is a plain function that works
  * anywhere. The server answers pilots in both languages from one process, so it asks for a `translator` instead.
  */
-import { FR } from './fr';
+import { FR, GOAL_SHORT_FR } from './fr';
 
 export type Lang = 'en' | 'fr';
 type Values = Record<string, string | number>;
@@ -54,6 +54,9 @@ export function chooseLang(language: Lang): void {
 }
 
 export const t = (text: string, values?: Values): string => translator(current)(text, values);
+
+/** A goal's short name, in a sentence. */
+export const shortName = (short: string): string => (current === 'fr' ? (GOAL_SHORT_FR[short] ?? short) : short);
 
 // Building a formatter is slow and the logbook asks for one per row, so each is kept once made.
 const dates = new Map<string, Intl.DateTimeFormat>();

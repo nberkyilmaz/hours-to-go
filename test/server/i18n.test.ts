@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 import { t, translator } from '../../src/i18n';
-import { FR } from '../../src/i18n/fr';
+import { FR, GOAL_SHORT_FR } from '../../src/i18n/fr';
 import { AFTER_PPL_LABEL, COLUMN_LABEL, LOG_GROUPS } from '../../src/model/entry';
 import { MEDICAL_LABEL } from '../../src/model/profile';
 import { LOG_FILTERS } from '../../src/model/search';
@@ -95,13 +95,22 @@ describe('the French table', () => {
     for (const name of [...readFileSync(join(ROOT, 'src/rules/next.ts'), 'utf8').matchAll(/ name: '([^']+)'/g)].map((m) => m[1]!)) expect(name in FR).toBe(true);
   });
 
+  it('names every goal in French', () => {
+    const shorts = GOALS.map((g) => g.short).filter((s) => !['PPL', 'CPL'].includes(s));
+    expect(shorts.filter((s) => !(s in GOAL_SHORT_FR))).toEqual([]);
+  });
+
+  it('calls the department by its French name', () => {
+    expect(Object.values(FR).filter((f) => /Transport Canada/.test(f))).toEqual([]);
+  });
+
   it('keeps every placeholder, so nothing shows up as {n}', () => {
     const marks = (s: string) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
     expect(Object.entries(FR).filter(([en, fr]) => marks(en).join() !== marks(fr).join())).toEqual([]);
   });
 
   it('doesn’t leave English behind, apart from what reads the same', () => {
-    const SAME = new Set(['Hours to Go', 'Sections', 'Solo', 'Date', 'Message', 'FTD', 'Id', 'Type', 'Total', 'Page', 'h', 'Co', 'App', 'Inst', '1 page', '{n} pages', 'Transport Canada ·']);
+    const SAME = new Set(['Hours to Go', 'Sections', 'Solo', 'Date', 'Message', 'FTD', 'Id', 'Type', 'Total', 'Page', 'h', 'Co', 'App', 'Inst', '1 page', '{n} pages']);
     expect(Object.entries(FR).filter(([en, fr]) => en === fr && !SAME.has(en)).map(([en]) => en)).toEqual([]);
   });
 
