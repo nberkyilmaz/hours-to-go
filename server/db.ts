@@ -11,11 +11,12 @@ export interface User {
   confirmed: boolean;
 }
 
-/** What the app shows about a profile: its address, whether that is confirmed, and an address it is changing to. */
+/** What the app shows about a profile: its address, whether that is confirmed, an address it is changing to, and whether it gets reminders. */
 export interface Account {
   email: string;
   confirmed: boolean;
   pendingEmail: string | null;
+  reminders: boolean;
 }
 
 /** What spending an emailed link did: confirmed the profile's address, or moved the profile to a new one. */
@@ -88,6 +89,19 @@ const MIGRATIONS: string[][] = [
       expires_at bigint not null
     )`,
     'create index email_links_user on email_links(user_id)',
+  ],
+  // 3: reminder emails, which a pilot turns on. `reminders_at` is when they did. `reminders_stop` goes in every
+  // reminder to turn them off, so it's kept as it is, not hashed: all it can do is stop the emails.
+  [
+    'alter table users add column reminders_at timestamptz',
+    'alter table users add column reminders_stop text',
+    'create unique index users_reminders_stop on users(reminders_stop)',
+    `create table reminders_sent (
+      user_id text not null references users(id) on delete cascade,
+      mark text not null,
+      sent_at timestamptz not null default now(),
+      primary key (user_id, mark)
+    )`,
   ],
 ];
 
@@ -212,14 +226,14 @@ export class Store {
 
   /** The newest unexpired link to an address other than the profile's own is a change waiting to be confirmed. */
   async account(userId: string, now: number): Promise<Account | null> {
-    const [row] = await this.db.query<{ email: string; confirmed: boolean; pending_email: string | null }>(
-      `select u.email, u.email_confirmed_at is not null as confirmed,
+    const [row] = await this.db.query<{ email: string; confirmed: boolean; pending_email: string | null; reminders: boolean }>(
+      `select u.email, u.email_confirmed_at is not null as confirmed, u.reminders_at is not null as reminders,
          (select l.email from email_links l where l.user_id = u.id and l.email <> u.email and l.expires_at > $2
           order by l.expires_at desc limit 1) as pending_email
        from users u where u.id = $1`,
       [userId, now],
     );
-    return row ? { email: row.email, confirmed: row.confirmed, pendingEmail: row.pending_email } : null;
+    return row ? { email: row.email, confirmed: row.confirmed, pendingEmail: row.pending_email, reminders: row.reminders } : null;
   }
 
   async passwordHashFor(userId: string): Promise<string | null> {
@@ -367,6 +381,30 @@ export class Store {
   async deleteEntry(userId: string, id: string): Promise<boolean> {
     const rows = await this.db.query('delete from entries where user_id = $1 and id = $2 returning id', [userId, id]);
     return rows.length > 0;
+  }
+
+  /** On with `stop`, the token every reminder carries; off with null. A link in an earlier email keeps working. */
+  async setReminders(userId: string, stop: string | null): Promise<void> {
+    if (stop === null) await this.db.query('update users set reminders_at = null where id = $1', [userId]);
+    else await this.db.query('update users set reminders_at = coalesce(reminders_at, now()), reminders_stop = coalesce(reminders_stop, $2) where id = $1', [userId, stop]);
+  }
+
+  /** From the link in a reminder, with no sign-in. False when the link is unknown. */
+  async stopReminders(stop: string): Promise<boolean> {
+    return (await this.db.query('update users set reminders_at = null where reminders_stop = $1 returning id', [stop])).length > 0;
+  }
+
+  /** Who asked for reminders, at an address that's been confirmed. */
+  reminderRecipients(): Promise<{ id: string; email: string; stop: string }[]> {
+    return this.db.query('select id, email, reminders_stop as stop from users where reminders_at is not null and email_confirmed_at is not null');
+  }
+
+  async sentReminders(userId: string): Promise<Set<string>> {
+    return new Set((await this.db.query<{ mark: string }>('select mark from reminders_sent where user_id = $1', [userId])).map((r) => r.mark));
+  }
+
+  async markReminders(userId: string, marks: readonly string[]): Promise<void> {
+    for (const mark of marks) await this.db.query('insert into reminders_sent (user_id, mark) values ($1, $2) on conflict do nothing', [userId, mark]);
   }
 
   putProfile(userId: string, profile: Profile): Promise<void> {

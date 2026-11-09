@@ -1,0 +1,32 @@
+# Every day: wake the server, which sleeps on the free plan, and have it send the reminder emails
+# pilots have asked for (D53). It does nothing until the REMINDERS_KEY secret is set. A failed run
+# emails the repository's owner.
+
+name: Reminders
+
+on:
+  schedule:
+    - cron: '41 12 * * *'  # 12:41 UTC, the morning across Canada
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: reminders
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Wake the server and send today's reminders
+        env:
+          KEY: ${{ secrets.REMINDERS_KEY }}
+          API: https://hours-to-go-api.nberkyilmaz.com
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "::notice::REMINDERS_KEY isn't set yet, so nothing was sent."
+            exit 0
+          fi
+          curl -fsS --retry 8 --retry-delay 20 --retry-all-errors --max-time 120 "$API/api/health" > /dev/null
+          curl -fsS --max-time 240 -X POST -H "authorization: Bearer $KEY" "$API/api/reminders/run"

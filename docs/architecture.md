@@ -42,6 +42,7 @@ hours-to-go/
 │   │   ├── pace.ts             the time logged a week lately, and when a goal's time left is flown (D40)
 │   │   ├── moment.ts           what a flight just did for the goal, for the message after saving (D46)
 │   │   ├── progress.ts         how far along a goal is, by hours, for the ring (D47)
+│   │   ├── reminders.ts        what's about to run out, and what hasn't been said yet (D53)
 │   │   ├── currency.ts         what a licensed pilot needs to have done recently (D52)
 │   │   └── next.ts             which flight counts toward the most, by trying each against the rules (D43)
 │   └── ui/
@@ -71,6 +72,7 @@ hours-to-go/
 │   ├── main.ts                 reads env, picks the database, starts Fastify
 │   ├── app.ts                  routes, CORS, session hook, health check, static files, SPA fallback
 │   ├── auth.ts                 scrypt hashing, random tokens (sessions, reset links), throttles
+│   ├── reminders.ts            the daily run: who gets what, one email each (D53)
 │   ├── mail.ts                 Resend over HTTP, printing on a laptop, the reset, confirm and
 │   │                               feedback emails
 │   └── db.ts                   Store: every SQL statement in the project, and the numbered
@@ -222,6 +224,9 @@ All JSON. Errors are `{ "error": "message for the pilot" }`. The session cookie 
 | `GET /api/me` | | `{ user: { email, confirmed, pendingEmail } }` or 401; extends the session to 90 days from now and sets the cookie again. Sign-up, sign-in and reset answer with the same `user` |
 | `GET /api/health` | | `{ ok: true }`, or 503 when the database doesn't answer; Render's health check |
 | `POST /api/feedback` | `{ message, email }` | emails `FEEDBACK_TO`, Reply-To the profile's address (signed in) or `email` (optional); 400 empty, over 4,000 characters or a bad address; 429 after 5 an hour from one IP or 30 a day in all; 502 if sending fails; 503 without `RESEND_API_KEY` and `FEEDBACK_TO`; 204 |
+| `PUT /api/account/reminders` | `{ on }` | signed in; turning on needs a confirmed address and `REMINDERS_KEY` set (D53) |
+| `POST /api/reminders/off` | `{ token }` | no sign-in: the token from the link in a reminder; 204, or 400 if unknown |
+| `POST /api/reminders/run` | `Authorization: Bearer REMINDERS_KEY` | the daily run: `{ checked, sent, failed, waiting }` |
 | `DELETE /api/account` | `{ password }` | deletes the user; entries, profile and sessions cascade; 204 |
 | `POST /api/account/confirm` | | emails a new link to confirm the profile's address; 400 already confirmed, 429 after 3 links an hour to one profile or 50 a day in all, 502 if sending fails, 503 without email; 204 |
 | `POST /api/account/email` | `{ email, password }` | emails a link to the new address, which takes over once it is opened; returns `{ user }` with `pendingEmail`. 400 bad or the same address, 401 wrong password, 409 another profile has it, 429/502/503 as above |
@@ -256,6 +261,7 @@ users    (id text pk, email text unique, password_hash text, created_at timestam
           email_confirmed_at timestamptz /* null until a link sent there is opened */)
 sessions (token_hash text pk, user_id → users on delete cascade, expires_at bigint /* ms */)
 password_resets (token_hash text pk, user_id → users on delete cascade, expires_at bigint /* ms */)
+reminders_sent (user_id → users on delete cascade, mark text /* item|date|step */, sent_at timestamptz, pk (user_id, mark))
 email_links (token_hash text pk, user_id → users on delete cascade, email text /* the address it confirms */,
              expires_at bigint /* ms */)
 entries  (user_id → users on delete cascade, id text, data jsonb, pk (user_id, id))

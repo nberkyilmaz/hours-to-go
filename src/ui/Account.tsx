@@ -51,6 +51,38 @@ export function ConfirmBanner({ lb, email, onLater }: { lb: LogbookState; email:
   );
 }
 
+/** Off until the pilot turns it on, and only for an address that has been confirmed (D53). */
+function Reminders({ lb, account }: { lb: LogbookState; account: Account }) {
+  /** What was just asked for, shown at once, since the server can take a moment to answer. */
+  const [asked, setAsked] = useState<boolean | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const change = async (on: boolean) => {
+    setError(null);
+    setAsked(on);
+    try {
+      await lb.setReminders(on);
+    } catch (err) {
+      setError(describe(err));
+    } finally {
+      setAsked(null);
+    }
+  };
+  return (
+    <div className="reminders">
+      <label className="toggle">
+        <input type="checkbox" checked={asked ?? account.reminders} disabled={asked !== null || !account.confirmed} onChange={(e) => void change(e.target.checked)} />
+        <span>Email me before my medical, exams or ratings run out</span>
+      </label>
+      <p className="hint">{account.confirmed ? '30 and 7 days before, from the dates in your profile. Every email has a link to stop them.' : 'Confirm your email first, so they can reach you.'}</p>
+      {error && (
+        <p className="field-error" role="alert">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 type Open = 'email' | 'password' | 'delete' | null;
 
 /** The Profile tab's account card, signed in: the address and its state, and changing or deleting the profile. */
@@ -117,6 +149,7 @@ export function SignedIn({ lb, account }: { lb: LogbookState; account: Account }
           </div>
         )
       )}
+      <Reminders lb={lb} account={account} />
       {done && (
         <p className="banner ok" role="status">
           {done}

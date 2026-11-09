@@ -29,11 +29,11 @@ beforeEach(() => {
       const body = JSON.parse(String(init?.body ?? 'null'));
       if (url === '/api/auth/login') {
         signedIn = true;
-        return reply(200, { user: { email: 'student@example.com', confirmed: true, pendingEmail: null } });
+        return reply(200, { user: { email: 'student@example.com', confirmed: true, pendingEmail: null, reminders: false } });
       }
       if (!signedIn) return reply(401, { error: 'Sign in to continue.' });
       if (url === refuse) return reply(400, { error: 'That entry is not valid.' });
-      if (url === '/api/me') return reply(200, { user: { email: 'student@example.com', confirmed: true, pendingEmail: null } });
+      if (url === '/api/me') return reply(200, { user: { email: 'student@example.com', confirmed: true, pendingEmail: null, reminders: false } });
       if (url === '/api/logbook') return reply(200, { version: 2, ...server });
       if (url === '/api/profile') {
         server.profile = body;

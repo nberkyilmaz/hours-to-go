@@ -69,7 +69,7 @@ export function applyOps(book: Logbook, ops: readonly Op[]): Logbook {
 
 /** The signed-in profile as this device last knew it: enough to open with no connection. */
 export interface AccountCopy {
-  account: { email: string; confirmed: boolean; pendingEmail: string | null };
+  account: { email: string; confirmed: boolean; pendingEmail: string | null; reminders: boolean };
   /** The logbook as the server last had it. */
   server: Logbook;
   /** Changes made here that the server doesn't have yet, oldest first. */

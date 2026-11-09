@@ -59,9 +59,8 @@ The owner wants every one of these. Roughly in order of value:
 2. ~~**Finish date.**~~ Done: "At your pace, 1.3 h a week, you'll reach the minimum around June
    2027", from the flights and FTD sessions of the last 8 weeks, for the time the price is for
    (D40).
-3. **Email reminders**, opted into: medical expiry (the date is in the profile now, D44), the
-   recommendation letter's 60 days, written exam results expiring before the flight test, IFR
-   renewal. Render's free server sleeps, so a daily GitHub Actions run would wake it to send them.
+3. ~~**Email reminders**~~ Done (D53): turned on from the Profile tab, 30 and 7 days before a medical, exam
+   result, letter, recurrent training or instrument check runs out. A daily GitHub Actions run wakes the server.
 4. ~~**Currency and recency**~~ Done (D52): for licensed pilots, the 5 years, recurrent training, passengers
    by day and at night, and the instrument check and approaches, from CAR 401.05.
 5. ~~**Offline logging while signed in.**~~ Done: a service worker keeps the app on the device, and
@@ -85,10 +84,9 @@ The owner wants every one of these. Roughly in order of value:
 14. ~~**Cost per month at your pace.**~~ Done (D51): under the finish date.
 15. ~~**Small fixes.**~~ Done: "45 h" no longer splits across lines (D50).
 
-**The order from here** (agreed with the owner on 2026-11-08, who wants all of it): email reminders
-(3), "log again" (6), search and filter (7), cost per month (14), currency and recency (4), CSV (8),
-print or PDF (9), a read-only link for an instructor (10), then French (11). The small fixes go in
-with whatever touches them.
+**The order from here** (agreed with the owner on 2026-11-08, who wants all of it): CSV (8), print or
+PDF (9), a read-only link for an instructor (10), then French (11). The small fixes go in with whatever
+touches them.
 
 Also wanted some day, if pilots ask: PIC under supervision for the ATPL; Group 2 and Group 4
 instrument ratings, helicopters; other authorities (a second `goals` file and an authority setting

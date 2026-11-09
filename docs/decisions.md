@@ -848,6 +848,30 @@ within six months before the flight". Taken as a limit on when the approaches we
 in the first six months after a check, so it's read as when the requirement starts. An approach flown before
 that day counts if it's within the six months. Worth confirming with an instructor.
 
+### D53. Reminder emails, which a pilot turns on
+A switch on the Profile tab, off until they turn it on, and only for an address they've confirmed. What's coming
+up is worked out by `rules/reminders.ts` from the same evaluator and currency rules as the screen, so an email
+can't disagree with Progress:
+- the medical, exam results, letters, and flight tests that must be recent, wherever the pilot has entered a date;
+- recurrent training and the instrument check, for a licensed pilot. Not the passenger items: they come round every
+  few months and would only be noise.
+
+**When.** 30 and 7 days before the last day, and only 7 for a letter, which lasts 30 or 60 days and would otherwise
+get a month's notice the day it's dated. Nothing about what has already run out: the screen says so. One email per
+pilot, with everything in it. Someone first seen late gets one email, not one per step.
+
+**How it runs.** Render's free server sleeps, so a daily GitHub Actions run wakes it and calls
+`POST /api/reminders/run` with `REMINDERS_KEY`. Without the key the switch says reminders aren't available, and the
+workflow does nothing. `reminders_sent` remembers what's been said, by item, date and step, so a renewed medical
+starts over. A mark is written after the email goes: a failure means it's sent twice rather than not at all.
+
+**Limits.** 50 emails a run, soonest deadline first, leaving room in Resend's 100 a day for reset links. Whoever
+doesn't fit is still unsent the next day.
+
+**Stopping.** Every email has a link. It opens the app, which posts the token, so a mail scanner following the link
+can't turn reminders off by accident. The token is stored as it is, not hashed, because it goes in every email and
+all it can do is stop them.
+
 ## Process
 
 ### D22. Check the UI in a real browser, at phone size, before calling it done

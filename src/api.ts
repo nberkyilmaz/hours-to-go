@@ -37,11 +37,12 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
   return data as T;
 }
 
-/** The signed-in profile: its address, whether a link sent there has been opened, and an address it is moving to. */
+/** The signed-in profile: its address, whether a link sent there has been opened, an address it is moving to, and whether it gets reminders. */
 export interface Account {
   email: string;
   confirmed: boolean;
   pendingEmail: string | null;
+  reminders: boolean;
 }
 
 interface UserReply {
@@ -60,6 +61,8 @@ export const api = {
   sendConfirmation: () => call<void>('POST', '/api/account/confirm'),
   changeEmail: (email: string, password: string) => call<UserReply>('POST', '/api/account/email', { email, password }),
   cancelEmailChange: () => call<UserReply>('DELETE', '/api/account/email'),
+  setReminders: (on: boolean) => call<UserReply>('PUT', '/api/account/reminders', { on }),
+  stopReminders: (token: string) => call<void>('POST', '/api/reminders/off', { token }),
   changePassword: (password: string, newPassword: string) => call<void>('POST', '/api/account/password', { password, newPassword }),
   deleteAccount: (password: string) => call<void>('DELETE', '/api/account', { password }),
   sendFeedback: (message: string, email: string) => call<void>('POST', '/api/feedback', { message, email }),

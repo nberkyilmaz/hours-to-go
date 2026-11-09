@@ -14,7 +14,7 @@ beforeEach(() => {
   localStorage.clear();
   rememberSignedIn(true);
   failSaves = false;
-  account = { email: 'student@example.com', confirmed: true, pendingEmail: null };
+  account = { email: 'student@example.com', confirmed: true, pendingEmail: null, reminders: false };
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {

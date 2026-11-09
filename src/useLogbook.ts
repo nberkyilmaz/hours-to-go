@@ -65,6 +65,9 @@ export interface LogbookState {
   /** The new address takes over once the link sent to it is opened. */
   changeEmail: (email: string, password: string) => Promise<void>;
   cancelEmailChange: () => Promise<void>;
+  setReminders: (on: boolean) => Promise<void>;
+  /** From the link in a reminder, signed in or not. */
+  stopReminders: (token: string) => Promise<void>;
   changePassword: (password: string, newPassword: string) => Promise<void>;
   signOut: () => Promise<void>;
   deleteAccount: (password: string) => Promise<void>;
@@ -412,6 +415,20 @@ export function useLogbook(): LogbookState {
   const changeEmail = async (email: string, password: string) => showAccount((await api.changeEmail(email, password)).user);
   const cancelEmailChange = async () => showAccount((await api.cancelEmailChange()).user);
 
+  const setReminders = async (on: boolean) => showAccount((await api.setReminders(on)).user);
+
+  const stopReminders = async (token: string) => {
+    await api.stopReminders(token);
+    // As with a confirm link, it may be for another profile than the one signed in here.
+    if (modeRef.current.kind === 'account') {
+      try {
+        showAccount((await api.me()).user);
+      } catch {
+        // It shows the next time the app opens.
+      }
+    }
+  };
+
   const signOut = async () => {
     // Signing out takes the profile off this device, so anything waiting goes first.
     await flush();
@@ -457,6 +474,8 @@ export function useLogbook(): LogbookState {
     sendConfirmation: api.sendConfirmation,
     changeEmail,
     cancelEmailChange,
+    setReminders,
+    stopReminders,
     changePassword: api.changePassword,
     signOut,
     deleteAccount,

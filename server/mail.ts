@@ -1,3 +1,6 @@
+import { dateText } from '../src/model/entry';
+import type { Due } from '../src/rules/reminders';
+
 export interface Mail {
   to: string;
   subject: string;
@@ -72,6 +75,40 @@ export function confirmMail(to: string, link: string, days: number, change: bool
 <p style="margin:0;color:#5b6573;font-size:14px">${ignore}</p>
 </div></body></html>`;
   return { to, subject: change ? 'Confirm your new email for Hours to Go' : 'Confirm your email for Hours to Go', text, html };
+}
+
+const whenLeft = (days: number) => (days === 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days`);
+
+/** What's coming up, soonest first, to a pilot who turned reminders on. */
+export function reminderMail(to: string, items: readonly Due[], appLink: string, stopLink: string): Mail {
+  const first = items[0]!;
+  const subject = items.length === 1 ? `${first.what} runs out ${whenLeft(first.daysLeft)}` : `${items.length} things run out soon, the first ${whenLeft(first.daysLeft)}`;
+  const check = 'Worked out from the dates in your profile, so check them against your own documents.';
+  const why = 'You turned these reminders on in your Hours to Go profile.';
+  const text = [
+    'Coming up in your Hours to Go profile:',
+    '',
+    ...items.map((d) => `- ${d.what}: last day ${dateText(d.until)} (${whenLeft(d.daysLeft)})`),
+    '',
+    check,
+    appLink,
+    '',
+    `${why} To stop them: ${stopLink}`,
+  ].join('\n');
+  // As in the other emails, the links need no escaping: APP_URL and a base64url token.
+  const rows = items
+    .map((d) => `<li style="margin:0 0 8px"><strong>${escapeHtml(d.what)}</strong><br>Last day ${escapeHtml(dateText(d.until))} (${whenLeft(d.daysLeft)})</li>`)
+    .join('');
+  const html = `<!doctype html><html><body style="margin:0;padding:24px;background:#f3f4f6;font:16px/1.5 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#0f141b">
+<div style="max-width:480px;margin:0 auto;background:#fff;border:1px solid #e1e4e9;border-radius:10px;padding:24px">
+<p style="margin:0 0 16px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-size:13px;color:#0e7490">Hours to Go</p>
+<p style="margin:0 0 12px">Coming up in your profile:</p>
+<ul style="margin:0 0 16px;padding:0 0 0 20px">${rows}</ul>
+<p style="margin:0 0 24px">${check}</p>
+<p style="margin:0 0 24px"><a href="${appLink}" style="display:inline-block;padding:12px 20px;border-radius:8px;background:#0e7490;color:#fff;font-weight:700;text-decoration:none">Open Hours to Go</a></p>
+<p style="margin:0;color:#5b6573;font-size:14px">${why} <a href="${stopLink}" style="color:#0e7490">Stop these reminders</a></p>
+</div></body></html>`;
+  return { to, subject, text, html };
 }
 
 const HTML_ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };

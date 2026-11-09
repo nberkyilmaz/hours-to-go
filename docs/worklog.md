@@ -899,16 +899,29 @@ CAR 401.05 read directly (D52). The roadmap had said "approaches and holds"; the
 check instead of the seventh month after it. Reading the wording again before committing caught it, and there's
 now a test on the boundary. No test had failed, because the dates in them fell on the right side either way.
 
+## Phase 32: reminder emails (2026-11-08)
+
+A switch on the Profile tab, off by default, sends an email 30 and 7 days before a medical, exam result, letter,
+recurrent training or instrument check runs out (D53). The rules are the screen's own. A daily GitHub Actions run
+wakes the server and calls it with a key. The owner sets that key once ([deploy.md](deploy.md), step 10).
+
+**Problem on the way:** the switch only moved once the server had answered, so a tap seemed to do nothing. It now
+shows what was asked for at once, and goes back if the server says no.
+
+**Checked.** In Edge against a local server: signed up, confirmed, turned it on, ran it, got the email, ran it
+again and got nothing, stopped it from the link signed out, and the switch showed off. A wrong key gets a 401.
+
 ## Where things stand
 
-- 275 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
+- 296 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
   21, offline changes 5, server API 42, the standard's watcher 8, first visit, guest, cost to go,
   finish date, next flight, expiry, password reset, confirm links and feedback 28, the form and
   notices 12, the quick form 14, Progress 9, the logbook 7, first run and trust 10, signed in 6,
-  offline on the screen 5, log again and the cost a month 4, current to fly 17), and the API tests per
+  offline on the screen 5, log again and the cost a month 4, current to fly 17, reminders 21), and the API tests per
   database also run against a Postgres server through `pg` in CI.
 - Typecheck clean on both configs; `npm audit` clean.
 - Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.
-- Password reset live. Feedback and error alerts send once `FEEDBACK_TO` is set in Render. Backups
+- Password reset live. Feedback and error alerts send once `FEEDBACK_TO` is set in Render, and reminders once
+  `REMINDERS_KEY` is set in Render and GitHub. Backups
   run once the private repository exists and has its `DATABASE_URL` secret.
 - What comes next, in order, is the plan in [roadmap.md](roadmap.md).

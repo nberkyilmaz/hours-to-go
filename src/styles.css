@@ -1907,6 +1907,14 @@ button.log-row:hover {
   }
 }
 
+.reminders {
+  margin: 12px 0;
+}
+
+.reminders .hint {
+  margin-top: 4px;
+}
+
 /* ---- Current to fly ------------------------------------------------- */
 
 .currency {

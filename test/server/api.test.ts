@@ -9,7 +9,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildApp } from '../../server/app';
 import { hashPassword } from '../../server/auth';
 import type { Mail } from '../../server/mail';
-import { blankEntry } from '../../src/model/entry';
+import { addDays, blankEntry, today } from '../../src/model/entry';
+import { blankProfile } from '../../src/model/profile';
 
 // Every test runs on PGlite. Production's database goes through `pg` instead, so when
 // TEST_DATABASE_URL names a Postgres server (CI provides one) they all run there too,
@@ -24,7 +25,7 @@ async function emptied(url: string): Promise<string> {
   const client = new pg.Client({ connectionString: url });
   await client.connect();
   try {
-    await client.query('drop table if exists migrations, email_links, password_resets, sessions, entries, profiles, users');
+    await client.query('drop table if exists migrations, reminders_sent, email_links, password_resets, sessions, entries, profiles, users');
   } finally {
     await client.end();
   }
@@ -34,6 +35,7 @@ async function emptied(url: string): Promise<string> {
 let app: FastifyInstance;
 /** Emails the app sent, instead of sending them. */
 let sent: Mail[] = [];
+let mailFails = false;
 const APP_URL = 'https://nberkyilmaz.test/hours-to-go/';
 const OWNER = 'owner@example.test';
 
@@ -55,8 +57,8 @@ async function signUp(email = 'student@example.com', password = 'correct horse')
   return { res, cookies: cookie ? { htg_session: cookie.value } : {}, confirmation: confirmation! };
 }
 
-/** The token from an emailed link, which carries it in the fragment after `#reset=` or `#confirm=`. */
-function tokenIn(mail: Mail, kind: 'reset' | 'confirm'): string {
+/** The token from an emailed link, which carries it in the fragment after `#reset=`, `#confirm=` or `#stop=`. */
+function tokenIn(mail: Mail, kind: 'reset' | 'confirm' | 'stop'): string {
   const link = new RegExp(`https://\\S+#${kind}=([\\w-]+)`).exec(mail.text);
   expect(link?.[0].startsWith(APP_URL)).toBe(true);
   return link![1]!;
@@ -68,13 +70,16 @@ const DAY = 86_400_000;
 describe.each(DATABASES)('on $name', ({ url }) => {
   beforeEach(async () => {
     sent = [];
+    mailFails = false;
     app = await buildApp({
       database: await emptied(url),
       secureCookies: false,
       appUrl: APP_URL,
       feedbackTo: OWNER,
       alertTo: OWNER,
+      remindersKey: 'the-key',
       sendMail: async (mail) => {
+        if (mailFails) throw new Error('Resend is down');
         sent.push(mail);
       },
     });
@@ -85,6 +90,89 @@ describe.each(DATABASES)('on $name', ({ url }) => {
     await app.close();
   });
 
+  describe('reminders', () => {
+    const me = (cookies: Record<string, string>) => app.inject({ method: 'GET', url: '/api/me', cookies });
+    const run = (key = 'the-key') => app.inject({ method: 'POST', url: '/api/reminders/run', headers: { authorization: `Bearer ${key}` } });
+    const turn = (cookies: Record<string, string>, on: boolean) => app.inject({ method: 'PUT', url: '/api/account/reminders', cookies, payload: { on } });
+    const medicalIn = (cookies: Record<string, string>, days: number) =>
+      app.inject({ method: 'PUT', url: '/api/profile', cookies, payload: { ...blankProfile(), medical: 'cat3', medicalUntil: addDays(today(), days) } });
+    const confirmedPilot = async (email = 'student@example.com') => {
+      const { cookies, confirmation } = await signUp(email);
+      await app.inject({ method: 'POST', url: '/api/auth/confirm', payload: { token: tokenIn(confirmation, 'confirm') } });
+      return cookies;
+    };
+
+    it('only runs with the key', async () => {
+      expect((await run('wrong')).statusCode).toBe(401);
+      expect((await app.inject({ method: 'POST', url: '/api/reminders/run' })).statusCode).toBe(401);
+      expect((await run()).json()).toEqual({ checked: 0, sent: 0, failed: 0, waiting: 0 });
+    });
+
+    it('waits for a confirmed email before turning on', async () => {
+      const { cookies } = await signUp();
+      const res = await turn(cookies, true);
+      expect(res.statusCode).toBe(400);
+      expect(res.json().error).toContain('Confirm your email');
+    });
+
+    it('sends what is coming up once, and not again the next day', async () => {
+      const cookies = await confirmedPilot();
+      expect((await turn(cookies, true)).json().user.reminders).toBe(true);
+      await medicalIn(cookies, 20);
+      expect((await run()).json()).toEqual({ checked: 1, sent: 1, failed: 0, waiting: 0 });
+      expect(sent).toHaveLength(1);
+      expect(sent[0]!.to).toBe('student@example.com');
+      expect(sent[0]!.subject).toBe('Your medical certificate runs out in 20 days');
+      expect((await run()).json().sent).toBe(0);
+      expect(sent).toHaveLength(1);
+    });
+
+    it('sends nothing to a pilot who didn’t ask', async () => {
+      await medicalIn(await confirmedPilot(), 20);
+      expect((await run()).json()).toEqual({ checked: 0, sent: 0, failed: 0, waiting: 0 });
+      expect(sent).toEqual([]);
+    });
+
+    it('stops from the link in the email, signed out', async () => {
+      const cookies = await confirmedPilot();
+      await turn(cookies, true);
+      await medicalIn(cookies, 20);
+      await run();
+      const res = await app.inject({ method: 'POST', url: '/api/reminders/off', payload: { token: tokenIn(sent[0]!, 'stop') } });
+      expect(res.statusCode).toBe(204);
+      expect((await me(cookies)).json().user.reminders).toBe(false);
+      await medicalIn(cookies, 19);
+      expect((await run()).json().checked).toBe(0);
+    });
+
+    it('turns down a link it doesn’t know', async () => {
+      expect((await app.inject({ method: 'POST', url: '/api/reminders/off', payload: { token: 'nope' } })).statusCode).toBe(400);
+    });
+
+    it('keeps the same link working after turning off and on again', async () => {
+      const cookies = await confirmedPilot();
+      await turn(cookies, true);
+      await medicalIn(cookies, 20);
+      await run();
+      const first = tokenIn(sent[0]!, 'stop');
+      await turn(cookies, false);
+      await turn(cookies, true);
+      await medicalIn(cookies, 19);
+      await run();
+      expect(tokenIn(sent[1]!, 'stop')).toBe(first);
+    });
+
+    it('tries again the next day when an email didn’t go', async () => {
+      const cookies = await confirmedPilot();
+      await turn(cookies, true);
+      await medicalIn(cookies, 20);
+      mailFails = true;
+      expect((await run()).json()).toMatchObject({ sent: 0, failed: 1 });
+      mailFails = false;
+      expect((await run()).json()).toMatchObject({ sent: 1, failed: 0 });
+    });
+  });
+
   describe('accounts', () => {
     it('signs up, sets an HttpOnly session cookie, and knows who you are', async () => {
       const { res, cookies } = await signUp('Student@Example.com ');
@@ -93,7 +181,7 @@ describe.each(DATABASES)('on $name', ({ url }) => {
       expect(cookie?.httpOnly).toBe(true);
       expect(cookie?.sameSite).toBe('Lax');
       const me = await app.inject({ method: 'GET', url: '/api/me', cookies });
-      expect(me.json()).toEqual({ user: { email: 'student@example.com', confirmed: false, pendingEmail: null } });
+      expect(me.json()).toEqual({ user: { email: 'student@example.com', confirmed: false, pendingEmail: null, reminders: false } });
     });
 
     it('refuses a duplicate email, a short password and a bad email', async () => {
@@ -249,7 +337,7 @@ describe.each(DATABASES)('on $name', ({ url }) => {
       const res = await reset(tokenFrom(sent[0]!), 'a new long password');
       expect(res.statusCode).toBe(200);
       // The link reached the inbox, so the address is confirmed too.
-      expect(res.json()).toEqual({ user: { email: 'student@example.com', confirmed: true, pendingEmail: null } });
+      expect(res.json()).toEqual({ user: { email: 'student@example.com', confirmed: true, pendingEmail: null, reminders: false } });
       const cookies = { htg_session: res.cookies.find((c) => c.name === 'htg_session')!.value };
       expect((await app.inject({ method: 'GET', url: '/api/me', cookies })).statusCode).toBe(200);
       expect((await login('correct horse')).statusCode).toBe(401);
@@ -315,7 +403,7 @@ describe.each(DATABASES)('on $name', ({ url }) => {
       const res = await confirm(tokenIn(confirmation, 'confirm'));
       expect(res.statusCode).toBe(200);
       expect(res.json()).toEqual({ email: 'student@example.com', changed: false });
-      expect((await me(cookies)).json().user).toEqual({ email: 'student@example.com', confirmed: true, pendingEmail: null });
+      expect((await me(cookies)).json().user).toEqual({ email: 'student@example.com', confirmed: true, pendingEmail: null, reminders: false });
       expect((await confirm(tokenIn(confirmation, 'confirm'))).statusCode).toBe(400);
     });
 
@@ -351,7 +439,7 @@ describe.each(DATABASES)('on $name', ({ url }) => {
       const { cookies } = await signUp();
       const res = await change(cookies, ' New@Example.com');
       expect(res.statusCode).toBe(200);
-      expect(res.json().user).toEqual({ email: 'student@example.com', confirmed: false, pendingEmail: 'new@example.com' });
+      expect(res.json().user).toEqual({ email: 'student@example.com', confirmed: false, pendingEmail: 'new@example.com', reminders: false });
       expect(sent).toHaveLength(1);
       expect(sent[0]!.to).toBe('new@example.com');
       expect(sent[0]!.subject).toBe('Confirm your new email for Hours to Go');
@@ -360,7 +448,7 @@ describe.each(DATABASES)('on $name', ({ url }) => {
 
       expect((await confirm(tokenIn(sent[0]!, 'confirm'))).json()).toEqual({ email: 'new@example.com', changed: true });
       const after = await app.inject({ method: 'GET', url: '/api/me', cookies });
-      expect(after.json().user).toEqual({ email: 'new@example.com', confirmed: true, pendingEmail: null });
+      expect(after.json().user).toEqual({ email: 'new@example.com', confirmed: true, pendingEmail: null, reminders: false });
       expect((await login('new@example.com')).statusCode).toBe(200);
       expect((await login('student@example.com')).statusCode).toBe(401);
     });
@@ -524,7 +612,7 @@ describe.each(DATABASES)('a database made before migrations, on $name', ({ url }
         try {
           const res = await api.inject({ method: 'POST', url: '/api/auth/login', payload: { email: 'student@example.com', password: 'correct horse' } });
           expect(res.statusCode).toBe(200);
-          expect(res.json().user).toEqual({ email: 'student@example.com', confirmed: false, pendingEmail: null });
+          expect(res.json().user).toEqual({ email: 'student@example.com', confirmed: false, pendingEmail: null, reminders: false });
         } finally {
           await api.close();
         }
