@@ -62,9 +62,8 @@ The owner wants every one of these. Roughly in order of value:
 3. **Email reminders**, opted into: medical expiry (the date is in the profile now, D44), the
    recommendation letter's 60 days, written exam results expiring before the flight test, IFR
    renewal. Render's free server sleeps, so a daily GitHub Actions run would wake it to send them.
-4. **Currency and recency** (401.05) for licensed pilots: 5 takeoffs and landings in 6 months to
-   carry passengers, night currency, IFR currency (6 approaches and holds in 6 months; the
-   approaches column already exists). It keeps pilots using the app after their licence.
+4. ~~**Currency and recency**~~ Done (D52): for licensed pilots, the 5 years, recurrent training, passengers
+   by day and at night, and the instrument check and approaches, from CAR 401.05.
 5. ~~**Offline logging while signed in.**~~ Done: a service worker keeps the app on the device, and
    changes are kept there until the server has them, so a pilot can open it and log with no signal
    (D41). The phone apps needed it too.
