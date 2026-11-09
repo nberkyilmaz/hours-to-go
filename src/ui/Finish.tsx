@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { formatHours, today } from '../model/entry';
 import { about, money, type Cost } from '../rules/cost';
 import type { GoalResult } from '../rules/evaluate';
-import { WINDOW_DAYS, dayText, finishOn, monthText, monthsBetween, type Pace } from '../rules/pace';
+import { WINDOW_DAYS, dayText, finishOn, monthText, monthsBetween, weeksBetween, type Pace } from '../rules/pace';
 import { decimal, t } from '../i18n';
 
 interface Props {
@@ -19,14 +19,18 @@ const SLOWEST = 0.5;
 const FASTEST = 15;
 /** Where the slider starts for someone with no pace yet: a lesson or two a week. */
 const USUAL_HOURS = 2;
+/** From here on a difference is counted in months. */
+const WEEKS_COUNTED = 8;
 
 const hoursWord = (hours: number) => t('{n} h a week', { n: decimal(String(hours)) });
 
 function compared(at: string, usual: string): string {
+  const weeks = weeksBetween(usual, at);
+  if (weeks === 0) return t('About the same as your pace.');
+  if (weeks === -1) return t('1 week sooner than your pace.');
+  if (weeks === 1) return t('1 week later than your pace.');
+  if (Math.abs(weeks) < WEEKS_COUNTED) return weeks < 0 ? t('{n} weeks sooner than your pace.', { n: -weeks }) : t('{n} weeks later than your pace.', { n: weeks });
   const months = monthsBetween(usual, at);
-  if (months === 0) return t('About the same as your pace.');
-  if (months === -1) return t('1 month sooner than your pace.');
-  if (months === 1) return t('1 month later than your pace.');
   return months < 0 ? t('{n} months sooner than your pace.', { n: -months }) : t('{n} months later than your pace.', { n: months });
 }
 
@@ -51,7 +55,8 @@ function WhatIf({ minutes, pace, cost }: { minutes: number; pace: Pace | null; c
         <strong>{at ? t('Around {month}', { month: monthText(at, now) }) : t('More than 5 years away')}</strong>
         {monthly !== null && monthly > 0 && <> · {t('about {price} a month', { price: money(about(monthly)) })}</>}
       </p>
-      {at && usual && <p className="hint">{compared(at, usual)}</p>}
+      {/* The slider rounds the pace to a half hour, so where it starts isn't a change. */}
+      {at && usual && <p className="hint">{hours === start ? t('About the same as your pace.') : compared(at, usual)}</p>}
     </details>
   );
 }

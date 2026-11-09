@@ -127,12 +127,12 @@ nberkyilmaz.com already has Resend's DNS records at Cloudflare (`resend._domaink
 Until the key is set, asking for a link says resetting "isn't available yet", and Render's log
 says "Password reset emails are off".
 
-5. **Feedback**: Render → `hours-to-go-api` → **Environment**: add `FEEDBACK_TO` with the address
-   where you want pilots' messages, and save. It isn't in `render.yaml`, so your address isn't
-   published. Then Profile → **Send feedback** on the page: the message arrives from
-   `no-reply@nberkyilmaz.com`, and **Reply** answers the pilot. Until it is set, sending says
-   feedback "isn't available yet", and Render's log says "Feedback and error alerts are off".
-   The same address gets an email when something fails on the server (D37), at most 5 an hour.
+5. **Feedback**: `FEEDBACK_TO` comes from `render.yaml`, so pilots' messages go to
+   `contact@nberkyilmaz.com`. Profile → **Send feedback** on the page: the message arrives from
+   `no-reply@nberkyilmaz.com`, and **Reply** answers the pilot. Without it or the Resend key,
+   sending says feedback "isn't available yet", and Render's log says "Feedback and error alerts
+   are off". The same address gets an email when something fails on the server (D37), at most 5
+   an hour.
 
 ### 7. Check it as a pilot would
 

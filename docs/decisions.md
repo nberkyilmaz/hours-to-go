@@ -55,8 +55,8 @@ In the app's plain words it says:
 - who runs it: the owner, by name;
 - what is stored with and without a profile, and the one cookie;
 - what feedback sends, and that hosts log IP addresses;
-- the services, all in the US: Neon and Render in Ohio, Resend, GitHub, and Google for the owner's
-  inbox;
+- the services, all in the US: Neon and Render in Ohio, Resend, GitHub, and Cloudflare for the owner's
+  address;
 - how long things are kept: until deletion, plus 90 days in backups;
 - how to export and delete, and the Privacy Commissioner of Canada;
 - the terms: free, a study aid and not an official record, interpretations may be wrong, no
@@ -480,8 +480,9 @@ guest, the pilot may type one.
 
 - **Nothing is stored in the database.** A message is an email, and the inbox is where the owner
   reads anyway.
-- **`FEEDBACK_TO` is typed in Render's dashboard**, not written in `render.yaml`, so the owner's
-  personal address isn't published in this public repository.
+- **`FEEDBACK_TO` is `contact@nberkyilmaz.com`, written in `render.yaml`.** It began as a personal
+  address typed in Render's dashboard, to keep that out of this public repository. An address on
+  the owner's own domain is there to be published, and this way it's set with the deploy.
 - **Sent before replying.** A message that didn't go says so (502), and stays in the box.
 - **The browser's User-Agent goes with it**, to help with "it doesn't work". The form and the privacy
   page say so.
@@ -960,7 +961,7 @@ The nightly check of the standard still reads the English page, which is the one
 ### D58. What if you flew more or less
 Under the finish date, a folded slider from half an hour to 15 hours a week. It starts at the pilot's own pace, or at 2
 hours a week for someone with none yet, and gives the month they'd finish, what that pace costs a month, and how many
-months sooner or later that is. It uses the same sum as the finish date, so the two can't disagree, and it saves
+weeks or months sooner or later that is. It uses the same sum as the finish date, so the two can't disagree, and it saves
 nothing: it's for thinking about a budget or a deadline, not a setting.
 
 ### D59. The flight clock

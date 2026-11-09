@@ -999,17 +999,26 @@ drawn in the browser and nothing is uploaded.
 **Checked.** Real cards from Edge in English and French, with the app's font; looked at the files themselves. The
 share sheet needs a real phone.
 
+## Phase 42: weeks on the slider, and where problems go (2026-11-09)
+
+The what-if slider rounded to whole months, so a date two weeks sooner read "About the same as your pace". It counts
+weeks now, up to two months. Where it starts always reads as the pilot's own pace, since the slider rounds that to a
+half hour.
+
+Feedback and server error alerts go to `contact@nberkyilmaz.com`, written in `render.yaml` (D31). The privacy page
+names Cloudflare, which handles that address, in place of Google.
+
 ## Where things stand
 
-- 422 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
+- 425 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
   21, offline changes 5, server API 42, the standard's watcher 8, first visit, guest, cost to go,
   finish date, next flight, expiry, password reset, confirm links and feedback 28, the form and
   notices 12, the quick form 14, Progress 9, the logbook 7, first run and trust 10, signed in 6,
-  offline on the screen 5, log again and the cost a month 4, current to fly 17, reminders 21, the spreadsheet 19, the paper log 13, the instructor link 20, French 27, the what-if slider 7, the flight clock 16, the route 10, cards to share 13), and the API tests per
+  offline on the screen 5, log again and the cost a month 4, current to fly 17, reminders 21, the spreadsheet 19, the paper log 13, the instructor link 20, French 27, the what-if slider 10, the flight clock 16, the route 10, cards to share 13), and the API tests per
   database also run against a Postgres server through `pg` in CI.
 - Typecheck clean on both configs; `npm audit` clean.
 - Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.
-- Password reset live. Feedback and error alerts send once `FEEDBACK_TO` is set in Render, and reminders once
+- Password reset, feedback and error alerts live. Reminders send once
   `REMINDERS_KEY` is set in Render and GitHub. Backups
   run once the private repository exists and has its `DATABASE_URL` secret.
 - What comes next, in order, is the plan in [roadmap.md](roadmap.md).

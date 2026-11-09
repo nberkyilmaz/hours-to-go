@@ -41,11 +41,9 @@ services:
       - key: APP_URL
         value: https://nberkyilmaz.com/hours-to-go/
 
-      # Where "Send feedback" and error alerts go: the owner's own address. Typed in the dashboard
-      # rather than written here, so it isn't published with this repository. Replies to feedback
-      # go to the pilot.
+      # Where "Send feedback" and error alerts go. Replies to feedback go to the pilot.
       - key: FEEDBACK_TO
-        sync: false
+        value: contact@nberkyilmaz.com
 
       # What the daily GitHub Actions run presents to send the reminder emails (D53). The same
       # value goes in the repository's REMINDERS_KEY secret.

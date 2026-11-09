@@ -17,8 +17,7 @@ that costs money until it has users: no paid plan, no domain of its own, no stor
 2. ~~**A privacy and terms page.**~~ Done: `/hours-to-go/privacy/`, linked from the welcome screen
    and Profile (D30). It needs updating whenever what's stored or who stores it changes.
 3. ~~**A way to reach the owner.**~~ Done: "Send feedback" on the Profile tab and the privacy
-   page, emailed to the owner through Resend with the pilot's address to reply to (D31). Needs the
-   owner once: `FEEDBACK_TO` in Render ([deploy.md](deploy.md), step 6).
+   page, emailed to the owner through Resend with the pilot's address to reply to (D31).
 
 ### 2. The rest of the gaps (all free)
 
