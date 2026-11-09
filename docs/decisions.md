@@ -643,3 +643,36 @@ already does that once there is something to lose), and requiring a profile (gue
 ### D22. Check the UI in a real browser, at phone size, before calling it done
 jsdom tests can't see layout. Three real bugs were only found in Edge at 390×844: the tab bar at the
 top, the unreachable Save button, and cut-off fields. See the runbook.
+
+### D42. A nightly check of the standard the rules were written from
+The rules are only as right as Standard 421, and Transport Canada amends it. Students plan paid
+training around these numbers, and nobody re-reads a standard that long on the off chance. So
+`.github/workflows/standard.yml` reads Transport Canada's page every night and compares it with a
+copy kept here, `scripts/standard-421.json`. It costs nothing and doesn't touch the live app.
+
+- **What is compared:** only the 10 sections the app cites (74 distinct citations, used 126 times,
+  read from `goals.ts` so the list can't go stale). A change to the helicopter sections is no
+  reason to alert anyone.
+- **By subsection**, "421.26(4)". The page marks those reliably. Deeper than that its lists run
+  together, and a subsection is what a person would re-read anyway.
+- **The alert is one GitHub issue**, which GitHub emails: the subsection, the lines that changed,
+  and the requirements in the app that rest on it. It is updated only if the page changes again,
+  not every night. It stays until someone reads the change, fixes `goals.ts` if it needs it, and
+  runs `npm run standard:update` in a pull request.
+- **A page it can't read fails the run**, which GitHub also emails, so a broken watcher doesn't look
+  like a quiet standard. The same goes for a cited section that has gone: renumbered, or the page's
+  layout changed.
+- **A test holds every citation in the app against the stored copy**, down to the paragraph, so a
+  mistyped or stale citation fails CI. All 74 passed the first time it ran.
+
+It doesn't change the rules: a person reads the amendment first. It sees only this page, so an
+exemption or a change published elsewhere, or a change to the medical standards, won't show.
+GitHub pauses scheduled workflows in a repository with no activity for 60 days, and emails when it
+does; **Actions → Standard 421 → Enable** starts it again. The copy is of a public Government of
+Canada page, with its source named in the file.
+
+Turned down:
+- **Watching the page's "Date modified".** It can move with nothing changed, and can't say what did.
+- **A hash of each section instead of its text.** Smaller, but the alert couldn't show what changed.
+- **Emailing through Resend.** A secret and another way to fail, when GitHub already emails an
+  issue, and an issue is a to-do with a history.

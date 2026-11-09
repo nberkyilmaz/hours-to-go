@@ -46,6 +46,8 @@ that costs money until it has users: no paid plan, no domain of its own, no stor
    name stays on one line down to 320 px.
 10. ~~**`@fastify/static` advisories.**~~ Done: 10.1.8, with `glob` held at its fixed 14.x, and
    Vitest 5 and Vite 6.4.5 for the advisories in the test and build tools. `npm audit` finds none.
+11. ~~**Notice when Transport Canada changes the standard.**~~ Done: a nightly check of every section
+   the app cites, and a GitHub issue naming what changed and which requirements rest on it (D42).
 
 ### 3. Features, all before going public
 

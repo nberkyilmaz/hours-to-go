@@ -1,0 +1,60 @@
+# Every night: compare Transport Canada's Standard 421 with the copy this app was last checked
+# against, and open an issue when a section the app cites has changed (D42). GitHub emails the
+# repository's owner about a new issue, and about a failed run: a page that can't be read fails
+# rather than looking like a quiet night.
+
+name: Standard 421
+
+on:
+  schedule:
+    - cron: '17 9 * * *'  # 09:17 UTC, 4 or 5 in the morning in Ontario
+  workflow_dispatch:
+  # A change to the watcher or to the citations proves itself against the real page.
+  pull_request:
+    paths:
+      - 'scripts/**'
+      - 'src/rules/goals.ts'
+      - '.github/workflows/standard.yml'
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: standard-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Compare with Transport Canada's page
+        run: npm run -s standard:check -- --report report.md
+
+      # One issue, not one a night: it is updated only when the page has changed again.
+      - name: Say so in an issue
+        if: github.event_name != 'pull_request' && hashFiles('report.md') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          title='Transport Canada changed Standard 421'
+          stamp="report:$(sha256sum report.md | cut -c1-12)"
+          printf '\n\n<!-- %s -->\n' "$stamp" >> report.md
+          number=$(gh issue list --state open --search "in:title \"$title\"" --json number,title --jq "map(select(.title == \"$title\"))[0].number // empty")
+          if [ -z "$number" ]; then
+            gh issue create --title "$title" --body-file report.md
+          elif ! gh issue view "$number" --json body --jq .body | grep -q "$stamp"; then
+            gh issue edit "$number" --body-file report.md
+            gh issue comment "$number" --body 'The page has changed again. The description above is up to date.'
+          fi
