@@ -336,8 +336,10 @@ const RAW: Record<string, string> = {
   'More than 5 years away': 'Dans plus de 5 ans',
   'about {price} a month': 'environ {price} par mois',
   'About the same as your pace.': 'À peu près comme à votre rythme actuel.',
-  '1 month sooner than your pace.': '1 mois plus tôt qu’à votre rythme actuel.',
-  '1 month later than your pace.': '1 mois plus tard qu’à votre rythme actuel.',
+  '1 week sooner than your pace.': '1 semaine plus tôt qu’à votre rythme actuel.',
+  '1 week later than your pace.': '1 semaine plus tard qu’à votre rythme actuel.',
+  '{n} weeks sooner than your pace.': '{n} semaines plus tôt qu’à votre rythme actuel.',
+  '{n} weeks later than your pace.': '{n} semaines plus tard qu’à votre rythme actuel.',
   '{n} months sooner than your pace.': '{n} mois plus tôt qu’à votre rythme actuel.',
   '{n} months later than your pace.': '{n} mois plus tard qu’à votre rythme actuel.',
 

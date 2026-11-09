@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { addDays, today, type Entry } from '../../src/model/entry';
 import { emptyLogbook, rememberWelcomed, saveGuestLogbook } from '../../src/model/store';
-import { monthsBetween } from '../../src/rules/pace';
+import { monthsBetween, weeksBetween } from '../../src/rules/pace';
 import { line } from './fixtures';
 
 describe('months between two finishes', () => {
@@ -11,6 +11,14 @@ describe('months between two finishes', () => {
     expect(monthsBetween('2027-01-01', '2027-04-01')).toBe(3);
     expect(monthsBetween('2027-04-01', '2027-01-01')).toBe(-3);
     expect(monthsBetween('2027-01-01', '2027-01-10')).toBe(0);
+  });
+});
+
+describe('weeks between two finishes', () => {
+  it('rounds to whole weeks, and is negative when sooner', () => {
+    expect(weeksBetween('2027-01-01', '2027-01-15')).toBe(2);
+    expect(weeksBetween('2027-01-15', '2027-01-01')).toBe(-2);
+    expect(weeksBetween('2027-01-01', '2027-01-03')).toBe(0);
   });
 });
 
@@ -47,9 +55,27 @@ describe('the slider', () => {
     const { box, slider } = await open(steady());
     set(slider, 6);
     expect(box.textContent).toContain('6 h a week');
-    expect(box.textContent).toMatch(/\d+ months? sooner than your pace/);
+    expect(box.textContent).toMatch(/\d+ weeks? sooner than your pace/);
     set(slider, 1);
     expect(box.textContent).toMatch(/\d+ months? later than your pace/);
+  });
+
+  it('counts a difference under two months in weeks, instead of calling it the same', async () => {
+    const { box, slider } = await open(steady());
+    set(slider, 4);
+    expect(box.textContent).toContain('1 week sooner than your pace.');
+    set(slider, 8);
+    expect(box.textContent).toContain('4 weeks sooner than your pace.');
+    expect(box.textContent).not.toContain('About the same');
+  });
+
+  it('doesn’t call its own rounding a change', async () => {
+    // 2.2 h a week starts the slider at 2, which on its own would finish a week later.
+    const { box, slider } = await open(Array.from({ length: 20 }, (_, i) => line(addDays(today(), -Math.round(3.5 * i) - 1), { seDayDual: 1.1 }, { id: `f${i}` })));
+    expect(slider.value).toBe('2');
+    expect(box.textContent).toContain('About the same as your pace.');
+    set(slider, 2.5);
+    expect(box.textContent).toContain('1 week sooner than your pace.');
   });
 
   it('says what that pace costs a month, more when flying more', async () => {
