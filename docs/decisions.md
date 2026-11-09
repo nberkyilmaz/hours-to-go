@@ -974,6 +974,15 @@ cancelling the form doesn't lose the time. Past 12 hours it asks whether it was 
 It measures what the pilot starts and stops. Whether that's air time or engine time is theirs to decide, and the form
 lets them change it, so the app doesn't claim to know.
 
+### D60. The route
+Under the ring, the goal drawn as a flight plan: a fix for each part of the standard, a line flown so far, and an
+aircraft on the leg in progress, with its name and the next one's. The legs come from the goal's own sections, so
+nothing is written for any one licence and every goal gets one. On a leg with hours, the aircraft moves by the hours;
+on the others, by what's been ticked.
+
+Only the current leg is named. Five labels wouldn't fit a phone, least of all in French, and the Progress screen was
+slimmed down on purpose (F5). A screen reader gets every leg and its count.
+
 ## Process
 
 ### D22. Check the UI in a real browser, at phone size, before calling it done

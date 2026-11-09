@@ -348,6 +348,11 @@ const RAW: Record<string, string> = {
   'Cancel the clock': 'Annuler le chrono',
   'Flying now? Start the clock': 'Vous partez? Démarrez le chrono',
 
+  // ---- The route ----
+  'Your route to the {goal}. {legs}.': 'Votre route vers la {goal}. {legs}.',
+  'then {leg}': 'ensuite : {leg}',
+  'then your application': 'ensuite : votre demande',
+
   // ---- Importing a spreadsheet ----
   'What this file would add': 'Ce que ce fichier ajouterait',
   '1 line': '1 ligne',

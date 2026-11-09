@@ -984,13 +984,20 @@ it started, so it runs on with the app closed.
 **Checked.** In Edge on a phone in both languages, with a real reload in the middle of a flight, through to a saved
 line; axe finds nothing on the bar. The home-screen shortcut needs a real phone.
 
+## Phase 40: the route (2026-11-09)
+
+The goal drawn as a flight plan under the ring: one leg for each part of the standard, and an aircraft on the leg in
+progress (D60).
+
+**Checked.** In Edge on a 360 px phone, light in English and dark in French; axe finds nothing.
+
 ## Where things stand
 
-- 399 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
+- 409 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
   21, offline changes 5, server API 42, the standard's watcher 8, first visit, guest, cost to go,
   finish date, next flight, expiry, password reset, confirm links and feedback 28, the form and
   notices 12, the quick form 14, Progress 9, the logbook 7, first run and trust 10, signed in 6,
-  offline on the screen 5, log again and the cost a month 4, current to fly 17, reminders 21, the spreadsheet 19, the paper log 13, the instructor link 20, French 27, the what-if slider 7, the flight clock 16), and the API tests per
+  offline on the screen 5, log again and the cost a month 4, current to fly 17, reminders 21, the spreadsheet 19, the paper log 13, the instructor link 20, French 27, the what-if slider 7, the flight clock 16, the route 10), and the API tests per
   database also run against a Postgres server through `pg` in CI.
 - Typecheck clean on both configs; `npm audit` clean.
 - Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.

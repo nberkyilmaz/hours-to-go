@@ -10,6 +10,7 @@ import { CostDetail, CostStat, costOf, openRates } from './Cost';
 import { CurrencyCard } from './Currency';
 import { Finish } from './Finish';
 import { Ring } from './Ring';
+import { Route } from './Route';
 import { MedicalFields } from './Medical';
 import { NextFlightCard } from './NextFlight';
 import { CheckIcon, LockIcon, PlusIcon } from './icons';
@@ -223,6 +224,7 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
           {cost && <CostStat result={r} cost={cost} profile={profile} onRates={() => openRates(costPanel.current)} />}
         </div>
       )}
+      <Route result={r} />
       {r.complete && !r.held && !r.credited && (
         <div className="banner ok goal-complete">
           <span>

@@ -47,6 +47,7 @@ hours-to-go/
 │   │   ├── moment.ts           what a flight just did for the goal, for the message after saving (D46)
 │   │   ├── progress.ts         how far along a goal is, by hours, for the ring (D47)
 │   │   ├── shared.ts           the only figures a read-only link can show (D56)
+│   │   ├── route.ts            a goal as a flight plan, one leg for each part of the standard (D60)
 │   │   ├── reminders.ts        what's about to run out, and what hasn't been said yet (D53)
 │   │   ├── currency.ts         what a licensed pilot needs to have done recently (D52)
 │   │   └── next.ts             which flight counts toward the most, by trying each against the rules (D43)
