@@ -10,6 +10,7 @@ import { BookIcon, CloudCheckIcon, CloudOffIcon, CloudUpIcon, Mark, PlusIcon, Pr
 import { LogbookView } from './ui/Logbook';
 import { ProfileView } from './ui/Profile';
 import { ProgressView } from './ui/Progress';
+import { PrintLog } from './ui/PrintLog';
 import { ResetPassword } from './ui/ResetPassword';
 import { StopReminders } from './ui/StopReminders';
 import { Welcome } from './ui/Welcome';
@@ -229,6 +230,7 @@ export function App() {
   if (link?.kind === 'stop') return <StopReminders token={link.token} lb={lb} onDone={() => setLink(null)} />;
   if (lb.mode.kind === 'loading') return <Loading />;
   if (welcoming) return <Welcome lb={lb} />;
+  if (hash === '#print') return <PrintLog entries={entries} onBack={() => window.history.back()} />;
 
   const { mode, book } = lb;
   const strandedCount = mode.kind === 'account' && hasContent(lb.guest) ? lb.guest.entries.length : 0;

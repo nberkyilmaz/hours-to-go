@@ -908,6 +908,9 @@ wakes the server and calls it with a key. The owner sets that key once ([deploy.
 **Problem on the way:** the switch only moved once the server had answered, so a tap seemed to do nothing. It now
 shows what was asked for at once, and goes back if the server says no.
 
+**Problem on the way:** the server's image only copied `src/model`, and reminders need `src/rules` too. Every test
+passed, and the deploy would have failed. CI builds and starts the image on each push, which is what caught it.
+
 **Checked.** In Edge against a local server: signed up, confirmed, turned it on, ran it, got the email, ran it
 again and got nothing, stopped it from the link signed out, and the switch showed off. A wrong key gets a 401.
 
@@ -920,13 +923,24 @@ when the heading says exactly which one it is, and shows what it would add befor
 a formula in the remarks is defused, importing the same file again adds nothing, and someone's own spreadsheet with a
 bad date and a 12-hour line reports both before anything is added. axe finds nothing on the preview.
 
+## Phase 34: the logbook on paper (2026-11-08)
+
+Every line in the paper log's columns, sideways, with each page's own totals carried forward (D55). The browser's
+Save as PDF makes the file, so it costs nothing and nothing leaves the device.
+
+**Problem on the way:** with a career's worth of hours, totals spilled out of their columns on Letter, though not on
+A4, which is wider. The columns are a little wider now, and a long number prints smaller rather than being cut.
+
+**Checked.** Real PDFs from Edge on Letter and A4, with 81 lines including 12,345 hours brought forward: 4 pages plus
+the remarks page, as counted, no number outside its cell, and axe finds nothing. Not printed on paper.
+
 ## Where things stand
 
-- 315 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
+- 328 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
   21, offline changes 5, server API 42, the standard's watcher 8, first visit, guest, cost to go,
   finish date, next flight, expiry, password reset, confirm links and feedback 28, the form and
   notices 12, the quick form 14, Progress 9, the logbook 7, first run and trust 10, signed in 6,
-  offline on the screen 5, log again and the cost a month 4, current to fly 17, reminders 21, the spreadsheet 19), and the API tests per
+  offline on the screen 5, log again and the cost a month 4, current to fly 17, reminders 21, the spreadsheet 19, the paper log 13), and the API tests per
   database also run against a Postgres server through `pg` in CI.
 - Typecheck clean on both configs; `npm audit` clean.
 - Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.

@@ -894,6 +894,21 @@ Text that a spreadsheet would run as a formula gets a leading apostrophe, remove
 French Canada saves with semicolons and decimal commas, which import reads. Export is still comma-separated, which
 that Excel may open as one column; French (roadmap 11) is the time to look at it.
 
+### D55. The logbook on paper
+"Print or save as PDF" on the Logbook tab opens every line in the columns of a Canadian paper log, sideways, and hands
+over to the browser. Its Save as PDF is free and needs no library or server, so nothing leaves the device.
+
+**Pages are counted, not left to the browser.** Each page has 26 one-line rows and its own "This page", "Brought
+forward" and "Total to date", as a paper log does. If the browser chose the breaks, totals couldn't be placed at the
+foot of a page and be right. One line a row is what makes that safe, so a remark too long for its row is cut short
+there and written out in full on a last page. Nothing is lost.
+
+**A number is never cut short.** A career's totals have to fit a column sized for one flight, so a long number is
+printed smaller instead.
+
+**Not claimed:** that an examiner or school will accept it. The screen says to ask them, and it's on the list of
+questions for the flight school. The name is typed on the screen and isn't stored, since a profile has no name.
+
 ## Process
 
 ### D22. Check the UI in a real browser, at phone size, before calling it done

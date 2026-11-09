@@ -1928,6 +1928,181 @@ button.log-row:hover {
   padding-left: 20px;
 }
 
+/* ---- The logbook on paper (D55) -------------------------------------- */
+
+.print-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.print-bar h1 {
+  margin: 0;
+}
+
+.print-sheets {
+  overflow-x: auto;
+  padding: 0 16px 24px;
+}
+
+/* A sheet of paper whatever the theme: ink on white, and the same size on a phone as in print. */
+.print-page {
+  box-sizing: border-box;
+  width: 279mm;
+  margin: 0 auto 16px;
+  padding: 9mm;
+  background: #fff;
+  color: #000;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 9pt;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 25%);
+}
+
+.print-head,
+.print-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.print-head {
+  margin-bottom: 4pt;
+}
+
+.print-foot {
+  margin-top: 6pt;
+  font-size: 8pt;
+}
+
+.print-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 7.5pt;
+  line-height: 1.2;
+}
+
+.print-table th,
+.print-table td {
+  height: 15pt;
+  padding: 0 1.5pt;
+  border: 0.5pt solid #777;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 400;
+}
+
+.print-table thead th {
+  height: auto;
+  padding: 1.5pt;
+  overflow: visible;
+  white-space: normal;
+  text-align: center;
+  font-weight: 700;
+}
+
+.print-table tfoot th,
+.print-table tfoot td {
+  font-weight: 700;
+}
+
+.print-table tfoot th {
+  text-align: right;
+}
+
+.print-table .num {
+  overflow: visible;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.print-table .tight {
+  font-size: 6.5pt;
+}
+
+.print-table .tighter {
+  font-size: 5.5pt;
+}
+
+.print-table .c-date {
+  width: 6%;
+}
+
+.print-table .c-type {
+  width: 5%;
+}
+
+.print-table .c-reg {
+  width: 5.5%;
+}
+
+.print-table .c-place {
+  width: 3.25%;
+}
+
+.print-table .c-num {
+  width: 3.2%;
+}
+
+.print-table .c-remarks {
+  width: 13%;
+}
+
+.print-notes dl {
+  margin: 0;
+}
+
+.print-notes dl > div {
+  display: flex;
+  gap: 12px;
+  padding: 3pt 0;
+  border-bottom: 0.5pt solid #bbb;
+  break-inside: avoid;
+}
+
+.print-notes dt {
+  flex: 0 0 34mm;
+  font-weight: 700;
+}
+
+.print-notes dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+@media print {
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  .print-bar {
+    display: none;
+  }
+
+  .print-sheets {
+    overflow: visible;
+    padding: 0;
+  }
+
+  .print-page {
+    width: auto;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    break-after: page;
+  }
+
+  .print-page:last-child {
+    break-after: auto;
+  }
+}
+
 /* ---- Current to fly ------------------------------------------------- */
 
 .currency {
