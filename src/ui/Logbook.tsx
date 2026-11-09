@@ -67,17 +67,20 @@ export function LogbookView({ entries, onNew, onEdit, onDelete }: Props) {
     return [...groups.values()].map((g) => ({ label: g.label, sums: addUp(g.entries) })).sort((a, b) => b.sums.total - a.sums.total);
   }, [entries]);
 
-  const listColumns: ListColumn[] = [
-    { key: 'dual', label: 'Dual', value: (_e, d) => h(d.dual) },
-    { key: 'pic', label: 'PIC', value: (_e, d) => h(d.pic) },
-    ...(sums.copilot ? [{ key: 'copilot', label: 'Co-pilot', value: (_e: Entry, d: Derived) => h(d.copilot) }] : []),
-    { key: 'night', label: 'Night', value: (_e, d) => h(d.night) },
-    { key: 'xc', label: 'XC', value: (_e, d) => h(d.xcDual + d.xcPic) },
-    { key: 'inst', label: 'Inst', value: (_e, d) => h(d.inst) },
-    { key: 'ftd', label: 'FTD', value: (e) => h(e.ftd) },
-    { key: 'ldg', label: 'Ldg D/N', value: (e) => (e.dayLandings || e.nightLandings ? `${e.dayLandings}/${e.nightLandings}` : '') },
-  ];
-  const gridStyle = { '--log-cols': `92px minmax(0, 1.4fr) minmax(0, 1.1fr) repeat(${listColumns.length}, 52px) 64px 92px` } as CSSProperties;
+  // Only the columns with something in them, so the route gets the room.
+  const listColumns = (
+    [
+      { key: 'dual', label: 'Dual', value: (_e, d) => h(d.dual) },
+      { key: 'pic', label: 'PIC', value: (_e, d) => h(d.pic) },
+      { key: 'copilot', label: 'Co-pilot', value: (_e, d) => h(d.copilot) },
+      { key: 'night', label: 'Night', value: (_e, d) => h(d.night) },
+      { key: 'xc', label: 'XC', value: (_e, d) => h(d.xcDual + d.xcPic) },
+      { key: 'inst', label: 'Inst', value: (_e, d) => h(d.inst) },
+      { key: 'ftd', label: 'FTD', value: (e) => h(e.ftd) },
+      { key: 'ldg', label: 'Ldg D/N', value: (e) => (e.dayLandings || e.nightLandings ? `${e.dayLandings}/${e.nightLandings}` : '') },
+    ] satisfies ListColumn[]
+  ).filter((c) => entries.some((e) => c.value(e, derive(e)) !== ''));
+  const gridStyle = { '--log-cols': `92px minmax(120px, 1.4fr) minmax(120px, 1.1fr) repeat(${listColumns.length}, 52px) 64px 92px` } as CSSProperties;
 
   const tiles: [string, string][] = [
     ['Grand total', formatHours(sums.total)],
@@ -94,6 +97,7 @@ export function LogbookView({ entries, onNew, onEdit, onDelete }: Props) {
   if (sorted.length === 0) {
     return (
       <section className="card empty-state" aria-labelledby="empty-title">
+        <h1 className="sr-only">Logbook</h1>
         <span className="empty-icon">
           <BookIcon />
         </span>
@@ -119,6 +123,7 @@ export function LogbookView({ entries, onNew, onEdit, onDelete }: Props) {
 
   return (
     <div className="stack">
+      <h1 className="sr-only">Logbook</h1>
       <div className="log-actions">
         <button type="button" className="btn primary" onClick={() => onNew('flight')}>
           <PlusIcon /> Log a flight
@@ -143,7 +148,7 @@ export function LogbookView({ entries, onNew, onEdit, onDelete }: Props) {
       <details className="card fold">
         <summary>Every column, laid out like your paper logbook</summary>
         <div className="paper-totals">
-          {LOG_GROUPS.map((g) => (
+          {LOG_GROUPS.filter((g) => g.columns.some((c) => sums[c] > 0)).map((g) => (
             <div key={g.title} className="paper-group">
               <h4>{g.title}</h4>
               <dl>
@@ -172,9 +177,9 @@ export function LogbookView({ entries, onNew, onEdit, onDelete }: Props) {
                 <th scope="col">Type</th>
                 <th scope="col">Dual</th>
                 <th scope="col">PIC</th>
-                <th scope="col">Co-pilot</th>
+                {sums.copilot > 0 && <th scope="col">Co-pilot</th>}
                 <th scope="col">Total</th>
-                <th scope="col">FTD</th>
+                {sums.ftd > 0 && <th scope="col">FTD</th>}
               </tr>
             </thead>
             <tbody>
@@ -183,9 +188,9 @@ export function LogbookView({ entries, onNew, onEdit, onDelete }: Props) {
                   <th scope="row">{t.label}</th>
                   <td>{h(t.sums.dual)}</td>
                   <td>{h(t.sums.pic)}</td>
-                  <td>{h(t.sums.copilot)}</td>
+                  {sums.copilot > 0 && <td>{h(t.sums.copilot)}</td>}
                   <td>{h(t.sums.total)}</td>
-                  <td>{h(t.sums.ftd)}</td>
+                  {sums.ftd > 0 && <td>{h(t.sums.ftd)}</td>}
                 </tr>
               ))}
             </tbody>

@@ -803,12 +803,34 @@ government form. 25 findings in six batches, now the UI and UX plan on the roadm
 one detail about the dialog's focus was corrected. Nothing in it has been tried on a real phone, with
 a screen reader, or with students yet, and it says so.
 
+## Phase 24: the audit's first batch (2026-11-08)
+
+**Owner request.** "Lets keep working and lets not stop working."
+
+**Built** (D45): the entry form as a native dialog; asking before anything typed is thrown away, from
+Cancel, Esc, a click outside or Back; a failed save taking the pilot to the problem; doubts about
+impossible numbers; the logbook's table only above 1100 px, showing only the columns in use; one notice
+at a time, with "Later" kept for two weeks; contrast; 44 px tap targets on phones; headings in order and
+a page title per tab; a splash during the first load.
+
+**Problems on the way:**
+1. *Focus didn't come back to the button.* It was restored while the modal still made the page inert,
+   so it fell to the body. It's restored after the modal has gone now.
+2. *Tap sizes were overruled.* The phone rules came before each control's own size in the stylesheet, so
+   they lost. They come last now.
+
+**Checked.** 12 new tests. In Edge against the audit's own measures: the empty-Save error is on screen
+(285 px, was 1,282) with the cursor in the box; Esc, a click outside and Back all ask; focus can't
+leave the form and comes back to "Log a flight"; a route is never clipped from 720 to 1280 px;
+no control under 44 px on a phone but the inline link to the standard; and axe finds nothing on the form,
+the logbook, Profile or Progress in dark.
+
 ## Where things stand
 
-- 202 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
+- 214 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
   21, offline changes 5, server API 42, the standard's watcher 8, first visit, guest, cost to go,
-  finish date, next flight, expiry, password reset, confirm links and feedback 28, signed in 6,
-  offline on the screen 5), and the API tests per
+  finish date, next flight, expiry, password reset, confirm links and feedback 28, the form and
+  notices 12, signed in 6, offline on the screen 5), and the API tests per
   database also run against a Postgres server through `pg` in CI.
 - Typecheck clean on both configs; `npm audit` clean.
 - Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { blankEntry, derive, isFtdOnly, type Entry } from './model/entry';
-import { hasContent } from './model/store';
+import { hasContent, isSnoozed, snooze } from './model/store';
 import { ConfirmBanner } from './ui/Account';
 import { ConfirmEmail } from './ui/ConfirmEmail';
 import { EntryForm, type FormLayout, type Suggestions } from './ui/EntryForm';
@@ -86,11 +86,15 @@ export function App() {
   const lb = useLogbook();
   const [tab, setTab] = useState<Tab>('progress');
   const [draft, setDraft] = useState<{ entry: Entry; isNew: boolean; layout: FormLayout } | null>(null);
-  const [hideGuestNudge, setHideGuestNudge] = useState(false);
+  const [hideGuestNudge, setHideGuestNudge] = useState(() => isSnoozed('guest-nudge'));
   const [hideStranded, setHideStranded] = useState(false);
-  const [hideConfirm, setHideConfirm] = useState(false);
+  const [hideConfirm, setHideConfirm] = useState(() => isSnoozed('confirm-email'));
   const [link, setLink] = useState(linkInUrl);
   const entries = lb.book.entries;
+
+  useEffect(() => {
+    document.title = `${TABS.find((t) => t.id === tab)?.label} · Hours to Go`;
+  }, [tab]);
 
   // Out of the address bar and the history once read, so the link isn't bookmarked or shared.
   useEffect(() => {
@@ -142,6 +146,81 @@ export function App() {
   const { mode, book } = lb;
   const strandedCount = mode.kind === 'account' && hasContent(lb.guest) ? lb.guest.entries.length : 0;
 
+  // One notice at a time, the most pressing first: a stack of them pushed the app off the first screen.
+  const notices: JSX.Element[] = [];
+  if (mode.kind === 'guest' && mode.offline) {
+    notices.push(<div className="banner warn">Can’t reach the server. You’re working on this device only; sign in again once you’re back online.</div>);
+  }
+  if (mode.kind === 'guest' && !lb.storageOk) {
+    notices.push(<div className="banner warn">This browser isn’t letting the app save. Create a profile, or export your logbook so you don’t lose it.</div>);
+  }
+  if (mode.kind === 'account' && lb.sync.offline && lb.sync.pending > 0) {
+    notices.push(
+      <div className="banner" role="status">
+        You’re offline.{' '}
+        {lb.sync.pending === 1 ? 'Your change is kept on this device and goes' : `Your ${lb.sync.pending} changes are kept on this device and go`}{' '}
+        to your profile when you’re back online.
+      </div>,
+    );
+  }
+  if (mode.kind === 'account' && !lb.storageOk) {
+    notices.push(
+      <div className="banner warn">
+        This browser isn’t letting the app keep changes on this device. They go straight to your profile, so keep the app open until it says
+        Saved.
+      </div>,
+    );
+  }
+  if (strandedCount > 0 && !hideStranded) {
+    notices.push(
+      <div className="banner">
+        <span>
+          This device has {strandedCount} {strandedCount === 1 ? 'entry' : 'entries'} saved before you signed in. Add them to your profile?
+          Entries already in your profile are not duplicated.
+        </span>
+        <span className="row">
+          <button type="button" className="btn small primary" onClick={() => void lb.moveGuestIntoAccount()}>
+            Add to my profile
+          </button>
+          <button type="button" className="link" onClick={() => setHideStranded(true)}>
+            Not now
+          </button>
+        </span>
+      </div>,
+    );
+  }
+  if (mode.kind === 'guest' && !mode.offline && hasContent(book) && !hideGuestNudge && tab !== 'profile') {
+    notices.push(
+      // The top bar's Create profile is right above it, so it needs no button of its own.
+      <div className="banner">
+        <span>Your logbook is only on this device. Save it to a free profile so you can’t lose it.</span>
+        <button
+          type="button"
+          className="link"
+          onClick={() => {
+            snooze('guest-nudge');
+            setHideGuestNudge(true);
+          }}
+        >
+          Later
+        </button>
+      </div>,
+    );
+  }
+  // Its link can't be sent offline, so it waits for the connection too.
+  if (mode.kind === 'account' && !mode.confirmed && !mode.pendingEmail && !hideConfirm && !lb.sync.offline && tab !== 'profile') {
+    notices.push(
+      <ConfirmBanner
+        lb={lb}
+        email={mode.email}
+        onLater={() => {
+          snooze('confirm-email');
+          setHideConfirm(true);
+        }}
+      />,
+    );
+  }
+
   return (
     <div className="app">
       <header className="topbar">
@@ -169,7 +248,7 @@ export function App() {
         )}
       </header>
 
-      <main className="main">
+      <main className={`main${tab === 'log' ? ' main-wide' : ''}`}>
         {lb.error && (
           <div className="banner danger" role="alert">
             <span>{lb.error}</span>
@@ -178,58 +257,7 @@ export function App() {
             </button>
           </div>
         )}
-        {mode.kind === 'guest' && mode.offline && (
-          <div className="banner warn">Can’t reach the server. You’re working on this device only; sign in again once you’re back online.</div>
-        )}
-        {mode.kind === 'guest' && !lb.storageOk && (
-          <div className="banner warn">This browser isn’t letting the app save. Create a profile, or export your logbook so you don’t lose it.</div>
-        )}
-        {mode.kind === 'account' && lb.sync.offline && lb.sync.pending > 0 && (
-          <div className="banner" role="status">
-            You’re offline.{' '}
-            {lb.sync.pending === 1 ? 'Your change is kept on this device and goes' : `Your ${lb.sync.pending} changes are kept on this device and go`}{' '}
-            to your profile when you’re back online.
-          </div>
-        )}
-        {mode.kind === 'account' && !lb.storageOk && (
-          <div className="banner warn">
-            This browser isn’t letting the app keep changes on this device. They go straight to your profile, so keep the app open until
-            it says Saved.
-          </div>
-        )}
-        {mode.kind === 'guest' && !mode.offline && hasContent(book) && !hideGuestNudge && tab !== 'profile' && (
-          <div className="banner">
-            <span>Your logbook is only on this device. Create a free profile so you don’t lose it and can use it on your phone too.</span>
-            <span className="row">
-              <button type="button" className="btn small primary" onClick={() => setTab('profile')}>
-                Create profile
-              </button>
-              <button type="button" className="link" onClick={() => setHideGuestNudge(true)}>
-                Later
-              </button>
-            </span>
-          </div>
-        )}
-        {/* Its link can't be sent offline, so it waits for the connection too. */}
-        {mode.kind === 'account' && !mode.confirmed && !mode.pendingEmail && !hideConfirm && !lb.sync.offline && tab !== 'profile' && (
-          <ConfirmBanner lb={lb} email={mode.email} onLater={() => setHideConfirm(true)} />
-        )}
-        {strandedCount > 0 && !hideStranded && (
-          <div className="banner">
-            <span>
-              This device has {strandedCount} {strandedCount === 1 ? 'entry' : 'entries'} saved before you signed in. Add them to your profile?
-              Entries already in your profile are not duplicated.
-            </span>
-            <span className="row">
-              <button type="button" className="btn small primary" onClick={() => void lb.moveGuestIntoAccount()}>
-                Add to my profile
-              </button>
-              <button type="button" className="link" onClick={() => setHideStranded(true)}>
-                Not now
-              </button>
-            </span>
-          </div>
-        )}
+        {notices[0]}
 
         {tab === 'progress' && (
           <ProgressView
@@ -247,7 +275,8 @@ export function App() {
             onNew={startEntry}
             onEdit={editEntry}
             onDelete={(entry) => {
-              if (window.confirm(`Delete the ${entry.date} entry?`)) void lb.removeEntry(entry.id);
+              const what = [entry.date, entry.aircraft, entry.registration].filter(Boolean).join(' ');
+              if (window.confirm(`Delete the ${what} entry?`)) void lb.removeEntry(entry.id);
             }}
           />
         )}

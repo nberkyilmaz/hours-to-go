@@ -16,7 +16,7 @@ export function NextFlightCard({ result: r, entries, profile }: { result: GoalRe
   if (advice.status === 'before-solo') {
     return (
       <section className="next" aria-labelledby="next-title">
-        <h3 id="next-title">Your next flight</h3>
+        <h2 id="next-title">Your next flight</h2>
         <p className="hint">Before your first solo, your school’s lessons set the order. Once a solo is in your log, this suggests the flight that counts toward the most.</p>
       </section>
     );
@@ -26,7 +26,7 @@ export function NextFlightCard({ result: r, entries, profile }: { result: GoalRe
   const n = best.counts.length;
   return (
     <section className="next" aria-labelledby="next-title">
-      <h3 id="next-title">Your next flight</h3>
+      <h2 id="next-title">Your next flight</h2>
       <p>
         <strong>{best.name}</strong>, {formatHours(best.minutes)} h, about {money(about(best.price))}
       </p>

@@ -14,6 +14,7 @@ export function ProfileView({ lb }: { lb: LogbookState }) {
   const { book, mode } = lb;
   return (
     <div className="stack">
+      <h1 className="sr-only">Profile</h1>
       <section className="card pad" aria-labelledby="account-title">
         <h2 id="account-title">Your profile</h2>
         {mode.kind === 'account' ? (
@@ -150,11 +151,21 @@ export function AuthForm({ lb, tab: givenTab, onTabChange }: AuthFormProps) {
     <>
       {offline && <p className="warn-text">Can’t reach the server right now, so signing in won’t work until the connection is back.</p>}
       {tab !== 'forgot' && (
-        <div className="segmented" role="tablist" aria-label="Profile">
-          <button type="button" role="tab" aria-selected={tab === 'signup'} className={tab === 'signup' ? 'is-on' : ''} onClick={() => setTab('signup')}>
+        <div
+          className="segmented"
+          role="tablist"
+          aria-label="Profile"
+          onKeyDown={(e) => {
+            if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+            e.preventDefault();
+            e.currentTarget.querySelector<HTMLElement>('[aria-selected="false"]')?.focus();
+            setTab(tab === 'signup' ? 'signin' : 'signup');
+          }}
+        >
+          <button type="button" role="tab" aria-selected={tab === 'signup'} tabIndex={tab === 'signup' ? 0 : -1} className={tab === 'signup' ? 'is-on' : ''} onClick={() => setTab('signup')}>
             Create profile
           </button>
-          <button type="button" role="tab" aria-selected={tab === 'signin'} className={tab === 'signin' ? 'is-on' : ''} onClick={() => setTab('signin')}>
+          <button type="button" role="tab" aria-selected={tab === 'signin'} tabIndex={tab === 'signin' ? 0 : -1} className={tab === 'signin' ? 'is-on' : ''} onClick={() => setTab('signin')}>
             Sign in
           </button>
         </div>
