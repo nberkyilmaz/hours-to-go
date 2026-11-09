@@ -192,17 +192,20 @@ export function LogbookView({ entries, onNew, onEdit }: Props) {
         </div>
       </details>
 
-      <div className="log-actions">
-        <button type="button" className="link" onClick={() => onNew('ftd')}>
-          {t('Log FTD session')}
-        </button>
-        <button type="button" className="link" onClick={() => onNew('forward')}>
-          {t('Add paper logbook totals')}
-        </button>
-        <a className="link" href="#print">
-          {t('Print or save as PDF')}
-        </a>
-      </div>
+      <details className="log-more">
+        <summary>{t('More')}</summary>
+        <div className="log-actions">
+          <button type="button" className="link" onClick={() => onNew('ftd')}>
+            {t('Log FTD session')}
+          </button>
+          <button type="button" className="link" onClick={() => onNew('forward')}>
+            {t('Add paper logbook totals')}
+          </button>
+          <a className="link" href="#print">
+            {t('Print or save as PDF')}
+          </a>
+        </div>
+      </details>
 
       {sorted.length >= SEARCH_FROM && (
         <div className="log-find">

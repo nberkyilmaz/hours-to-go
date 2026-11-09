@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
-import { emptyLogbook, rememberWelcomed, saveGuestLogbook } from '../../src/model/store';
+import { emptyLogbook, rememberWelcomed, loadGuestLogbook, saveGuestLogbook } from '../../src/model/store';
 import { drawCard, shareCard, wrapped, type CardFacts } from '../../src/ui/card';
 import { line, profile } from './fixtures';
 
@@ -134,9 +134,36 @@ describe('on the screen', () => {
     fireEvent.click(within(dialog).getByLabelText('Solo'));
     fireEvent.change(within(dialog).getByLabelText('Flight time, in hours'), { target: { value: '0.5' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
-    await waitFor(() => expect(document.querySelector('.toast')).not.toBeNull());
-    fireEvent.click(within(document.querySelector('.toast') as HTMLElement).getByRole('button', { name: 'Share' }));
-    await waitFor(() => expect(drawn).toContain('My first solo'));
+    const moment = await screen.findByRole('dialog', { name: /Your first solo/ });
+    expect(document.querySelector('.toast')).toBeNull();
+    fireEvent.click(within(moment).getByRole('button', { name: 'Share' }));
+    await waitFor(() => expect(share).toHaveBeenCalled());
+    expect(drawn).toContain('My first solo');
+  });
+
+  const logFirstSolo = async () => {
+    seed([line('2026-10-01', { seDayDual: 12 })]);
+    render(<App />);
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Log a flight' }))[0]!);
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.click(within(dialog).getByLabelText('Solo'));
+    fireEvent.change(within(dialog).getByLabelText('Flight time, in hours'), { target: { value: '0.5' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+    return screen.findByRole('dialog', { name: /Your first solo/ });
+  };
+
+  it('stays until it’s closed, unlike an ordinary flight’s notice', async () => {
+    const moment = await logFirstSolo();
+    fireEvent.click(within(moment).getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(loadGuestLogbook().entries).toHaveLength(2);
+  });
+
+  it('can still be undone', async () => {
+    const moment = await logFirstSolo();
+    fireEvent.click(within(moment).getByRole('button', { name: 'Undo' }));
+    await waitFor(() => expect(loadGuestLogbook().entries).toHaveLength(1));
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('leaves an ordinary flight’s notice as it was', async () => {

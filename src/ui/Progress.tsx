@@ -27,9 +27,10 @@ interface Props {
   onAddHours: () => void;
   onFly: (line: Partial<Entry>) => void;
   onProfile: () => void;
+  onStartClock?: (() => void) | undefined;
 }
 
-export function ProgressView({ book, updateProfile, onAddHours, onFly, onProfile }: Props) {
+export function ProgressView({ book, updateProfile, onAddHours, onFly, onProfile, onStartClock }: Props) {
   const results = useMemo(
     () => GOALS.map((g) => {
       const now = evaluateGoal(g, book.entries, book.profile);
@@ -75,6 +76,7 @@ export function ProgressView({ book, updateProfile, onAddHours, onFly, onProfile
         entries={book.entries}
         onFly={onFly}
         onProfile={onProfile}
+        onStartClock={onStartClock}
         picker={
           <div className="goal-pick">
             <label htmlFor="focus">{t('Working on')}</label>
@@ -109,6 +111,7 @@ interface DetailProps {
   picker: ReactNode;
   onFly: (line: Partial<Entry>) => void;
   onProfile: () => void;
+  onStartClock?: (() => void) | undefined;
 }
 
 /**
@@ -217,7 +220,7 @@ function ShareProgress({ result, progress }: { result: GoalResult; progress: Goa
   );
 }
 
-function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries, picker, onFly, onProfile }: DetailProps) {
+function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries, picker, onFly, onProfile, onStartClock }: DetailProps) {
   const { goal } = r;
   const holding = GOALS.filter((g) => g.id !== goal.id && profile.held[g.id] !== undefined);
   const cost = costOf(r, profile);
@@ -326,7 +329,7 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
           </button>
         </div>
       )}
-      <NextFlightCard result={r} entries={entries} profile={profile} onFly={onFly} />
+      <NextFlightCard result={r} entries={entries} profile={profile} onFly={onFly} onStartClock={onStartClock} />
       <Route result={r} progress={progress} />
       <WhatIf result={r} pace={pace} cost={cost} />
       {cost && <CostDetail result={r} cost={cost} profile={profile} onRates={() => setRatesOpen(true)} />}

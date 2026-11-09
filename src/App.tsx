@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { blankEntry, dateText, derive, formatHours, formatHoursUp, isFtdOnly, newId, today, type Entry } from './model/entry';
 import { hasContent, isSnoozed, snooze } from './model/store';
 import { ConfirmBanner } from './ui/Account';
@@ -17,7 +17,7 @@ import { StopReminders } from './ui/StopReminders';
 import { Welcome } from './ui/Welcome';
 import { useLogbook, type Sync } from './useLogbook';
 import { dateFormat, shortName, t } from './i18n';
-import { shareCard, type CardFacts } from './ui/card';
+import { drawCard, shareCard, type CardFacts } from './ui/card';
 import { clearClock, clockHours, clockMinutes, clockStart, startClock } from './model/clock';
 
 type Tab = 'progress' | 'log' | 'profile';
@@ -94,8 +94,13 @@ interface Toast {
   text: JSX.Element;
   undo: () => void;
   progress: boolean;
-  /** A flight worth a picture: the first solo, half way, or the last requirement. */
-  card?: CardFacts | undefined;
+}
+
+/** A flight worth a picture: the first solo, half way, or the last requirement. */
+interface Moment {
+  card: CardFacts;
+  text: ReactNode;
+  undo: () => void;
 }
 
 const TOAST_MS = 8000;
@@ -110,12 +115,7 @@ function Toast({ toast, onUndo, onProgress, onDone }: { toast: Toast; onUndo: ()
     <div className="toast" role="status">
       <p>{toast.text}</p>
       <span className="toast-actions">
-        {toast.card && (
-          <button type="button" className="link" onClick={() => void shareCard(toast.card!).catch(() => undefined)}>
-            {t('Share')}
-          </button>
-        )}
-        {toast.progress && !toast.card && onProgress && (
+        {toast.progress && onProgress && (
           <button type="button" className="link" onClick={onProgress}>
             {t('See progress')}
           </button>
@@ -141,7 +141,7 @@ function momentCard(moment: NonNullable<ReturnType<typeof momentOf>>, short: str
 /** Past this, it was more likely left running than flown. */
 const CLOCK_FORGOTTEN = 12 * 60;
 
-/** A flight in progress (D59). On every tab, because it's the first thing a pilot needs on landing. */
+/** A flight in progress (D59). In the thumb's spot, because it's the first thing a pilot needs on landing. */
 function FlightClock({ start, onLanded, onCancel }: { start: number; onLanded: () => void; onCancel: () => void }) {
   const [, tick] = useState(0);
   useEffect(() => {
@@ -151,19 +151,93 @@ function FlightClock({ start, onLanded, onCancel }: { start: number; onLanded: (
   const minutes = clockMinutes(start);
   const time = dateFormat({ hour: 'numeric', minute: '2-digit' }).format(new Date(start));
   const elapsed = `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`;
-  const forgotten = minutes > CLOCK_FORGOTTEN;
+  if (minutes > CLOCK_FORGOTTEN) {
+    return (
+      <div className="banner flight-clock warn" role="timer">
+        <span>{t('The flight clock has been running since {time}, over 12 hours. Forgot to stop it?', { time })}</span>
+        <span className="row">
+          <button type="button" className="btn primary small" onClick={onLanded}>
+            {t('Landed')}
+          </button>
+          <button type="button" className="link" onClick={onCancel}>
+            {t('Cancel the clock')}
+          </button>
+        </span>
+      </div>
+    );
+  }
   return (
-    <div className={`banner flight-clock${forgotten ? ' warn' : ''}`} role="timer">
-      <span>{forgotten ? t('The flight clock has been running since {time}, over 12 hours. Forgot to stop it?', { time }) : t('Flight clock: {elapsed}, since {time}', { elapsed, time })}</span>
-      <span className="row">
-        <button type="button" className="btn primary small" onClick={onLanded}>
-          {t('Landed')}
-        </button>
-        <button type="button" className="link" onClick={onCancel}>
-          {t('Cancel the clock')}
-        </button>
-      </span>
-    </div>
+    <aside className="fab-clock" aria-label={t('Flight clock')}>
+      <div className="fab-clock-row" role="timer">
+      <span className="sr-only">{t('Flight clock: {elapsed}, since {time}', { elapsed, time })}</span>
+      <button type="button" className="fab-clock-cancel" aria-label={t('Cancel the clock')} onClick={onCancel}>
+        ×
+      </button>
+      <button type="button" className="btn primary fab-clock-landed" aria-label={t('Landed')} onClick={onLanded}>
+        {t('Landed')} · <span className="tnum">{elapsed}</span>
+      </button>
+      </div>
+    </aside>
+  );
+}
+
+/** A first solo, halfway or the last requirement (D61): worth more than a line that fades. */
+function MomentSheet({ moment, onUndo, onClose }: { moment: Moment; onUndo: () => void; onClose: () => void }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [picture, setPicture] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    const d = dialog.current;
+    if (d && typeof d.showModal === 'function') d.showModal();
+    else d?.setAttribute('open', '');
+    let live = true;
+    let url: string | null = null;
+    drawCard(moment.card)
+      .then((blob) => {
+        if (!live || typeof URL.createObjectURL !== 'function') return;
+        url = URL.createObjectURL(blob);
+        setPicture(url);
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [moment]);
+  return (
+    <dialog ref={dialog} className="sheet-backdrop" aria-labelledby="moment-title" onClose={onClose}>
+      <div className="sheet moment-sheet">
+        <div className="sheet-body">
+          {picture && <img className="moment-card" src={picture} alt={moment.card.headline} />}
+          <p id="moment-title" className="moment-text">
+            {moment.text}
+          </p>
+          {failed && (
+            <p className="field-error" role="alert">
+              {t('Couldn’t make the picture.')}
+            </p>
+          )}
+        </div>
+        <div className="sheet-foot">
+          <button type="button" className="link" onClick={onUndo}>
+            {t('Undo')}
+          </button>
+          <button type="button" className="btn" onClick={onClose}>
+            {t('Close')}
+          </button>
+          <button
+            type="button"
+            className="btn primary"
+            onClick={() => {
+              setFailed(false);
+              shareCard(moment.card).catch(() => setFailed(true));
+            }}
+          >
+            {t('Share')}
+          </button>
+        </div>
+      </div>
+    </dialog>
   );
 }
 
@@ -179,7 +253,26 @@ export function App() {
   const [link, setLink] = useState(linkInUrl);
   const [hash, setHash] = useState(window.location.hash);
   const [toast, setToast] = useState<Toast | null>(null);
+  const [moment, setMoment] = useState<Moment | null>(null);
   const clearToast = useCallback(() => setToast(null), []);
+  // Going down the page, the + steps aside so it isn't over what's being read.
+  const [scrolling, setScrolling] = useState(false);
+  useEffect(() => {
+    let last = window.scrollY;
+    let settle = 0;
+    const onScroll = () => {
+      const now = window.scrollY;
+      setScrolling(now > last);
+      last = now;
+      window.clearTimeout(settle);
+      settle = window.setTimeout(() => setScrolling(false), 400);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.clearTimeout(settle);
+    };
+  }, []);
   const entries = lb.book.entries;
 
   useEffect(() => {
@@ -241,7 +334,7 @@ export function App() {
 
   const saveEntry = async (entry: Entry) => {
     const isNew = draft?.isNew === true;
-    const moment = isNew ? momentOf(goalById(lb.book.profile.focus), entries, entry, lb.book.profile, today()) : null;
+    const flown = isNew ? momentOf(goalById(lb.book.profile.focus), entries, entry, lb.book.profile, today()) : null;
     const ok = await lb.saveEntry(entry);
     if (ok && draft?.clockTime) stopClock();
     if (ok && isNew) {
@@ -252,8 +345,8 @@ export function App() {
           text: (
             <>
               <strong>{formatHours(d.total || entry.ftd)}{' '}{t('h added from your paper logbook.')}</strong>
-              {moment && !moment.complete && ` ${t('{goal}: {now} h to go.', { goal: moment.short, now: formatHoursUp(moment.now) })}`}
-              {moment?.complete && ` ${t('Every {goal} requirement is met.', { goal: moment.short })}`}
+              {flown && !flown.complete && ` ${t('{goal}: {now} h to go.', { goal: flown.short, now: formatHoursUp(flown.now) })}`}
+              {flown?.complete && ` ${t('Every {goal} requirement is met.', { goal: flown.short })}`}
             </>
           ),
           undo: () => void lb.removeEntry(entry.id),
@@ -262,21 +355,19 @@ export function App() {
         setTab('progress');
         return ok;
       }
-      const card = moment && momentCard(moment, goalById(lb.book.profile.focus).short);
-      setToast({
-        card: card ?? undefined,
-        text: (
+      const card = flown && momentCard(flown, goalById(lb.book.profile.focus).short);
+      const text = (
           <>
             <strong>{formatHours(d.total || entry.ftd)}{' '}{t('h logged.')}</strong>
-            {moment?.firstSolo && t(' Your first solo. Congratulations!')}
-            {moment?.complete ? ` ${t('Every {goal} requirement is met.', { goal: moment.short })}` : moment && moment.now < moment.was ? ` ${t('{goal}: {now} h to go, was {was}.', { goal: moment.short, now: formatHoursUp(moment.now), was: formatHoursUp(moment.was) })}` : ''}
-            {moment?.halfway && !moment.complete && t(' Halfway there.')}
-            {moment && moment.finished.length > 0 && !moment.complete ? ` ${t('Done: {what}.', { what: t(moment.finished[0]!) })}` : ''}
+            {flown?.firstSolo && t(' Your first solo. Congratulations!')}
+            {flown?.complete ? ` ${t('Every {goal} requirement is met.', { goal: flown.short })}` : flown && flown.now < flown.was ? ` ${t('{goal}: {now} h to go, was {was}.', { goal: flown.short, now: formatHoursUp(flown.now), was: formatHoursUp(flown.was) })}` : ''}
+            {flown?.halfway && !flown.complete && t(' Halfway there.')}
+            {flown && flown.finished.length > 0 && !flown.complete ? ` ${t('Done: {what}.', { what: t(flown.finished[0]!) })}` : ''}
           </>
-        ),
-        undo: () => void lb.removeEntry(entry.id),
-        progress: true,
-      });
+      );
+      const undo = () => void lb.removeEntry(entry.id);
+      if (card) setMoment({ card, text, undo });
+      else setToast({ text, undo, progress: true });
     }
     return ok;
   };
@@ -371,7 +462,7 @@ export function App() {
     notices.push(
       // The top bar's Create profile is right above it, so it needs no button of its own.
       <div className="banner">
-        <span>{t('Your logbook is only on this device. Save it to a free profile so you can’t lose it.')}</span>
+        <span>{t('Your logbook is only on this device.')}</span>
         <button
           type="button"
           className="link"
@@ -446,7 +537,6 @@ export function App() {
             </button>
           </div>
         )}
-        {clock !== null && <FlightClock start={clock} onLanded={landed} onCancel={stopClock} />}
         {notices[0]}
 
         {tab === 'progress' && (
@@ -459,6 +549,7 @@ export function App() {
             }}
             onFly={(line) => startEntry(line.ftd ? 'ftd' : 'flight', line)}
             onProfile={() => setTab('profile')}
+            onStartClock={clock === null ? () => setClock(startClock()) : undefined}
           />
         )}
         {tab === 'log' && (
@@ -488,10 +579,23 @@ export function App() {
             clearToast();
           }}
         />
+      ) : clock !== null ? (
+        <FlightClock start={clock} onLanded={landed} onCancel={stopClock} />
       ) : (
-        <button type="button" className="fab" aria-label={t('Log a flight')} onClick={() => startEntry('flight')}>
+        <button type="button" className={`fab${scrolling ? ' is-away' : ''}`} aria-label={t('Log a flight')} onClick={() => startEntry('flight')}>
           <PlusIcon />
         </button>
+      )}
+
+      {moment && (
+        <MomentSheet
+          moment={moment}
+          onClose={() => setMoment(null)}
+          onUndo={() => {
+            moment.undo();
+            setMoment(null);
+          }}
+        />
       )}
 
       {draft && (

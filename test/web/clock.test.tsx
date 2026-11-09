@@ -5,6 +5,7 @@ import { setLang } from '../../src/i18n';
 import { clearClock, clockHours, clockMinutes, clockStart, startClock } from '../../src/model/clock';
 import { today } from '../../src/model/entry';
 import { emptyLogbook, loadGuestLogbook, rememberWelcomed, saveGuestLogbook } from '../../src/model/store';
+import { line } from './fixtures';
 
 const KEY = 'hours-to-go/flight-clock';
 const MINUTE = 60_000;
@@ -87,12 +88,22 @@ describe('on the screen', () => {
     expect((await bar()).textContent).toContain('1:12');
   });
 
+  it('starts from the next flight, and swaps the + for the way to land', async () => {
+    const log = [...Array.from({ length: 14 }, (_, i) => line('2026-10-01', { seDayDual: 1.5 }, { id: `d${i}` })), ...Array.from({ length: 4 }, (_, i) => line('2026-10-02', { seDayPic: 1.5 }, { id: `s${i}`, solo: true }))];
+    saveGuestLogbook({ ...emptyLogbook(), entries: log });
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Start the clock' }));
+    expect(within(await bar()).getByRole('button', { name: 'Landed' }).textContent).toContain('0:00');
+    expect(document.querySelector('.fab')).toBeNull();
+  });
+
   it('fills in the time on landing, and stops once the flight is saved', async () => {
     running(72);
     render(<App />);
     fireEvent.click(within(await bar()).getByRole('button', { name: 'Landed' }));
     const dialog = await screen.findByRole('dialog');
     expect((within(dialog).getByLabelText('Flight time, in hours') as HTMLInputElement).value).toBe('1.2');
+    expect(within(dialog).getByText('From the clock')).toBeTruthy();
     fireEvent.click(within(dialog).getByLabelText('Dual, with an instructor'));
     fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(loadGuestLogbook().entries).toHaveLength(1));

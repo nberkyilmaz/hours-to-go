@@ -2630,6 +2630,108 @@ input.quick-time {
   height: 26px;
 }
 
+.fab {
+  transition: transform 0.2s ease;
+}
+
+.fab.is-away {
+  transform: translateY(96px);
+}
+
+.fab-clock {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: 20px;
+  z-index: 20;
+}
+
+.fab-clock-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fab-clock-landed {
+  min-height: 52px;
+  padding: 0 20px;
+  border-radius: 26px;
+  box-shadow: var(--shadow-lift);
+  font-variant-numeric: tabular-nums;
+}
+
+.fab-clock-cancel {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+@media (max-width: 720px) {
+  .fab-clock {
+    bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 12px);
+  }
+}
+
+.sheet.moment-sheet {
+  width: min(420px, calc(100% - 32px));
+  height: auto;
+  align-self: center;
+  justify-self: center;
+  transform: none;
+  border-radius: 14px;
+}
+
+.moment-card {
+  display: block;
+  width: 100%;
+  border-radius: 10px;
+}
+
+.moment-text {
+  margin: 0;
+}
+
+.next-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.log-more > summary {
+  padding: 6px 0;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.choices.one-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.choices.one-row .choice {
+  justify-content: center;
+}
+
+.quick-numbers {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+}
+
+.quick-numbers .quick-landings {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+
 .toast {
   position: fixed;
   left: 16px;

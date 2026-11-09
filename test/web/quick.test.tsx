@@ -136,7 +136,7 @@ describe('logging a flight', () => {
     pick(dialog, 'Solo');
     time('1.0');
     save(dialog);
-    await closed();
+    await waitFor(() => expect(loadGuestLogbook().entries).toHaveLength(2));
     expect(loadGuestLogbook().entries[1]).toMatchObject({ seDayPic: 60, solo: true });
   });
 
