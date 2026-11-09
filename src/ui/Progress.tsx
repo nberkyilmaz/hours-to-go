@@ -7,6 +7,7 @@ import { GOALS, STANDARD_421_URL, goalById } from '../rules/goals';
 import { paceOf, type Pace } from '../rules/pace';
 import { progressOf, type GoalProgress } from '../rules/progress';
 import { CostDetail, CostStat, costOf, openRates } from './Cost';
+import { CurrencyCard } from './Currency';
 import { Finish } from './Finish';
 import { Ring } from './Ring';
 import { MedicalFields } from './Medical';
@@ -50,6 +51,8 @@ export function ProgressView({ book, updateProfile, onAddHours, onFly }: Props) 
           }}
         />
       )}
+
+      <CurrencyCard entries={book.entries} profile={book.profile} updateProfile={updateProfile} />
 
       <GoalDetail
         result={focus.now}

@@ -827,6 +827,27 @@ anyone who has asked their device for less.
 - **What the pace costs a month**, under the finish date: the same hours and rates as the price, spread at
   the pilot's pace. It's what a student actually budgets.
 
+### D52. Current to fly, for licensed pilots
+From CAR 401.05, read directly. A card at the top of Progress once a licence is held, folded while everything
+is current and open when something isn't:
+- flown as pilot-in-command or co-pilot in the last 5 years (401.05(1)(a));
+- recurrent training in the last 24 months (401.05(2)(a)). A licence or rating issued counts (421.05(2)(f)), so
+  it starts from those dates, and the pilot can enter a later one;
+- passengers by day and at night, 5 takeoffs and landings in 6 months, in the same class of aeroplane, so
+  single-engine and multi-engine are counted apart (401.05(2)(b));
+- with an instrument rating: a test or check in the last 24 months (401.05(3)), and 6 approaches in 6 months
+  from the first day of the seventh month after it (401.05(3.1)). The regulation doesn't mention holds, though
+  the roadmap had said it did.
+
+It counts only flights logged one by one in an aircraft, and it says so: paper totals can't show when a landing
+was, and a simulator counts only at Level B, C or D, which the log's one column can't tell. Not covered: the
+12-month flight review that can stand in for the 5 years (401.05(1)(b)), and helicopters.
+
+401.05(3.1) reads "following the first day of the seventh month after the completion of a test or check ... and
+within six months before the flight". Taken as a limit on when the approaches were flown, nobody could fly IFR
+in the first six months after a check, so it's read as when the requirement starts. An approach flown before
+that day counts if it's within the six months. Worth confirming with an instructor.
+
 ## Process
 
 ### D22. Check the UI in a real browser, at phone size, before calling it done

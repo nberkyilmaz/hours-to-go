@@ -882,13 +882,30 @@ damaged, checked against `main`.
 and the paper columns is 14 px, axe finds nothing, nothing spills sideways. All six of the audit's batches
 are done; what's left of it needs a real phone or real students.
 
+## Phase 30: log it again, fly the suggestion, what the pace costs (2026-11-08)
+
+Three small ways the app saves a step (D51): "Log again" starts a new form from any flight, "I flew this" opens
+the form with the suggested flight filled in, and the finish date now says what that pace costs a month.
+
+**Problem on the way:** going from one form straight into the next, the old form's `history.back()` undid the
+new form's history entry, so the new one closed at once. It now waits for the `popstate` before opening.
+
+## Phase 31: current to fly (2026-11-08)
+
+For licensed pilots, a card at the top of Progress says whether they can still fly and carry passengers, from
+CAR 401.05 read directly (D52). The roadmap had said "approaches and holds"; the regulation has no holds.
+
+**Problem on the way:** the first version started the approaches a month early, counting six months from the
+check instead of the seventh month after it. Reading the wording again before committing caught it, and there's
+now a test on the boundary. No test had failed, because the dates in them fell on the right side either way.
+
 ## Where things stand
 
-- 254 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
+- 275 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
   21, offline changes 5, server API 42, the standard's watcher 8, first visit, guest, cost to go,
   finish date, next flight, expiry, password reset, confirm links and feedback 28, the form and
   notices 12, the quick form 14, Progress 9, the logbook 7, first run and trust 10, signed in 6,
-  offline on the screen 5), and the API tests per
+  offline on the screen 5, log again and the cost a month 4, current to fly 17), and the API tests per
   database also run against a Postgres server through `pg` in CI.
 - Typecheck clean on both configs; `npm audit` clean.
 - Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.

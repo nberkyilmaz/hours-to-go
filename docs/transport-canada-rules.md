@@ -157,4 +157,4 @@ has those columns except co-pilot cross-country, and the app follows the owner's
 
 Recreational permit, gliders, balloons, gyroplanes, helicopters, Group 2 and 4, seaplane and
 landplane ratings, type ratings, instructor Classes 1–3, aerobatic ratings, foreign and military
-credits, recency (401.05), medical validity periods, written-exam validity windows.
+credits. Recency (401.05) is covered for aeroplanes, apart from the 12-month flight review (D52).
