@@ -43,7 +43,7 @@ export interface SectionResult {
 export interface GateResult {
   gate: Gate;
   met: boolean;
-  /** The exams this gate leads to are all passed. */
+  /** The exams this gate leads to are all passed, or its flight test is ticked. */
   passed: boolean;
   /** What is still in the way, flattened. */
   open: ReqResult[];
@@ -209,7 +209,8 @@ export function evaluateGoal(goal: Goal, entries: readonly Entry[], profile: Pro
         : flatten(gate.needs.map((r) => evalReq(r, c)));
     const open = pool.filter((r) => counts(r) && !r.met);
     const examsPassed = gate.exams?.every((key) => passed(c, key, examCheck(key)?.minScore ?? 0)) ?? false;
-    return { gate, met: open.length === 0, passed: examsPassed, open };
+    const tested = gate.test !== undefined && c.profile.milestones[gate.test] !== undefined;
+    return { gate, met: open.length === 0, passed: examsPassed || tested, open };
   });
 
   let minutesToGo = 0;

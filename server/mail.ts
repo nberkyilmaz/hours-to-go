@@ -88,7 +88,7 @@ export function reminderMail(to: string, items: readonly Due[], appLink: string,
   const check = tr('Worked out from the dates in your profile, so check them against your own documents.');
   const why = tr('You turned these reminders on in your Hours to Go profile.');
   const lastDay = (d: Due) => tr('last day {date}', { date: dateText(d.until, language) });
-  const text = [lead, '', ...items.map((d) => `- ${tr(d.what)}: ${lastDay(d)} (${when(d.daysLeft)})`), '', check, appLink, '', `${why} ${tr('To stop them:')} ${stopLink}`].join('\n');
+  const text = [lead, '', ...items.map((d) => `- ${tr('{label}: {value}', { label: tr(d.what), value: `${lastDay(d)} (${when(d.daysLeft)})` })}`), '', check, appLink, '', `${why} ${tr('To stop them:')} ${stopLink}`].join('\n');
   // As in the other emails, the links need no escaping: APP_URL and a base64url token.
   const rows = items.map((d) => `<li style="margin:0 0 8px"><strong>${escapeHtml(tr(d.what))}</strong><br>${escapeHtml(lastDay(d))} (${when(d.daysLeft)})</li>`).join('');
   const html = page(`<p style="margin:0 0 12px">${lead}</p>

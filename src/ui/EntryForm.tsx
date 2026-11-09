@@ -25,7 +25,7 @@ import {
   type EntryErrors,
 } from '../model/entry';
 import { blankQuick, quickFrom, quickText, type Quick, type QuickKind } from '../model/quick';
-import { t } from '../i18n';
+import { decimal, t } from '../i18n';
 
 /** Which boxes the form shows. The line underneath is the same in every case. */
 export type FormLayout = 'flight' | 'ftd' | 'forward';
@@ -101,7 +101,9 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
     if (layout !== 'flight') return null;
     const flown = quickFrom(initial);
     if (!isNew) return flown;
-    // A new line can start already filled in: flown again, or the suggested next flight.
+    // A new line can start already filled in: flown again, or the suggested next flight. One the
+    // quick form can't show goes to the columns, or what it can't show would be saved unseen.
+    if (!flown && [...TIME_COLUMNS, ...COUNT_COLUMNS].some((c) => initial[c] > 0)) return null;
     const first = flown ? { ...flown, landings: flown.landings || 1 } : blankQuick();
     return clockTime ? { ...first, time: clockTime } : first;
   });
@@ -440,7 +442,7 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
           id="q-time"
           className="quick-time"
           inputMode="decimal"
-          placeholder="1.3"
+          placeholder={decimal('1.3')}
           autoComplete="off"
           value={quick.time}
           onChange={(e) => changeQuick({ time: e.target.value })}
@@ -832,7 +834,7 @@ function SmallInput({
       <input
         id={id}
         inputMode={count ? 'numeric' : 'decimal'}
-        placeholder={count ? '0' : '0.0'}
+        placeholder={count ? '0' : decimal('0.0')}
         autoComplete="off"
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -872,7 +874,7 @@ function ColumnInputs({
             <input
               id={`f-${c}`}
               inputMode={isTimeColumn(c) ? 'decimal' : 'numeric'}
-              placeholder={isTimeColumn(c) ? '0.0' : '0'}
+              placeholder={isTimeColumn(c) ? decimal('0.0') : '0'}
               autoComplete="off"
               value={text[c]}
               onChange={(e) => onChange(c, e.target.value)}

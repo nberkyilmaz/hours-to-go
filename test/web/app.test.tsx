@@ -41,6 +41,13 @@ describe('the app as a guest', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    // Straight to what it did, with no first solo to celebrate: those hours were flown long ago.
+    const toast = screen.getByRole('status');
+    expect(toast.textContent).toContain('45.0 h added from your paper logbook.');
+    expect(toast.textContent).not.toContain('first solo');
+    expect(within(toast).queryByRole('button', { name: 'Share' })).toBeNull();
+    expect(screen.getByLabelText('Working on')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /^Logbook/ }));
     expect(screen.getByRole('list', { name: 'Logbook entries' }).textContent).toContain('Brought forward');
 
     fireEvent.click(screen.getByRole('button', { name: /Progress/ }));

@@ -319,3 +319,11 @@ describe('Class 4 instructor (421.69)', () => {
     expect(hours(find(run('inst4', log, profile({ trainingStart: { inst4: '2026-02-01' } })), 'i4-dual'))).toBe(10);
   });
 });
+
+describe('the flight test on the way to a licence', () => {
+  it('says passed once it’s ticked, like a written exam', () => {
+    const gate = (milestones: Record<string, { date: string }>) => evaluateGoal(goalById('ppl'), [], profile({ milestones }), '2026-11-08').gates.find((g) => g.gate.label === 'Take the flight test')!;
+    expect(gate({}).passed).toBe(false);
+    expect(gate({ 'test-ppl': { date: '2026-10-01' } }).passed).toBe(true);
+  });
+});

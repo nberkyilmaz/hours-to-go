@@ -32,16 +32,18 @@ export function momentOf(goal: Goal, entries: readonly Entry[], flight: Entry, p
   if (before.held || before.credited) return null;
   const after = evaluateGoal(goal, [...entries, flight], profile, today);
   const metBefore = new Set(results(before).filter((r) => r.met).map((r) => r.req.id));
-  const percent = (log: readonly Entry[]) => goalProgress(goal, log, profile, today).percent;
+  // The ring's figures, so what a flight says it did is what Progress then shows.
+  const from = goalProgress(goal, entries, profile, today);
+  const to = goalProgress(goal, [...entries, flight], profile, today);
   return {
     short: shortName(goal.short),
-    was: before.minutesToGo,
-    now: after.minutesToGo,
+    was: from.left,
+    now: to.left,
     finished: results(after)
       .filter((r) => counted(r) && r.met && !metBefore.has(r.req.id))
       .map((r) => r.req.label),
     complete: after.complete && !before.complete,
     firstSolo: derive(flight).solo > 0 && !entries.some((e) => derive(e).solo > 0),
-    halfway: percent(entries) < 50 && percent([...entries, flight]) >= 50,
+    halfway: from.percent < 50 && to.percent >= 50,
   };
 }

@@ -26,9 +26,10 @@ interface Props {
   updateProfile: UpdateProfile;
   onAddHours: () => void;
   onFly: (line: Partial<Entry>) => void;
+  onProfile: () => void;
 }
 
-export function ProgressView({ book, updateProfile, onAddHours, onFly }: Props) {
+export function ProgressView({ book, updateProfile, onAddHours, onFly, onProfile }: Props) {
   const results = useMemo(
     () => GOALS.map((g) => {
       const now = evaluateGoal(g, book.entries, book.profile);
@@ -65,6 +66,7 @@ export function ProgressView({ book, updateProfile, onAddHours, onFly }: Props) 
         pace={pace}
         entries={book.entries}
         onFly={onFly}
+        onProfile={onProfile}
         picker={
           <div className="goal-pick">
             <label htmlFor="focus">{t('Working on')}</label>
@@ -92,6 +94,7 @@ interface DetailProps {
   entries: readonly Entry[];
   picker: ReactNode;
   onFly: (line: Partial<Entry>) => void;
+  onProfile: () => void;
 }
 
 /**
@@ -188,7 +191,7 @@ function ShareProgress({ result, progress }: { result: GoalResult; progress: Goa
   );
 }
 
-function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries, picker, onFly }: DetailProps) {
+function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries, picker, onFly, onProfile }: DetailProps) {
   const { goal } = r;
   const holding = GOALS.filter((g) => g.id !== goal.id && profile.held[g.id] !== undefined);
   const cost = costOf(r, profile);
@@ -240,7 +243,9 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
       {holding.length > 0 && (
         <p className="holding">
           {t('You hold:')}{' '}{holding.map((g) => shortName(g.short)).join(' · ')}.{' '}
-          <span className="muted">{t('Change this in Profile.')}</span>
+          <button type="button" className="link" onClick={onProfile}>
+            {t('Change this in Profile.')}
+          </button>
         </p>
       )}
 
@@ -325,8 +330,8 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
 }
 
 function shortfall(r: ReqResult): string {
-  if (r.req.kind === 'time') return keepUnits(`${t(r.req.label)}: ${t('{hours} h to go', { hours: formatHoursUp(r.need - r.have) })}`);
-  if (r.req.kind === 'count') return `${t(r.req.label)}: ${t('{amount} to go', { amount: r.need - r.have })}`;
+  if (r.req.kind === 'time') return keepUnits(t('{label}: {value}', { label: t(r.req.label), value: t('{hours} h to go', { hours: formatHoursUp(r.need - r.have) }) }));
+  if (r.req.kind === 'count') return t('{label}: {value}', { label: t(r.req.label), value: t('{amount} to go', { amount: r.need - r.have }) });
   return keepUnits(t(r.req.label));
 }
 

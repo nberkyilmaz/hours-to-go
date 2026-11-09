@@ -19,7 +19,7 @@ export function Shared({ token, onDone }: { token: string; onDone: () => void })
     api.shared(token).then(setData, (err: unknown) => setError(err instanceof ApiError ? err.message : t('Something went wrong. Try the link again.')));
   }, [token]);
 
-  const title = data ? `${data.name || t('A pilot')}: ${t(data.goal)}` : error ? t('This link didn’t work') : t('Loading…');
+  const title = data ? t('{label}: {value}', { label: data.name || t('A pilot'), value: t(data.goal) }) : error ? t('This link didn’t work') : t('Loading…');
 
   return (
     <div className="welcome">

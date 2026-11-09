@@ -37,7 +37,7 @@ export function ImportCsv({ read, existing, onAdd, onCancel }: Props) {
           <ul className="csv-problems">
             {read.problems.slice(0, 20).map((p) => (
               <li key={p.row}>
-                {t('Row')}{' '}{p.row}: {p.why}
+                {t('{label}: {value}', { label: `${t('Row')} ${p.row}`, value: p.why })}
               </li>
             ))}
             {read.problems.length > 20 && <li>{t('And')}{' '}{read.problems.length - 20}{' '}{t('more.')}</li>}

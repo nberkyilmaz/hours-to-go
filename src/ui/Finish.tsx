@@ -24,6 +24,9 @@ const WEEKS_COUNTED = 8;
 
 const hoursWord = (hours: number) => t('{n} h a week', { n: decimal(String(hours)) });
 
+/** Within a month of the end, a month's flying would cost more than what's left. */
+const pastTheEnd = (monthly: number, cost: Cost) => monthly >= cost.total;
+
 function compared(at: string, usual: string): string {
   const weeks = weeksBetween(usual, at);
   if (weeks === 0) return t('About the same as your pace.');
@@ -37,9 +40,11 @@ function compared(at: string, usual: string): string {
 /** Moves the same sum the finish date does, at a pace the pilot picks (D58): nothing here is saved. */
 function WhatIf({ minutes, pace, cost }: { minutes: number; pace: Pace | null; cost: Cost | null }) {
   const start = pace ? Math.min(FASTEST, Math.max(SLOWEST, Math.round(pace.perWeek / 30) / 2)) : USUAL_HOURS;
-  const [hours, setHours] = useState(start);
+  // Null until it's moved: the slider stops on half hours, and the figures here match the pilot's own pace above.
+  const [picked, setPicked] = useState<number | null>(null);
   const now = today();
-  const perWeek = hours * 60;
+  const perWeek = picked !== null ? picked * 60 : pace ? pace.perWeek : USUAL_HOURS * 60;
+  const word = picked === null && pace ? t('{n} h a week', { n: formatHours(pace.perWeek) }) : hoursWord(picked ?? start);
   const at = finishOn(minutes, { perWeek, since: now, whole: true }, now);
   const usual = pace ? finishOn(minutes, pace, now) : null;
   const monthly = cost ? (cost.total / minutes) * perWeek * WEEKS_A_MONTH : null;
@@ -48,15 +53,14 @@ function WhatIf({ minutes, pace, cost }: { minutes: number; pace: Pace | null; c
       <summary>{t('What if you flew more or less?')}</summary>
       <label className="what-if-pace">
         <span>{t('Hours a week')}</span>
-        <input type="range" min={SLOWEST} max={FASTEST} step={0.5} value={hours} aria-valuetext={hoursWord(hours)} onChange={(e) => setHours(Number(e.target.value))} />
-        <strong>{hoursWord(hours)}</strong>
+        <input type="range" min={SLOWEST} max={FASTEST} step={0.5} value={picked ?? start} aria-valuetext={word} onChange={(e) => setPicked(Number(e.target.value))} />
+        <strong>{word}</strong>
       </label>
       <p aria-live="polite">
         <strong>{at ? t('Around {month}', { month: monthText(at, now) }) : t('More than 5 years away')}</strong>
-        {monthly !== null && monthly > 0 && <> · {t('about {price} a month', { price: money(about(monthly)) })}</>}
+        {monthly !== null && monthly > 0 && <> · {cost && pastTheEnd(monthly, cost) ? t('about {price} to finish', { price: money(about(cost.total)) }) : t('about {price} a month', { price: money(about(monthly)) })}</>}
       </p>
-      {/* The slider rounds the pace to a half hour, so where it starts isn't a change. */}
-      {at && usual && <p className="hint">{hours === start ? t('About the same as your pace.') : compared(at, usual)}</p>}
+      {at && usual && <p className="hint">{compared(at, usual)}</p>}
     </details>
   );
 }
@@ -101,7 +105,7 @@ export function Finish({ result: r, pace, logged, cost }: Props) {
           t('the minimum is more than 5 years away.')
         )}
       </p>
-      {monthly !== null && monthly > 0 && <p>{t('That’s about')}{' '}{money(about(monthly))}{' '}{t('a month at this pace.')}</p>}
+      {monthly !== null && monthly > 0 && (cost && pastTheEnd(monthly, cost) ? <p>{t('That’s about {price} to finish.', { price: money(about(cost.total)) })}</p> : <p>{t('That’s about')}{' '}{money(about(monthly))}{' '}{t('a month at this pace.')}</p>)}
       <p className="hint">
         {t('From the flights and FTD sessions you logged')}{' '}{pace.whole ? t('in the last {weeks} weeks', { weeks }) : t('since {date}', { date: dayText(pace.since) })}.
       </p>

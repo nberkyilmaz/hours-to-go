@@ -5,6 +5,7 @@ import { blankQuick, quickFrom, quickText } from '../../src/model/quick';
 import { emptyLogbook, loadGuestLogbook, rememberWelcomed, saveGuestLogbook } from '../../src/model/store';
 import { goalById } from '../../src/rules/goals';
 import { momentOf } from '../../src/rules/moment';
+import { goalProgress } from '../../src/rules/progress';
 import { line, profile, totals } from './fixtures';
 
 /** A flight that gives the next one its aircraft and field. */
@@ -79,6 +80,25 @@ describe('logging a flight', () => {
   const save = (dialog: HTMLElement) => fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
   const closed = () => waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   const seed = (...entries: ReturnType<typeof line>[]) => saveGuestLogbook({ ...emptyLogbook(), entries });
+
+  it('gives the same hours to go as Progress does', () => {
+    const night = goalById('night');
+    const flown = [line('2026-10-01', { seDayDual: 1.5 }, { hood: 90 })];
+    const held = profile({ held: { ppl: { date: '2025-01-01' } }, focus: 'night' });
+    const moment = momentOf(night, flown, line('2026-10-02', { seNightDual: 1.5 }), held, '2026-11-08')!;
+    expect(moment.now).toBe(goalProgress(night, [...flown, line('2026-10-02', { seNightDual: 1.5 })], held, '2026-11-08').left);
+  });
+
+  it('doesn’t offer the way to Progress from Progress', async () => {
+    seed(usualFlight());
+    render(<App />);
+    const dialog = await open();
+    pick(dialog, 'Dual, with an instructor');
+    time('1.3');
+    save(dialog);
+    await closed();
+    expect(within(screen.getByRole('status')).queryByRole('button', { name: 'See progress' })).toBeNull();
+  });
 
   it('takes a kind and a time from any tab, says what it did, and can be undone', async () => {
     seed(usualFlight());
