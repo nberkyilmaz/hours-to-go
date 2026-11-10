@@ -169,6 +169,20 @@ Tips from doing this:
   is how full-page capture works, not a bug.
 - Also take a dark-mode look: `colorScheme: 'dark'` on the context.
 
+**The README's pictures** are in `docs/screenshots/`. Retake them when a screen they show changes. They
+are a production build served under `/hours-to-go/` with no API running, as a guest, so no account is
+made anywhere. After "Continue without a profile", a made-up logbook goes straight into storage and the
+page is reloaded:
+
+```js
+await page.evaluate((s) => localStorage.setItem('hours-to-go/v1', JSON.stringify({ version: 2, ...s })), { entries, profile });
+await page.reload();
+```
+
+The computer pictures are 1440×900 and the phone ones 390×844 with touch, all at a device scale of 1.
+Progress is taken in light and dark, since the README shows the dark one to a reader in dark mode.
+Keep them as PNG: the WebP from Edge's canvas came out larger.
+
 ## Problems you will hit
 
 **Port already in use / an old server still answering.** On Windows, stopping the shell that ran
