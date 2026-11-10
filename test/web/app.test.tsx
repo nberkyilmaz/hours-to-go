@@ -147,10 +147,9 @@ describe('the app as a guest', () => {
     expect(price()).toBe('$14,500');
     expect(screen.getByText(/at the 65 h average/).textContent).toBe('About $21,500 at the 65 h average');
 
-    // The card's link opens the panel at the rates, ready to type in.
+    // The card's link opens the rates, ready to type in.
     fireEvent.click(screen.getByRole('button', { name: 'Enter your school’s rates' }));
     const aeroplane = screen.getByLabelText('Aeroplane, $ an hour');
-    expect(aeroplane.closest('details')?.open).toBe(true);
     expect(document.activeElement).toBe(aeroplane);
     const table = screen.getByRole('table', { name: 'The cost to go, line by line' });
     expect(table.textContent).toContain('33.0 h with an instructor× $310$10,230');
@@ -176,6 +175,7 @@ describe('the app as a guest', () => {
     render(<App />);
     await screen.findByText('left to pay, at least');
     expect(price()).toBe('$12,200');
+    fireEvent.click(screen.getByRole('button', { name: 'Change the rates' }));
     fireEvent.click(screen.getByRole('button', { name: 'Use the sample rates' }));
     expect(price()).toBe('$14,500');
     expect(screen.getByRole('button', { name: 'Enter your school’s rates' })).toBeTruthy();
@@ -189,8 +189,9 @@ describe('the app as a guest', () => {
       const weekly = ['09-17', '09-24', '10-01', '10-08', '10-15', '10-22', '10-29', '11-05'].map((d) => line(`2026-${d}`, { seDayDual: 1.2 }));
       saveGuestLogbook({ ...emptyLogbook(), entries: [line('2026-09-05', { seDayDual: 2 }), ...weekly] });
       render(<App />);
-      const finish = (await screen.findByText(/At your pace/)).textContent;
-      expect(finish).toBe('At your pace, 1.2 h a week, you’ll reach the minimum around May 2027, and the 65 h average around September 2027.');
+      const finish = (await screen.findByText(/^Minimum around/)).closest('p')!.textContent;
+      expect(finish).toBe('Minimum around May 2027 at your pace, 1.2 h a week');
+      expect(screen.getByText(/65 h average: around September 2027/)).toBeTruthy();
       expect(screen.getByText(/you logged in the last 8 weeks/)).toBeTruthy();
 
       // Months later with no flying, there is no pace to go on.

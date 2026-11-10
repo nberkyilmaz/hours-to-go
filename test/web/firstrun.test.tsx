@@ -40,6 +40,86 @@ describe('an empty logbook', () => {
   });
 });
 
+describe('getting set up', () => {
+  beforeEach(() => rememberWelcomed());
+
+  it('tells a beginner how to log the first lesson', async () => {
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: 'I’m just starting' }));
+    expect(await screen.findByText('After your first lesson, tap + to log it.')).toBeTruthy();
+  });
+
+  it('asks a licensed pilot when they got the PPL, and keeps the way to add hours', async () => {
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: 'I already hold a licence' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Private Pilot Licence — Aeroplane' }));
+    fireEvent.change(await screen.findByLabelText('When did you get your PPL?'), { target: { value: '2024-05-01' } });
+    expect(loadGuestLogbook().profile.held.ppl).toEqual({ date: '2024-05-01' });
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    expect(screen.getByRole('button', { name: /Add my hours/ })).toBeTruthy();
+  });
+
+  it('doesn’t raise alarms about currency before a flight is logged', async () => {
+    saveGuestLogbook({ ...emptyLogbook(), profile: { ...emptyLogbook().profile, held: { ppl: { date: '2024-05-01' } }, focus: 'night' } });
+    render(<App />);
+    const card = (await screen.findByText('Current to fly')).closest('details') as HTMLDetailsElement;
+    expect(card.open).toBe(false);
+    expect(card.textContent).toContain('log a flight to check');
+  });
+
+  it('asks for the PPL date where a CPL needs it', async () => {
+    saveGuestLogbook({ ...emptyLogbook(), profile: { ...emptyLogbook().profile, held: { ppl: { date: '' } }, focus: 'cpl' } });
+    render(<App />);
+    fireEvent.change(await screen.findByLabelText('When did you get your PPL?'), { target: { value: '2024-05-01' } });
+    await waitFor(() => expect(loadGuestLogbook().profile.held.ppl).toEqual({ date: '2024-05-01' }));
+    expect(screen.queryByLabelText('When did you get your PPL?')).toBeNull();
+  });
+
+  describe('after paper totals', () => {
+    const paper = () => saveGuestLogbook({ ...emptyLogbook(), entries: [line('2026-10-01', { seDayDual: 18 }, { forward: true })] });
+    const card = () => screen.findByRole('heading', { name: 'A few things your hours can’t show' });
+
+    it('asks what the hours can’t show, once, in one place', async () => {
+      paper();
+      render(<App />);
+      const section = (await card()).closest('section') as HTMLElement;
+      expect(within(section).getByLabelText('40 h private pilot ground school')).toBeTruthy();
+      expect(screen.getAllByLabelText('40 h private pilot ground school')).toHaveLength(1);
+    });
+
+    it('keeps a row where it is while it’s being answered, then forgets it next time', async () => {
+      paper();
+      render(<App />);
+      const section = (await card()).closest('section') as HTMLElement;
+      fireEvent.click(within(section).getByLabelText('40 h private pilot ground school'));
+      expect(within(section).getByLabelText('40 h private pilot ground school')).toBeTruthy();
+      cleanup();
+      render(<App />);
+      const again = (await card()).closest('section') as HTMLElement;
+      expect(within(again).queryByLabelText('40 h private pilot ground school')).toBeNull();
+    });
+
+    it('can be put off', async () => {
+      paper();
+      render(<App />);
+      const section = (await card()).closest('section') as HTMLElement;
+      fireEvent.click(within(section).getByRole('button', { name: 'Later' }));
+      expect(screen.queryByRole('heading', { name: 'A few things your hours can’t show' })).toBeNull();
+      cleanup();
+      render(<App />);
+      await screen.findByLabelText('Working on');
+      expect(screen.queryByRole('heading', { name: 'A few things your hours can’t show' })).toBeNull();
+    });
+
+    it('isn’t asked of a student logging flight by flight', async () => {
+      saveGuestLogbook({ ...emptyLogbook(), entries: [line('2026-10-01', { seDayDual: 1 })] });
+      render(<App />);
+      await screen.findByLabelText('Working on');
+      expect(screen.queryByRole('heading', { name: 'A few things your hours can’t show' })).toBeNull();
+    });
+  });
+});
+
 describe('trust', () => {
   beforeEach(() => rememberWelcomed());
 

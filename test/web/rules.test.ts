@@ -231,7 +231,7 @@ describe('CPL (421.30)', () => {
   it('counts everything when the PPL date is missing, and asks for it', () => {
     const r = run('cpl', [before, after], profile({ held: { ppl: { date: '' } } }));
     expect(hours(find(r, 'cpl-dual'))).toBe(22);
-    expect(r.scope?.message).toMatch(/PPL issue date/);
+    expect(r.scope?.message).toMatch(/when you got your PPL/);
   });
 
   it('lets the pilot move the start of the training window', () => {

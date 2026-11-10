@@ -38,7 +38,7 @@ function compared(at: string, usual: string): string {
 }
 
 /** Moves the same sum the finish date does, at a pace the pilot picks (D58): nothing here is saved. */
-function WhatIf({ minutes, pace, cost }: { minutes: number; pace: Pace | null; cost: Cost | null }) {
+function WhatIfSlider({ minutes, pace, cost }: { minutes: number; pace: Pace | null; cost: Cost | null }) {
   const start = pace ? Math.min(FASTEST, Math.max(SLOWEST, Math.round(pace.perWeek / 30) / 2)) : USUAL_HOURS;
   // Null until it's moved: the slider stops on half hours, and the figures here match the pilot's own pace above.
   const [picked, setPicked] = useState<number | null>(null);
@@ -61,8 +61,21 @@ function WhatIf({ minutes, pace, cost }: { minutes: number; pace: Pace | null; c
         {monthly !== null && monthly > 0 && <> · {cost && pastTheEnd(monthly, cost) ? t('about {price} to finish', { price: money(about(cost.total)) }) : t('about {price} a month', { price: money(about(monthly)) })}</>}
       </p>
       {at && usual && <p className="hint">{compared(at, usual)}</p>}
+      {pace && <p className="hint">{t('From the flights and FTD sessions you logged')}{' '}{pace.whole ? t('in the last {weeks} weeks', { weeks: WINDOW_DAYS / 7 }) : t('since {date}', { date: dayText(pace.since) })}.</p>}
     </details>
   );
+}
+
+/** The time the price is for, or nothing when there's no time left to plan. */
+function minutesLeft(r: GoalResult): number | null {
+  if (r.held || r.credited || r.complete) return null;
+  const minutes = r.plan ? r.plan.dual + r.plan.sim + r.plan.solo : r.minutesToGo;
+  return minutes > 0 ? minutes : null;
+}
+
+export function WhatIf({ result, pace, cost }: { result: GoalResult; pace: Pace | null; cost: Cost | null }) {
+  const minutes = minutesLeft(result);
+  return minutes === null ? null : <WhatIfSlider minutes={minutes} pace={pace} cost={cost} />;
 }
 
 /**
@@ -70,46 +83,24 @@ function WhatIf({ minutes, pace, cost }: { minutes: number; pace: Pace | null; c
  * time left is the plan the price is for, so the two always agree.
  */
 export function Finish({ result: r, pace, logged, cost }: Props) {
-  if (r.held || r.credited || r.complete) return null;
-  const minutes = r.plan ? r.plan.dual + r.plan.sim + r.plan.solo : r.minutesToGo;
-  if (minutes <= 0) return null;
-  const weeks = WINDOW_DAYS / 7;
-  if (!pace) {
-    return (
-      <>
-        {logged && <p className="pace hint">{t('A finish date needs two flights logged in the last')}{' '}{weeks}{' '}{t('weeks.')}</p>}
-        <WhatIf minutes={minutes} pace={null} cost={cost} />
-      </>
-    );
-  }
+  const minutes = minutesLeft(r);
+  if (minutes === null) return null;
+  if (!pace) return logged ? <p className="pace hint">{t('A finish date needs two flights logged in the last')}{' '}{WINDOW_DAYS / 7}{' '}{t('weeks.')}</p> : null;
 
   const now = today();
   const at = finishOn(minutes, pace, now);
   const typical = r.toAverage && at ? finishOn(minutes + r.toAverage.minutes, pace, now) : null;
   const monthly = cost && r.plan ? (cost.total / minutes) * pace.perWeek * WEEKS_A_MONTH : null;
+  const more = [
+    typical && r.toAverage ? t('{hours} h average: around {month}', { hours: r.toAverage.hours, month: monthText(typical, now) }) : null,
+    monthly !== null && monthly > 0 && cost ? (pastTheEnd(monthly, cost) ? t('about {price} to finish', { price: money(about(cost.total)) }) : t('about {price} a month', { price: money(about(monthly)) })) : null,
+  ].filter(Boolean);
   return (
     <div className="pace">
       <p>
-        {t('At your pace,')}{' '}{formatHours(pace.perWeek)}{' '}{t('h a week,')}{' '}
-        {at ? (
-          <>
-            {t('you’ll reach the minimum around')}{' '}<strong>{monthText(at, now)}</strong>
-            {typical && r.toAverage && (
-              <>
-                {t(', and the')}{' '}{r.toAverage.hours}{' '}{t('h average around')}{' '}<strong>{monthText(typical, now)}</strong>
-              </>
-            )}
-            .
-          </>
-        ) : (
-          t('the minimum is more than 5 years away.')
-        )}
+        <strong>{at ? t('Minimum around {month}', { month: monthText(at, now) }) : t('More than 5 years away')}</strong>{' '}{t('at your pace, {n} h a week', { n: formatHours(pace.perWeek) })}
       </p>
-      {monthly !== null && monthly > 0 && (cost && pastTheEnd(monthly, cost) ? <p>{t('That’s about {price} to finish.', { price: money(about(cost.total)) })}</p> : <p>{t('That’s about')}{' '}{money(about(monthly))}{' '}{t('a month at this pace.')}</p>)}
-      <p className="hint">
-        {t('From the flights and FTD sessions you logged')}{' '}{pace.whole ? t('in the last {weeks} weeks', { weeks }) : t('since {date}', { date: dayText(pace.since) })}.
-      </p>
-      <WhatIf minutes={minutes} pace={pace} cost={cost} />
+      {more.length > 0 && <p className="hint">{more.join(' · ')}</p>}
     </div>
   );
 }

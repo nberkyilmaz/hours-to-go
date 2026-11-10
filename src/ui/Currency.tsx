@@ -16,6 +16,8 @@ export function CurrencyCard({ entries, profile, updateProfile }: Props) {
   const items = useMemo(() => currencyOf(entries, profile, today()), [entries, profile]);
   if (!items) return null;
   const open = items.filter((i) => !i.current).length;
+  // Nothing logged flight by flight yet, so a list of alarms would only say that.
+  const flown = entries.some((e) => !e.forward);
   const setDate = (key: string, date: string) =>
     updateProfile((p) => {
       const milestones = { ...p.milestones };
@@ -24,10 +26,10 @@ export function CurrencyCard({ entries, profile, updateProfile }: Props) {
       return { ...p, milestones };
     });
   return (
-    <details className="card currency" open={open > 0}>
+    <details className="card currency" open={open > 0 && flown}>
       <summary>
         {t('Current to fly')}
-        <span className={open > 0 ? 'warn-text' : 'muted'}>{open > 0 ? ` · ${t('{n} to sort out', { n: open })}` : t(' · all good')}</span>
+        {flown ? <span className={open > 0 ? 'warn-text' : 'muted'}>{open > 0 ? ` · ${t('{n} to sort out', { n: open })}` : t(' · all good')}</span> : <span className="muted">{t(' · log a flight to check')}</span>}
       </summary>
       <ul className="currency-list">
         {items.map((i) => (

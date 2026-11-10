@@ -107,8 +107,8 @@ describe('what the pace costs', () => {
       seed(...weekly);
       render(<App />);
       // 1.2 h a week of dual at $350.30 an hour is about $421 a week; the plan is part solo, so a little less.
-      const text = (await screen.findByText(/a month at this pace/)).textContent;
-      expect(text).toMatch(/^That’s about \$1,\d{3} a month at this pace\.$/);
+      const text = (await screen.findAllByText(/a month$/))[0]!.textContent;
+      expect(text).toMatch(/about .1,[0-9]{3} a month$/);
     } finally {
       vi.useRealTimers();
     }

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { dateText, formatHours, formatHoursUp, today, type Entry } from '../model/entry';
 import type { GoalId, MilestoneRecord, Profile } from '../model/profile';
 import { isSnoozed, snooze, type Logbook } from '../model/store';
@@ -6,11 +6,11 @@ import { evaluateGoal, flatten, type ExamResult, type GateResult, type GoalResul
 import { GOALS, goalById } from '../rules/goals';
 import { paceOf, type Pace } from '../rules/pace';
 import { progressOf, type GoalProgress } from '../rules/progress';
-import { CostDetail, CostStat, costOf, openRates } from './Cost';
+import { CostDetail, CostStat, RatesSheet, costOf } from './Cost';
 import { CurrencyCard } from './Currency';
-import { Finish } from './Finish';
+import { Finish, WhatIf } from './Finish';
 import { Ring } from './Ring';
-import { Route } from './Route';
+import { Route, gateStatus } from './Route';
 import { shareCard, type CardFacts } from './card';
 import { MedicalFields } from './Medical';
 import { NextFlightCard } from './NextFlight';
@@ -40,6 +40,7 @@ export function ProgressView({ book, updateProfile, onAddHours, onFly, onProfile
   const pace = useMemo(() => paceOf(book.entries, today()), [book.entries]);
   const focus = results.find((r) => r.now.goal.id === book.profile.focus) ?? results[0]!;
   const [settled, setSettled] = useState(() => isSnoozed('first-step'));
+  const justStarting = settled && book.entries.length === 0 && Object.keys(book.profile.held).length === 0;
   const setFocus = (id: GoalId) => updateProfile((p) => ({ ...p, focus: id }));
 
   return (
@@ -56,6 +57,13 @@ export function ProgressView({ book, updateProfile, onAddHours, onFly, onProfile
         />
       )}
 
+      {justStarting && (
+        <div className="callout first-lesson">
+          <p>{t('After your first lesson, tap + to log it.')}</p>
+          <MedicalFields label={t('Your medical')} profile={book.profile} updateProfile={updateProfile} />
+        </div>
+      )}
+
       <CurrencyCard entries={book.entries} profile={book.profile} updateProfile={updateProfile} />
 
       <GoalDetail
@@ -70,14 +78,20 @@ export function ProgressView({ book, updateProfile, onAddHours, onFly, onProfile
         picker={
           <div className="goal-pick">
             <label htmlFor="focus">{t('Working on')}</label>
-            <select id="focus" value={focus.now.goal.id} onChange={(e) => setFocus(e.target.value as GoalId)}>
-              {results.map(({ now, progress }) => (
-                <option key={now.goal.id} value={now.goal.id}>
-                  {t(now.goal.name)}
-                  {now.held ? t(' (held)') : now === focus.now ? '' : ` · ${t('{n}%', { n: progress.percent })}`}
-                </option>
-              ))}
-            </select>
+            {/* The goal reads as a title; the phone's own picker opens over it. */}
+            <div className="goal-select">
+              <span className="goal-name" aria-hidden="true">
+                {t(focus.now.goal.name).replace(/ — (Aeroplane|Avion)$/, '')}
+              </span>
+              <select id="focus" value={focus.now.goal.id} onChange={(e) => setFocus(e.target.value as GoalId)}>
+                {results.map(({ now, progress }) => (
+                  <option key={now.goal.id} value={now.goal.id}>
+                    {t(now.goal.name)}
+                    {now.held ? t(' (held)') : now === focus.now ? '' : ` · ${t('{n}%', { n: progress.percent })}`}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         }
       />
@@ -122,7 +136,7 @@ function FirstStep({ profile, updateProfile, onAddHours, onDone }: { profile: Pr
       </button>
       <div className="first-step-more">
         <button type="button" className="link" onClick={onDone}>
-          {t('I’m just starting')}
+          {Object.keys(profile.held).length > 0 ? t('Later') : t('I’m just starting')}
         </button>
         <button type="button" className="link" aria-expanded={licensed} onClick={() => setLicensed(!licensed)}>
           {t('I already hold a licence')}
@@ -137,12 +151,24 @@ function FirstStep({ profile, updateProfile, onAddHours, onDone }: { profile: Pr
               <span>{t(g.name)}</span>
             </label>
           ))}
-          <button type="button" className="btn small" onClick={onDone}>
+          {profile.held.ppl && <PplDate profile={profile} updateProfile={updateProfile} />}
+          {/* The hours are still to come, so the way to add them stays. */}
+          <button type="button" className="btn small" onClick={() => setLicensed(false)}>
             {t('Done')}
           </button>
         </fieldset>
       )}
     </div>
+  );
+}
+
+/** Commercial training counts from this day, so it's asked where it's needed rather than left for Profile. */
+function PplDate({ profile, updateProfile }: { profile: Profile; updateProfile: UpdateProfile }) {
+  return (
+    <label className="inline-field">
+      <span>{t('When did you get your PPL?')}</span>
+      <input type="date" value={profile.held.ppl?.date ?? ''} onChange={(e) => updateProfile((p) => ({ ...p, held: { ...p.held, ppl: { date: e.target.value } } }))} />
+    </label>
   );
 }
 
@@ -195,13 +221,23 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
   const { goal } = r;
   const holding = GOALS.filter((g) => g.id !== goal.id && profile.held[g.id] !== undefined);
   const cost = costOf(r, profile);
-  const costPanel = useRef<HTMLDetailsElement>(null);
+  const [ratesOpen, setRatesOpen] = useState(false);
   // What was ticked just now stays in place, with its date and mark still to fill in.
   const [pinned, setPinned] = useState<ReadonlySet<string>>(new Set());
   const pin = (id: string) => setPinned((p) => new Set(p).add(id));
   // Held, the requirements are for reference, so they all stay.
   const showAll = r.held !== null || r.credited !== null;
-  const stays = (x: ReqResult) => showAll || !isDone(x) || pinned.has(x.req.id);
+  // After paper totals: what the hours can't show, asked here rather than 2,000 px down the page.
+  const [caughtUp, setCaughtUp] = useState(() => isSnoozed('catch-up'));
+  const toCatch =
+    !showAll && !caughtUp && entries.some((e) => e.forward)
+      ? r.sections
+          .filter((s) => s.section.kind === 'prerequisites' || s.section.kind === 'knowledge')
+          .flatMap((s) => s.results)
+          .filter((x) => (x.req.kind === 'medical' || x.req.kind === 'milestone') && (!isDone(x) || pinned.has(x.req.id)))
+      : [];
+  const catching = new Set(toCatch.map((x) => x.req.id));
+  const stays = (x: ReqResult) => !catching.has(x.req.id) && (showAll || !isDone(x) || pinned.has(x.req.id));
   const finished = showAll ? [] : flatten(r.sections.flatMap((s) => s.results)).filter((x) => x.req.kind !== 'info' && x.met && !pinned.has(x.req.id));
   const setHeld = (date: string | null) =>
     updateProfile((p) => {
@@ -219,13 +255,6 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
           <h1 id="goal-title" className="sr-only">
             {t(goal.name)}
           </h1>
-          <p className="eyebrow">
-            {t('Transport Canada ·')}{' '}
-            <a href={STANDARD_URL} target="_blank" rel="noreferrer">
-              {t('Standard')}{' '}{goal.cite}
-            </a>{' '}
-            {t('· current to')}{' '}{STANDARD_CURRENT}{t(', checked nightly')}
-          </p>
         </div>
         {r.held && (
           <div className="held-box">
@@ -262,15 +291,31 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
               </span>
             )}
             <span className="stat-label">{progress.left > 0 ? t('at least {hours} h to go', { hours: formatHoursUp(progress.left) }) : progress.need > 0 ? t('All hours flown') : t('No minimum hours')}</span>
-            <span className="stat-label">
-              {r.done}{' '}{t('of')}{' '}{r.total}{' '}{t('requirements met')}
-            </span>
           </div>
-          {cost && <CostStat result={r} cost={cost} profile={profile} onRates={() => openRates(costPanel.current)} />}
+          {cost && <CostStat result={r} cost={cost} profile={profile} onRates={() => setRatesOpen(true)} />}
         </div>
       )}
-      <Route result={r} />
-      <ShareProgress result={r} progress={progress} />
+      <Finish result={r} pace={pace} logged={entries.length > 0} cost={cost} />
+      {toCatch.length > 0 && (
+        <section className="catch-up" aria-labelledby="catch-up-title">
+          <h2 id="catch-up-title">{t('A few things your hours can’t show')}</h2>
+          <ul className="reqs">
+            {toCatch.map((x) => (
+              <ReqRow key={x.req.id} r={{ ...x, children: [] }} goalId={goal.id} profile={profile} updateProfile={updateProfile} stays={() => false} pin={pin} />
+            ))}
+          </ul>
+          <button
+            type="button"
+            className="link"
+            onClick={() => {
+              snooze('catch-up');
+              setCaughtUp(true);
+            }}
+          >
+            {t('Later')}
+          </button>
+        </section>
+      )}
       {r.complete && !r.held && !r.credited && (
         <div className="banner ok goal-complete">
           <span>
@@ -281,10 +326,12 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
           </button>
         </div>
       )}
-      <Finish result={r} pace={pace} logged={entries.length > 0} cost={cost} />
-      {cost && <CostDetail result={r} cost={cost} profile={profile} updateProfile={updateProfile} panel={costPanel} />}
-      {'unpriced' in goal.cost && !r.held && !r.credited && <p className="note cost-none">{t(goal.cost.unpriced)}</p>}
       <NextFlightCard result={r} entries={entries} profile={profile} onFly={onFly} />
+      <Route result={r} progress={progress} />
+      <WhatIf result={r} pace={pace} cost={cost} />
+      {cost && <CostDetail result={r} cost={cost} profile={profile} onRates={() => setRatesOpen(true)} />}
+      {ratesOpen && <RatesSheet profile={profile} updateProfile={updateProfile} onClose={() => setRatesOpen(false)} />}
+      {'unpriced' in goal.cost && !r.held && !r.credited && <p className="note cost-none">{t(goal.cost.unpriced)}</p>}
 
       {r.gates.length > 0 && !r.held && (
         <ul className="gates" aria-label={t('What is unlocked')}>
@@ -296,6 +343,7 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
 
       {r.scope && <ScopeControl result={r} profile={profile} updateProfile={updateProfile} />}
 
+      {!r.held && !r.credited && <p className="left-count">{t('{done} of {total} requirements met', { done: r.done, total: r.total })}</p>}
       {(showAll ? r.sections : hoursFirst(r.sections)).map((s) => {
         const open = s.results.filter(stays);
         if (open.length === 0) return null;
@@ -325,6 +373,14 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
           {t('Mark')}{' '}{shortName(goal.short)}{' '}{t('as held')}
         </button>
       )}
+      <ShareProgress result={r} progress={progress} />
+      <p className="eyebrow goal-source">
+        {t('Transport Canada ·')}{' '}
+        <a href={STANDARD_URL} target="_blank" rel="noreferrer">
+          {t('Standard')}{' '}{goal.cite}
+        </a>{' '}
+        {t('· current to')}{' '}{STANDARD_CURRENT}{t(', checked nightly')}
+      </p>
     </section>
   );
 }
@@ -336,8 +392,7 @@ function shortfall(r: ReqResult): string {
 }
 
 function Gate({ gate: g }: { gate: GateResult }) {
-  const open = g.open.length;
-  const status = g.passed ? t('Passed') : g.met ? (g.gate.exams ? t('You can write it') : t('Unlocked')) : open === 1 ? t('1 thing left') : t('{n} things left', { n: open });
+  const status = gateStatus(g);
   const title = (
     <>
       <strong>{t(g.gate.label)}</strong>
@@ -380,6 +435,7 @@ function ScopeControl({ result: r, profile, updateProfile }: { result: GoalResul
     <div className="scope">
       <p>{r.goal.scope && t(r.goal.scope.label)}</p>
       {r.scope?.message && <p className="warn-text">{r.scope.message}</p>}
+      {r.goal.scope?.from === 'ppl' && profile.held.ppl && !profile.held.ppl.date && <PplDate profile={profile} updateProfile={updateProfile} />}
       <label className="inline-field">
         <span>{t('Count training from')}</span>
         <input type="date" value={override || r.scope?.start || ''} onChange={(e) => setStart(e.target.value)} />

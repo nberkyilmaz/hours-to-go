@@ -59,7 +59,7 @@ export function NextFlightCard({ result: r, entries, profile, onFly }: Props) {
         {others.length > 0 && <p className="note">{t('Also useful:')}{' '}{others.map((f) => t(f.name)).join(' · ')}.</p>}
         <p className="note">{t('Worked out from the standard’s minimums, at your usual flight length.')}</p>
       </details>
-      <button type="button" className="link" onClick={() => onFly(best.line)}>
+      <button type="button" className="btn small" onClick={() => onFly(best.line)}>
         {t('I flew this')}
       </button>
       <p className="hint">{t('A suggestion. Your instructor decides what you fly next and when you’re ready for it.')}</p>
