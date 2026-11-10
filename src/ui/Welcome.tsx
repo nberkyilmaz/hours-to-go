@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { formatHours } from '../model/entry';
 import type { LogbookState } from '../useLogbook';
 import { BookIcon, CiteIcon, Mark, ProgressIcon } from './icons';
 import { PRIVACY_URL } from './links';
@@ -35,7 +36,7 @@ export function Welcome({ lb }: { lb: LogbookState }) {
             <Ring percent={58} label={t('An example: 58% of the way to a licence')} />
             <div>
               <strong>
-                26.1 <small>{t('of 45.0 h')}</small>
+                {formatHours(26.1 * 60)} <small>{t('of 45.0 h')}</small>
               </strong>
               <span>{t('18.9 h to go, about $5,800 left')}</span>
               <span>{t('Next flight: dual cross-country')}</span>

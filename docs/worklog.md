@@ -1066,12 +1066,24 @@ can be shared again from Progress (D68).
 
 **Checked.** Two tests. Edge at phone width in both languages, with axe.
 
+## Phase 50: a more finished look (2026-11-10)
+
+A pass on how it looks, inside the glass cockpit the owner chose (D21): the bar's buttons in the panel's cyan with one
+main action, the welcome in two columns on a computer, a plan with one box in it, and the remarks in the wide logbook
+(D69).
+
+**Found on the way.** The welcome's example said "26.1" in French, and "3,1 h par semaine" could break between the
+figure and its unit on a phone.
+
+**Checked.** One new test. Edge at 390, 1024 and 1440 px in both languages, light and dark, with axe and nothing wider
+than the screen; the welcome from 1099 to 1920 px, where its form takes clicks and typing.
+
 ## Where things stand
 
-- 471 tests pass (rules 38, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
+- 472 tests pass (rules 38, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
   21, offline changes 5, server API 42, the standard's watcher 8, first visit, guest, cost to go,
   finish date, next flight, expiry, password reset, confirm links and feedback 28, the form and
-  notices 12, the quick form 17, Progress 12, the logbook 8, first run and trust 18, signed in 6,
+  notices 12, the quick form 17, Progress 12, the logbook 9, first run and trust 18, signed in 6,
   offline on the screen 9, log again and the cost a month 6, current to fly 19, reminders 21, the spreadsheet 21, the paper log 13, the instructor link 20, French 27, the what-if slider 12, the flight clock 17, the route 10, cards to share 16, the server's defences 14), and the API tests per
   database also run against a Postgres server through `pg` in CI.
 - Typecheck clean on both configs; `npm audit` clean.

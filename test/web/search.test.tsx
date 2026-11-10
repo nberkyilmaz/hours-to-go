@@ -80,6 +80,17 @@ describe('the Logbook screen', () => {
     expect(screen.getByRole('dialog')).toBeTruthy();
   });
 
+  it('gives remarks a column on a wide screen, only when a flight has some', async () => {
+    let list = await open([flight, solo]);
+    expect(list.querySelectorAll('.c-remarks')).toHaveLength(2);
+    expect(within(list).getByRole('button', { name: 'Edit the 2026-11-08 entry' }).querySelector('.c-remarks')?.textContent).toBe('Crosswind landings');
+    expect(document.querySelector('.log-head')?.textContent).toContain('Remarks');
+    cleanup();
+    list = await open([solo]);
+    expect(list.querySelector('.c-remarks')).toBeNull();
+    expect(document.querySelector('.log-head')?.textContent).not.toContain('Remarks');
+  });
+
   it('says landings in words', async () => {
     const list = await open([{ ...flight, dayLandings: 4 }]);
     expect(list.textContent).toContain('4 landings');

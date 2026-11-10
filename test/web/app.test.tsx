@@ -190,8 +190,9 @@ describe('the app as a guest', () => {
       saveGuestLogbook({ ...emptyLogbook(), entries: [line('2026-09-05', { seDayDual: 2 }), ...weekly] });
       render(<App />);
       const finish = (await screen.findByText(/^Minimum around/)).closest('p')!.textContent;
-      expect(finish).toBe('Minimum around May 2027 at your pace, 1.2 h a week');
-      expect(screen.getByText(/65 h average: around September 2027/)).toBeTruthy();
+      // The hours keep their unit on the same line.
+      expect(finish).toBe('Minimum around May 2027 at your pace, 1.2\u00a0h a week');
+      expect(screen.getByText(/65\sh average: around September 2027/)).toBeTruthy();
       expect(screen.getByText(/you logged in the last 8 weeks/)).toBeTruthy();
 
       // Months later with no flying, there is no pace to go on.
