@@ -65,6 +65,13 @@ export const CiteIcon = () => (
   </svg>
 );
 
+export const InfoIcon = () => (
+  <svg {...base} width={18} height={18}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 11v6M12 7.5v.01" />
+  </svg>
+);
+
 export const CloudCheckIcon = () => (
   <svg {...base} width={16} height={16}>
     <path d="M7 18a4.5 4.5 0 0 1-.5-9 6 6 0 0 1 11.5 1.5A3.75 3.75 0 0 1 17.5 18z" />

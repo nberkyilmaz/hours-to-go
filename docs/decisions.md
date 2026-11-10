@@ -1048,6 +1048,20 @@ and they used to be 1,100 px down in a fold.
   the time, so the keyboard doesn't hide it and a default of 1 can't save unseen.
 - **Going down the page, the + steps aside**, and the Logbook's three less-used links are under More.
 
+### D67. The requirements list, and a wide screen
+- **Each requirement is two lines**: what it is, then its bar, its figures and the paragraph it comes from. The
+  citation used to follow the label and wrap it onto another line. Every line still has one (D2).
+- **One level in at most.** What sits under a sub-requirement is listed beside it, so the CPL's night landings aren't
+  three indents deep on a phone.
+- **A plain note is a tap away**, behind ⓘ. Our readings stay in view (D3): they're where the app chose, and a student
+  should see that without asking.
+- **From 1100 px the plan and the requirements sit side by side.** The hours, price, date, next flight and route are on
+  the left, with Share and the source under them; what's unlocked and the list are on the right, so the list starts on
+  the first screen. Held, the list is only for reference and keeps the full width. Profile's cards go in two columns
+  that keep their places while a form in one of them grows, the account and licences on the left.
+- **A guest's "Saved on this device only" goes below 1180 px.** In French it pushed Create profile off a 1024 px screen,
+  an iPad on its side. The banner on Progress says the same.
+
 ## Process
 
 ### D22. Check the UI in a real browser, at phone size, before calling it done

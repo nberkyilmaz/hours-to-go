@@ -14,7 +14,7 @@ import { Route, gateStatus } from './Route';
 import { shareCard, type CardFacts } from './card';
 import { MedicalFields } from './Medical';
 import { NextFlightCard } from './NextFlight';
-import { CheckIcon, LockIcon, PlusIcon } from './icons';
+import { CheckIcon, InfoIcon, LockIcon, PlusIcon } from './icons';
 import { STANDARD_CURRENT, STANDARD_URL } from './links';
 import { keepUnits } from './text';
 import { shortName, t } from '../i18n';
@@ -281,109 +281,119 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
         </p>
       )}
 
-      {r.held || r.credited ? (
-        <p className="banner ok">{r.held ? t('You hold this. The requirements are below for reference.') : t(r.credited ?? '')}</p>
-      ) : (
-        <div className="hero">
-          <Ring percent={progress.percent} />
-          <div className="hero-hours">
-            {progress.need > 0 && (
-              <span className="hero-figure">
-                {formatHours(progress.flown)}
-                <small>{' '}{t('of')}{' '}{formatHours(progress.need)}{' '}{t('h')}</small>
+      {/* On a wide screen the plan and the requirements sit side by side (D67); held, the list is all there is. */}
+      <div className={`goal-body${r.held || r.credited ? '' : ' is-split'}`}>
+        <div className="goal-plan">
+          {r.held || r.credited ? (
+            <p className="banner ok">{r.held ? t('You hold this. The requirements are below for reference.') : t(r.credited ?? '')}</p>
+          ) : (
+            <div className="hero">
+              <Ring percent={progress.percent} />
+              <div className="hero-hours">
+                {progress.need > 0 && (
+                  <span className="hero-figure">
+                    {formatHours(progress.flown)}
+                    <small>{' '}{t('of')}{' '}{formatHours(progress.need)}{' '}{t('h')}</small>
+                  </span>
+                )}
+                <span className="stat-label">{progress.left > 0 ? t('at least {hours} h to go', { hours: formatHoursUp(progress.left) }) : progress.need > 0 ? t('All hours flown') : t('No minimum hours')}</span>
+              </div>
+              {cost && <CostStat result={r} cost={cost} profile={profile} onRates={() => setRatesOpen(true)} />}
+            </div>
+          )}
+          <Finish result={r} pace={pace} logged={entries.length > 0} cost={cost} />
+          {toCatch.length > 0 && (
+            <section className="catch-up" aria-labelledby="catch-up-title">
+              <h2 id="catch-up-title">{t('A few things your hours can’t show')}</h2>
+              <ul className="reqs">
+                {toCatch.map((x) => (
+                  <ReqRow key={x.req.id} r={{ ...x, children: [] }} goalId={goal.id} profile={profile} updateProfile={updateProfile} stays={() => false} pin={pin} />
+                ))}
+              </ul>
+              <button
+                type="button"
+                className="link"
+                onClick={() => {
+                  snooze('catch-up');
+                  setCaughtUp(true);
+                }}
+              >
+                {t('Later')}
+              </button>
+            </section>
+          )}
+          {r.complete && !r.held && !r.credited && (
+            <div className="banner ok goal-complete">
+              <span>
+                <strong>{t('Every')}{' '}{shortName(goal.short)}{' '}{t('requirement is met.')}</strong>{' '}{t('Time to send in your application.')}
               </span>
-            )}
-            <span className="stat-label">{progress.left > 0 ? t('at least {hours} h to go', { hours: formatHoursUp(progress.left) }) : progress.need > 0 ? t('All hours flown') : t('No minimum hours')}</span>
-          </div>
-          {cost && <CostStat result={r} cost={cost} profile={profile} onRates={() => setRatesOpen(true)} />}
+              <button type="button" className="btn primary small" onClick={() => setHeld('')}>
+                {t('Mark')}{' '}{shortName(goal.short)}{' '}{t('as held')}
+              </button>
+            </div>
+          )}
+          <NextFlightCard result={r} entries={entries} profile={profile} onFly={onFly} onStartClock={onStartClock} />
+          <Route result={r} progress={progress} />
+          <WhatIf result={r} pace={pace} cost={cost} />
+          {cost && <CostDetail result={r} cost={cost} profile={profile} onRates={() => setRatesOpen(true)} />}
+          {ratesOpen && <RatesSheet profile={profile} updateProfile={updateProfile} onClose={() => setRatesOpen(false)} />}
+          {'unpriced' in goal.cost && !r.held && !r.credited && <p className="note cost-none">{t(goal.cost.unpriced)}</p>}
         </div>
-      )}
-      <Finish result={r} pace={pace} logged={entries.length > 0} cost={cost} />
-      {toCatch.length > 0 && (
-        <section className="catch-up" aria-labelledby="catch-up-title">
-          <h2 id="catch-up-title">{t('A few things your hours can’t show')}</h2>
-          <ul className="reqs">
-            {toCatch.map((x) => (
-              <ReqRow key={x.req.id} r={{ ...x, children: [] }} goalId={goal.id} profile={profile} updateProfile={updateProfile} stays={() => false} pin={pin} />
-            ))}
-          </ul>
-          <button
-            type="button"
-            className="link"
-            onClick={() => {
-              snooze('catch-up');
-              setCaughtUp(true);
-            }}
-          >
-            {t('Later')}
-          </button>
-        </section>
-      )}
-      {r.complete && !r.held && !r.credited && (
-        <div className="banner ok goal-complete">
-          <span>
-            <strong>{t('Every')}{' '}{shortName(goal.short)}{' '}{t('requirement is met.')}</strong>{' '}{t('Time to send in your application.')}
-          </span>
-          <button type="button" className="btn primary small" onClick={() => setHeld('')}>
-            {t('Mark')}{' '}{shortName(goal.short)}{' '}{t('as held')}
-          </button>
-        </div>
-      )}
-      <NextFlightCard result={r} entries={entries} profile={profile} onFly={onFly} onStartClock={onStartClock} />
-      <Route result={r} progress={progress} />
-      <WhatIf result={r} pace={pace} cost={cost} />
-      {cost && <CostDetail result={r} cost={cost} profile={profile} onRates={() => setRatesOpen(true)} />}
-      {ratesOpen && <RatesSheet profile={profile} updateProfile={updateProfile} onClose={() => setRatesOpen(false)} />}
-      {'unpriced' in goal.cost && !r.held && !r.credited && <p className="note cost-none">{t(goal.cost.unpriced)}</p>}
 
-      {r.gates.length > 0 && !r.held && (
-        <ul className="gates" aria-label={t('What is unlocked')}>
-          {r.gates.map((g) => (
-            <Gate key={g.gate.label} gate={g} />
-          ))}
-        </ul>
-      )}
-
-      {r.scope && <ScopeControl result={r} profile={profile} updateProfile={updateProfile} />}
-
-      {!r.held && !r.credited && <p className="left-count">{t('{done} of {total} requirements met', { done: r.done, total: r.total })}</p>}
-      {(showAll ? r.sections : hoursFirst(r.sections)).map((s) => {
-        const open = s.results.filter(stays);
-        if (open.length === 0) return null;
-        return (
-          <div key={s.section.title} className="req-section">
-            <h2>{t(s.section.title)}</h2>
-            <ul className="reqs">
-              {open.map((x) => (
-                <ReqRow key={x.req.id} r={x} goalId={goal.id} profile={profile} updateProfile={updateProfile} stays={stays} pin={pin} />
+        <div className="goal-reqs">
+          {r.gates.length > 0 && !r.held && (
+            <ul className="gates" aria-label={t('What is unlocked')}>
+              {r.gates.map((g) => (
+                <Gate key={g.gate.label} gate={g} />
               ))}
             </ul>
-          </div>
-        );
-      })}
-      {finished.length > 0 && (
-        <details className="req-done">
-          <summary>{t('Done (')}{finished.length})</summary>
-          <ul className="reqs">
-            {finished.map((x) => (
-              <ReqRow key={x.req.id} r={{ ...x, children: [] }} goalId={goal.id} profile={profile} updateProfile={updateProfile} stays={() => false} pin={pin} />
-            ))}
-          </ul>
-        </details>
-      )}
-      {!r.held && !r.complete && (
-        <button type="button" className="link goal-held" onClick={() => setHeld('')}>
-          {t('Mark')}{' '}{shortName(goal.short)}{' '}{t('as held')}
-        </button>
-      )}
-      <ShareProgress result={r} progress={progress} />
-      <p className="eyebrow goal-source">
-        {t('Transport Canada ·')}{' '}
-        <a href={STANDARD_URL} target="_blank" rel="noreferrer">
-          {t('Standard')}{' '}{goal.cite}
-        </a>{' '}
-        {t('· current to')}{' '}{STANDARD_CURRENT}{t(', checked nightly')}
-      </p>
+          )}
+
+          {r.scope && <ScopeControl result={r} profile={profile} updateProfile={updateProfile} />}
+
+          {!r.held && !r.credited && <p className="left-count">{t('{done} of {total} requirements met', { done: r.done, total: r.total })}</p>}
+          {(showAll ? r.sections : hoursFirst(r.sections)).map((s) => {
+            const open = s.results.filter(stays);
+            if (open.length === 0) return null;
+            return (
+              <div key={s.section.title} className="req-section">
+                <h2>{t(s.section.title)}</h2>
+                <ul className="reqs">
+                  {open.map((x) => (
+                    <ReqRow key={x.req.id} r={x} goalId={goal.id} profile={profile} updateProfile={updateProfile} stays={stays} pin={pin} />
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+          {finished.length > 0 && (
+            <details className="req-done">
+              <summary>{t('Done (')}{finished.length})</summary>
+              <ul className="reqs">
+                {finished.map((x) => (
+                  <ReqRow key={x.req.id} r={{ ...x, children: [] }} goalId={goal.id} profile={profile} updateProfile={updateProfile} stays={() => false} pin={pin} />
+                ))}
+              </ul>
+            </details>
+          )}
+          {!r.held && !r.complete && (
+            <button type="button" className="link goal-held" onClick={() => setHeld('')}>
+              {t('Mark')}{' '}{shortName(goal.short)}{' '}{t('as held')}
+            </button>
+          )}
+        </div>
+
+        <div className="goal-foot">
+          <ShareProgress result={r} progress={progress} />
+          <p className="eyebrow goal-source">
+            {t('Transport Canada ·')}{' '}
+            <a href={STANDARD_URL} target="_blank" rel="noreferrer">
+              {t('Standard')}{' '}{goal.cite}
+            </a>{' '}
+            {t('· current to')}{' '}{STANDARD_CURRENT}{t(', checked nightly')}
+          </p>
+        </div>
+      </div>
     </section>
   );
 }
@@ -460,11 +470,20 @@ interface RowProps {
   /** Whether a sub-requirement stays in this list. */
   stays: (r: ReqResult) => boolean;
   pin: (id: string) => void;
+  /** Already one level in: its own children are listed beside it, not under it. */
+  nested?: boolean;
 }
 
-function ReqRow({ r, goalId, profile, updateProfile, stays, pin }: RowProps) {
+/** Everything under a requirement, one level in however deep the standard goes. A child that's done takes its own children with it. */
+const below = (rs: readonly ReqResult[], stays: (r: ReqResult) => boolean): ReqResult[] => rs.filter(stays).flatMap((c) => [c, ...below(c.children, stays)]);
+
+function ReqRow({ r, goalId, profile, updateProfile, stays, pin, nested = false }: RowProps) {
   const { req } = r;
   const fieldId = `${goalId}-${req.id}`;
+  // Our readings stay in view (D3); the other notes are a tap away (D67).
+  const aside = req.note && !req.reading ? req.note : null;
+  const [noteOpen, setNoteOpen] = useState(false);
+  const under = nested ? [] : below(r.children, stays);
   return (
     <li className={`req${r.met ? ' is-met' : ''}`}>
       <div className="req-line">
@@ -481,11 +500,23 @@ function ReqRow({ r, goalId, profile, updateProfile, stays, pin }: RowProps) {
               <label htmlFor={fieldId}>{keepUnits(t(req.label))}</label>
             ) : (
               <span>{keepUnits(t(req.label))}</span>
-            )}{' '}
-            <span className="cite">{req.cite}</span>
+            )}
             <span className="sr-only">{r.met ? t(' (met)') : t(' (not met)')}</span>
           </div>
-          {(req.kind === 'time' || req.kind === 'count') && <Meter r={r} />}
+          <div className="req-meta">
+            {(req.kind === 'time' || req.kind === 'count') && <Meter r={r} />}
+            <span className="cite">{req.cite}</span>
+            {aside && (
+              <button type="button" className="link note-toggle" aria-label={t('Note')} aria-expanded={noteOpen} aria-controls={`${fieldId}-note`} onClick={() => setNoteOpen((o) => !o)}>
+                <InfoIcon />
+              </button>
+            )}
+          </div>
+          {aside && (
+            <p id={`${fieldId}-note`} className="note" hidden={!noteOpen}>
+              {keepUnits(t(aside))}
+            </p>
+          )}
           {req.kind === 'milestone' && <MilestoneControls r={r} updateProfile={updateProfile} />}
           <Validity r={r} />
           {r.exam && !r.exam.passed && <ExamPanel exam={r.exam} />}
@@ -503,17 +534,17 @@ function ReqRow({ r, goalId, profile, updateProfile, stays, pin }: RowProps) {
           {req.kind === 'info' && <p className="info-value">{r.value}</p>}
           {r.credited && <p className="credit">{t(r.credited)}</p>}
           {r.hint && <p className="hint-text">{r.hint}</p>}
-          {req.note && (
+          {req.note && req.reading && (
             <p className="note">
-              {req.reading && <span className="reading">{t('Our reading. Ask your school.')}</span>} {keepUnits(t(req.note))}
+              <span className="reading">{t('Our reading. Ask your school.')}</span> {keepUnits(t(req.note))}
             </p>
           )}
         </div>
       </div>
-      {r.children.some(stays) && (
+      {under.length > 0 && (
         <ul className="reqs nested">
-          {r.children.filter(stays).map((c) => (
-            <ReqRow key={c.req.id} r={c} goalId={goalId} profile={profile} updateProfile={updateProfile} stays={stays} pin={pin} />
+          {under.map((c) => (
+            <ReqRow key={c.req.id} r={c} goalId={goalId} profile={profile} updateProfile={updateProfile} stays={stays} pin={pin} nested />
           ))}
         </ul>
       )}
@@ -590,7 +621,7 @@ function Meter({ r }: { r: ReqResult }) {
   const pct = Math.min(100, Math.round((r.have / Math.max(1, r.need)) * 100));
   const left = r.need - r.have;
   return (
-    <div className="meter">
+    <>
       <span className="bar" aria-hidden="true">
         <span style={{ width: `${r.met ? 100 : pct}%` }} />
       </span>
@@ -599,7 +630,7 @@ function Meter({ r }: { r: ReqResult }) {
         {isTime ? ' h' : ''}
         {!r.met && left > 0 && <strong> · {isTime ? `${formatHoursUp(left)} h` : left}{' '}{t('to go')}</strong>}
       </span>
-    </div>
+    </>
   );
 }
 
