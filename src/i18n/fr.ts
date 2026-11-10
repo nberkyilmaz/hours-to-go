@@ -47,6 +47,13 @@ const RAW: Record<string, string> = {
   'saved before you signed in. Add them to your profile? Entries already in your profile are not duplicated.': 'datant d’avant votre connexion. Ajouter à votre profil? Les entrées déjà dans votre profil ne seront pas dupliquées.',
   'Add to my profile': 'Ajouter à mon profil',
   'Not now': 'Pas maintenant',
+  'Your logbook is only on this device.': 'Votre carnet est seulement sur cet appareil.',
+  'Start the clock': 'Démarrer le chrono',
+  'Flight clock': 'Chrono de vol',
+  'From the clock': 'Selon le chrono',
+  'With an instructor beside you.': 'Avec un instructeur à vos côtés.',
+  'Alone in the aircraft.': 'Seul à bord.',
+  'You’re in command, with passengers.': 'Vous êtes commandant de bord, avec des passagers.',
   'Your logbook is only on this device. Save it to a free profile so you can’t lose it.': 'Votre carnet se trouve seulement sur cet appareil. Enregistrez-le dans un profil gratuit pour ne pas le perdre.',
   Later: 'Plus tard',
   'Hours to Go': 'Hours to Go',
@@ -388,6 +395,7 @@ const RAW: Record<string, string> = {
   '. A heading has to say exactly which column it is, like “SE day PIC”, and totals are worked out here.': '. Un en-tête doit indiquer exactement sa colonne, comme « Monomoteur de jour CdB », et les totaux sont calculés ici.',
   Add: 'Ajouter',
   Close: 'Fermer',
+  More: 'Plus',
 
   // ---- The logbook ----
   'Type not given': 'Type non indiqué',

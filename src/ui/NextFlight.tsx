@@ -15,9 +15,10 @@ interface Props {
   profile: Profile;
   /** Opens the form on this flight, once it's been flown. */
   onFly: (line: Partial<Entry>) => void;
+  onStartClock?: (() => void) | undefined;
 }
 
-export function NextFlightCard({ result: r, entries, profile, onFly }: Props) {
+export function NextFlightCard({ result: r, entries, profile, onFly, onStartClock }: Props) {
   const advice = useMemo(() => nextFlights(r.goal, entries, profile, today()), [r.goal, entries, profile]);
   // An empty logbook has its own call to add hours.
   if (!advice || entries.length === 0) return null;
@@ -59,9 +60,16 @@ export function NextFlightCard({ result: r, entries, profile, onFly }: Props) {
         {others.length > 0 && <p className="note">{t('Also useful:')}{' '}{others.map((f) => t(f.name)).join(' · ')}.</p>}
         <p className="note">{t('Worked out from the standard’s minimums, at your usual flight length.')}</p>
       </details>
-      <button type="button" className="btn small" onClick={() => onFly(best.line)}>
-        {t('I flew this')}
-      </button>
+      <div className="next-actions">
+        <button type="button" className="btn small" onClick={() => onFly(best.line)}>
+          {t('I flew this')}
+        </button>
+        {onStartClock && (
+          <button type="button" className="btn small" onClick={onStartClock}>
+            {t('Start the clock')}
+          </button>
+        )}
+      </div>
       <p className="hint">{t('A suggestion. Your instructor decides what you fly next and when you’re ready for it.')}</p>
     </section>
   );

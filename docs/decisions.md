@@ -1038,6 +1038,16 @@ and they used to be 1,100 px down in a fold.
 - **Current to fly stays folded until a flight is logged**, since four alarms on an empty logbook only say it's empty.
   Passengers at night is left out for a pilot with no night rating or night flying.
 
+### D66. The moments, the clock and the form
+- **A first solo, halfway and the last requirement open a sheet with the card itself**, which stays until it's closed,
+  with Share and Undo. They used to be the same line that fades after any other flight.
+- **The clock lives where the thumb is.** While it runs, the + becomes "Landed · 1:12", and the top banner is kept only
+  for a clock that was probably forgotten. It can also start from Your next flight, since the bottom of the flight form
+  is where nobody would find it.
+- **Who was flying is one row**, Dual, Solo, PIC, with the plain words under the one chosen (D49). Landings sits beside
+  the time, so the keyboard doesn't hide it and a default of 1 can't save unseen.
+- **Going down the page, the + steps aside**, and the Logbook's three less-used links are under More.
+
 ## Process
 
 ### D22. Check the UI in a real browser, at phone size, before calling it done

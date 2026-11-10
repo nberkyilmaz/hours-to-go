@@ -77,10 +77,11 @@ const INSTRUMENT = group('Instrument');
 const LANDINGS = group('Takeoffs & landings');
 const FTD_ONLY: ColumnGroup = { title: 'FTD session', columns: ['ftd', 'approaches'] };
 
-const KINDS: { kind: QuickKind; label: string }[] = [
-  { kind: 'dual', label: t('Dual, with an instructor') },
-  { kind: 'solo', label: t('Solo') },
-  { kind: 'pic', label: t('PIC, with passengers') },
+/** One row, with the plain words under whichever is chosen (D49), so the keyboard doesn't hide the rest of the form. */
+const KINDS: { kind: QuickKind; label: string; short: string; means: string }[] = [
+  { kind: 'dual', label: t('Dual, with an instructor'), short: t('Dual'), means: t('With an instructor beside you.') },
+  { kind: 'solo', label: t('Solo'), short: t('Solo'), means: t('Alone in the aircraft.') },
+  { kind: 'pic', label: t('PIC, with passengers'), short: 'PIC', means: t('You’re in command, with passengers.') },
 ];
 
 const TITLE: Record<FormLayout, { add: string; edit: string; discard: string }> = {
@@ -427,17 +428,19 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
       )}
       <fieldset className="quick-group">
         <legend>{t('Who was flying')}</legend>
-        <div className="choices">
-          {KINDS.map(({ kind, label }) => (
+        <div className="choices one-row">
+          {KINDS.map(({ kind, label, short }) => (
             <label key={kind} className={`choice${quick.kind === kind ? ' is-on' : ''}`}>
-              <input type="radio" name="q-kind" value={kind} checked={quick.kind === kind} onChange={() => changeQuick({ kind })} />
-              {label}
+              <input type="radio" name="q-kind" value={kind} checked={quick.kind === kind} aria-label={label} onChange={() => changeQuick({ kind })} />
+              {short}
             </label>
           ))}
         </div>
+        {quick.kind && <p className="hint">{KINDS.find((k) => k.kind === quick.kind)!.means}</p>}
       </fieldset>
-      <div className={`field${errors.time ? ' has-error' : ''}`}>
-        <label htmlFor="q-time">{t('Flight time, in hours')}</label>
+      <div className="quick-numbers">
+        <div className={`field${errors.time ? ' has-error' : ''}`}>
+          <label htmlFor="q-time">{t('Flight time, in hours')}</label>
         <input
           id="q-time"
           className="quick-time"
@@ -448,7 +451,21 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
           onChange={(e) => changeQuick({ time: e.target.value })}
           aria-invalid={errors.time ? true : undefined}
         />
+        {clockTime && <p className="hint">{t('From the clock')}</p>}
         {timeError}
+        </div>
+      <div className="quick-landings">
+        <span id="q-landings">{t('Landings')}</span>
+        <div className="stepper" role="group" aria-labelledby="q-landings">
+          <button type="button" aria-label={t('One fewer landing')} disabled={quick.landings === 0} onClick={() => changeQuick({ landings: quick.landings - 1 })}>
+            −
+          </button>
+          <output aria-live="polite">{quick.landings}</output>
+          <button type="button" aria-label={t('One more landing')} onClick={() => changeQuick({ landings: quick.landings + 1 })}>
+            +
+          </button>
+        </div>
+      </div>
       </div>
       <fieldset className="quick-group">
         <legend>{t('Also')}</legend>
@@ -495,18 +512,6 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
           {errors.hood && <p className="field-error">{errors.hood}</p>}
         </div>
       )}
-      <div className="quick-landings">
-        <span id="q-landings">{t('Landings')}</span>
-        <div className="stepper" role="group" aria-labelledby="q-landings">
-          <button type="button" aria-label={t('One fewer landing')} disabled={quick.landings === 0} onClick={() => changeQuick({ landings: quick.landings - 1 })}>
-            −
-          </button>
-          <output aria-live="polite">{quick.landings}</output>
-          <button type="button" aria-label={t('One more landing')} onClick={() => changeQuick({ landings: quick.landings + 1 })}>
-            +
-          </button>
-        </div>
-      </div>
       {remarks}
       {onStartClock && (
         <button type="button" className="link quick-columns" onClick={() => leaveThen(onStartClock)}>
