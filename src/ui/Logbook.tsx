@@ -86,7 +86,11 @@ export function LogbookView({ entries, onNew, onEdit }: Props) {
       { key: 'ldg', label: t('Ldg D/N'), value: (e) => (e.dayLandings || e.nightLandings ? `${e.dayLandings}/${e.nightLandings}` : '') },
     ] satisfies ListColumn[]
   ).filter((c) => entries.some((e) => c.value(e, derive(e)) !== ''));
-  const gridStyle = { '--log-cols': `92px minmax(120px, 1.4fr) minmax(120px, 1.1fr) repeat(${listColumns.length}, 52px) 64px` } as CSSProperties;
+  // On a wide screen the remarks fill the room between the route and the figures, when there are any (D69).
+  const withRemarks = entries.some((e) => e.remarks.trim() !== '');
+  const gridStyle = {
+    '--log-cols': `92px minmax(120px, 1.4fr) minmax(120px, 1.1fr) ${withRemarks ? 'minmax(0, 2.4fr) ' : ''}repeat(${listColumns.length}, 52px) 64px`,
+  } as CSSProperties;
 
   const months = byMonth(sorted.filter((e) => matches(e, query, filter)));
   const showing = months.reduce((n, m) => n + m.entries.length, 0);
@@ -230,6 +234,7 @@ export function LogbookView({ entries, onNew, onEdit }: Props) {
           <span>{t('Date')}</span>
           <span>{t('Aircraft')}</span>
           <span>{t('From → To')}</span>
+          {withRemarks && <span>{t('Remarks')}</span>}
           {listColumns.map((c) => (
             <span key={c.key} className="num">
               {c.label}
@@ -255,6 +260,7 @@ export function LogbookView({ entries, onNew, onEdit }: Props) {
                       </span>
                       <span className="c-sub">
                         <span className="c-route">{e.from || e.to ? `${e.from || '—'} → ${e.to || '—'}` : ''}</span>
+                        {withRemarks && <span className="c-remarks">{e.remarks}</span>}
                         <span className="c-figures">
                           {listColumns.map((c) => (
                             <span key={c.key} className="num" data-label={c.label}>

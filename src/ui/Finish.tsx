@@ -4,6 +4,7 @@ import { about, money, type Cost } from '../rules/cost';
 import type { GoalResult } from '../rules/evaluate';
 import { WINDOW_DAYS, dayText, finishOn, monthText, monthsBetween, weeksBetween, type Pace } from '../rules/pace';
 import { decimal, t } from '../i18n';
+import { keepUnits } from './text';
 
 interface Props {
   result: GoalResult;
@@ -98,9 +99,9 @@ export function Finish({ result: r, pace, logged, cost }: Props) {
   return (
     <div className="pace">
       <p>
-        <strong>{at ? t('Minimum around {month}', { month: monthText(at, now) }) : t('More than 5 years away')}</strong>{' '}{t('at your pace, {n} h a week', { n: formatHours(pace.perWeek) })}
+        <strong>{at ? t('Minimum around {month}', { month: monthText(at, now) }) : t('More than 5 years away')}</strong>{' '}{keepUnits(t('at your pace, {n} h a week', { n: formatHours(pace.perWeek) }))}
       </p>
-      {more.length > 0 && <p className="hint">{more.join(' · ')}</p>}
+      {more.length > 0 && <p className="hint">{keepUnits(more.join(' · '))}</p>}
     </div>
   );
 }

@@ -1070,6 +1070,21 @@ and they used to be 1,100 px down in a fold.
   the log. It used to be offered once, in the sheet after logging it. Halfway isn't: the log would have to be replayed
   flight by flight to find its day.
 
+### D69. A more finished look
+A pass on how it looks, inside D21's glass cockpit rather than a new one.
+- **Buttons on the panel use the panel's cyan**, the bright one, in both modes, as the welcome already did. The page's
+  teal was dull on graphite. Beside Log a flight, a guest's Create profile is outlined, so the bar has one main action;
+  on a phone, where Log a flight is the +, it stays solid.
+- **The welcome on a computer is two columns** from 1100 px: the headline, the example and the three points on the left,
+  the form on the right, so it starts on the first screen rather than under the headline. The panel still runs the full
+  width. A browser without CSS subgrid keeps the one column.
+- **The plan has one box in it**, Your next flight, with the cyan edge of something to do and its heading in cyan. The
+  price is a readout like the hours, set off by a hairline, and How the cost is worked out is a fold like the what-if.
+  There were three grey boxes of three different kinds.
+- **The wide logbook shows the remarks**, between the route and the figures, when any flight has some. The room was
+  empty, and the remarks could be searched but not seen without opening each flight. A phone's two lines stay as they
+  were.
+
 ## Process
 
 ### D22. Check the UI in a real browser, at phone size, before calling it done
