@@ -79,6 +79,41 @@ describe('the Progress screen', () => {
     expect(within(open).queryByText('12 h solo cross')).toBeNull();
   });
 
+  const experience = async () => (await screen.findByRole('heading', { name: 'Experience' })).closest('.req-section') as HTMLElement;
+
+  it('keeps a plain note a tap away, and the citation on the figures’ line', async () => {
+    seed();
+    render(<App />);
+    const row = within(await experience()).getByText('45 h private pilot flight training').closest('.req-line') as HTMLElement;
+    expect(row.querySelector('.req-meta .cite')?.textContent).toBe('421.26(4)(a)');
+    const toggle = within(row).getByRole('button', { name: 'Note' });
+    const note = document.getElementById(toggle.getAttribute('aria-controls')!) as HTMLElement;
+    expect(note.textContent).toMatch(/Up to 5\sh of FTD time counts/);
+    expect(note.hidden).toBe(true);
+    fireEvent.click(toggle);
+    expect(note.hidden).toBe(false);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('lists what sits under a requirement one level in, however deep the standard goes', async () => {
+    saveGuestLogbook({ ...emptyLogbook(), profile: { ...emptyLogbook().profile, held: { ppl: { date: '2025-06-01' } }, focus: 'cpl' } });
+    render(<App />);
+    const landings = (await screen.findByText('10 solo night takeoffs, circuits and landings')).closest('.req') as HTMLElement;
+    expect(landings.closest('.reqs.nested')).not.toBeNull();
+    expect(document.querySelector('.reqs.nested .reqs.nested')).toBeNull();
+  });
+
+  it('puts the plan beside the requirements, unless the licence is held and the list is only for reference', async () => {
+    seed();
+    render(<App />);
+    expect((await experience()).closest('.goal-body.is-split > .goal-reqs')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'I flew this' }).closest('.goal-plan')).not.toBeNull();
+    cleanup();
+    saveGuestLogbook({ ...emptyLogbook(), profile: { ...emptyLogbook().profile, held: { ppl: { date: '2025-06-01' } } } });
+    render(<App />);
+    expect((await screen.findByText('You hold this. The requirements are below for reference.')).closest('.goal-body')?.classList.contains('is-split')).toBe(false);
+  });
+
   it('keeps a row where it is while its date and mark are filled in', async () => {
     seed();
     render(<App />);

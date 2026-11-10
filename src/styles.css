@@ -1210,17 +1210,43 @@ button:focus-visible {
   white-space: nowrap;
 }
 
-.meter {
+/* The second line: the bar, the figures and the paragraph they come from (D67). On a phone the bar has a line to itself. */
+.req-meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 12px;
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
-.meter .bar {
-  flex: 1 1 160px;
-  max-width: 320px;
+.req-meta .bar {
+  flex: 1 1 120px;
+  max-width: 200px;
+}
+
+.req-meta .cite {
+  font-size: 13px;
+}
+
+/* A plain note is a tap away; the 44 px to tap it reach past the line rather than make it taller. */
+.note-toggle {
+  display: inline-grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  margin: -12px -13px -12px -9px;
+  padding: 0;
+  color: var(--muted);
+}
+
+.note-toggle[aria-expanded='true'] {
+  color: var(--accent);
+}
+
+@media (max-width: 720px) {
+  .req-meta .bar {
+    flex-basis: 100%;
+  }
 }
 
 .req.is-met > .req-line .bar > span {
@@ -1739,8 +1765,14 @@ button.log-row:hover {
 
 /* Not enough room beside the tabs: the name stays on one line and the extra words go. */
 @media (max-width: 1000px) {
-  .save-state.is-local,
   .save-more {
+    display: none;
+  }
+}
+
+/* Beside Create profile it needs more: in French it pushed the button off a 1024 px screen. The guest banner says it too. */
+@media (max-width: 1180px) {
+  .save-state.is-local {
     display: none;
   }
 }
@@ -1973,6 +2005,49 @@ button.log-row:hover {
   }
   .hero .stat-money {
     grid-column: auto;
+  }
+}
+
+.profile-cols {
+  display: grid;
+  gap: 16px;
+}
+
+/* From 1100 px the plan and the requirements sit side by side, so the list starts on the first screen (D67).
+   Share and the source go under the plan, where there's room. */
+@media (min-width: 1101px) {
+  .main {
+    max-width: 1240px;
+  }
+  .goal-body.is-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    column-gap: 40px;
+  }
+  .is-split > .goal-plan {
+    grid-area: 1 / 1;
+  }
+  .is-split > .goal-foot {
+    grid-area: 2 / 1;
+    align-self: start;
+  }
+  .is-split > .goal-reqs {
+    grid-area: 1 / 2 / 3;
+  }
+  /* Half as wide: the price goes under the hours, as on a phone. */
+  .is-split .hero {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .is-split .hero .stat-money {
+    grid-column: 1 / -1;
+  }
+  .is-split > .goal-reqs > :first-child {
+    margin-top: 14px;
+  }
+  .profile-cols {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
   }
 }
 

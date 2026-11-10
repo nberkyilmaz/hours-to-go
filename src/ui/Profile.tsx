@@ -19,81 +19,85 @@ import { t } from '../i18n';
 export function ProfileView({ lb }: { lb: LogbookState }) {
   const { book, mode } = lb;
   return (
-    <div className="stack">
+    <div className="profile-cols">
       <h1 className="sr-only">{t('Profile')}</h1>
-      <section className="card pad" aria-labelledby="account-title">
-        <h2 id="account-title">{t('Your profile')}</h2>
-        {mode.kind === 'account' ? (
-          <SignedIn lb={lb} account={mode} />
-        ) : (
-          <>
-            <p className="muted">
-              {t('Right now your logbook is saved in this browser only. Create a free profile to keep it safe and to use it on your phone and your computer.')}
-            </p>
-            <AuthForm lb={lb} />
-          </>
-        )}
-      </section>
+      {/* Two columns on a wide screen (D67), each keeping its place while a form in the other grows. */}
+      <div className="stack">
+        <section className="card pad" aria-labelledby="account-title">
+          <h2 id="account-title">{t('Your profile')}</h2>
+          {mode.kind === 'account' ? (
+            <SignedIn lb={lb} account={mode} />
+          ) : (
+            <>
+              <p className="muted">
+                {t('Right now your logbook is saved in this browser only. Create a free profile to keep it safe and to use it on your phone and your computer.')}
+              </p>
+              <AuthForm lb={lb} />
+            </>
+          )}
+        </section>
 
-      <section className="card pad" aria-labelledby="held-title">
-        <h2 id="held-title">{t('Licences and ratings you hold')}</h2>
-        <p className="muted">{t('Tick what you already have. Your PPL date matters: CPL training only counts from that day.')}</p>
-        <ul className="held-list">
-          {GOALS.map((g) => {
-            const held = book.profile.held[g.id];
-            return (
-              <li key={g.id}>
-                <label className="toggle">
-                  <input
-                    type="checkbox"
-                    checked={held !== undefined}
-                    onChange={(e) =>
-                      lb.updateProfile((p) => {
-                        const next = { ...p.held };
-                        if (e.target.checked) next[g.id] = { date: '' };
-                        else delete next[g.id];
-                        return { ...p, held: next };
-                      })
-                    }
-                  />
-                  <span>{t(g.name)}</span>
-                </label>
-                {held && (
-                  <label className="inline-field">
-                    <span>{t('Issued')}</span>
+        <section className="card pad" aria-labelledby="held-title">
+          <h2 id="held-title">{t('Licences and ratings you hold')}</h2>
+          <p className="muted">{t('Tick what you already have. Your PPL date matters: CPL training only counts from that day.')}</p>
+          <ul className="held-list">
+            {GOALS.map((g) => {
+              const held = book.profile.held[g.id];
+              return (
+                <li key={g.id}>
+                  <label className="toggle">
                     <input
-                      type="date"
-                      value={held.date}
-                      onChange={(e) => lb.updateProfile((p) => ({ ...p, held: { ...p.held, [g.id]: { date: e.target.value } } }))}
+                      type="checkbox"
+                      checked={held !== undefined}
+                      onChange={(e) =>
+                        lb.updateProfile((p) => {
+                          const next = { ...p.held };
+                          if (e.target.checked) next[g.id] = { date: '' };
+                          else delete next[g.id];
+                          return { ...p, held: next };
+                        })
+                      }
                     />
+                    <span>{t(g.name)}</span>
                   </label>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-        <MedicalFields label={t('Medical certificate')} profile={book.profile} updateProfile={lb.updateProfile} />
-        {book.profile.medical !== 'none' && <p className="hint">{t('“Valid to” is on your medical certificate. A Category 1 can last longer for private flying, so use the date for the flying you do.')}</p>}
-      </section>
+                  {held && (
+                    <label className="inline-field">
+                      <span>{t('Issued')}</span>
+                      <input
+                        type="date"
+                        value={held.date}
+                        onChange={(e) => lb.updateProfile((p) => ({ ...p, held: { ...p.held, [g.id]: { date: e.target.value } } }))}
+                      />
+                    </label>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          <MedicalFields label={t('Medical certificate')} profile={book.profile} updateProfile={lb.updateProfile} />
+          {book.profile.medical !== 'none' && <p className="hint">{t('“Valid to” is on your medical certificate. A Category 1 can last longer for private flying, so use the date for the flying you do.')}</p>}
+        </section>
+      </div>
+      <div className="stack">
+        {mode.kind === 'account' && <ShareSection />}
 
-      {mode.kind === 'account' && <ShareSection />}
+        <DataSection lb={lb} />
 
-      <DataSection lb={lb} />
+        <Feedback signedInAs={mode.kind === 'account' ? mode.email : null} />
 
-      <Feedback signedInAs={mode.kind === 'account' ? mode.email : null} />
-
-      <section className="card pad muted small">
-        <p>
-          {t('Requirements come from Transport Canada')}{' '}
-          <a href={STANDARD_URL} target="_blank" rel="noreferrer">
-            {t('CAR Standard 421')}
-          </a>{' '}
-          {t('(text current to')}{' '}{STANDARD_CURRENT}{t(', checked against Transport Canada’s page every night). This app is a study and planning aid, not an official record: your certified personal log and Transport Canada decide what counts. Check anything that matters with your flight training unit.')}
-        </p>
-        <p>
-          <a href={PRIVACY_URL}>{t('Privacy and terms')}</a> · <LanguageSwitch />
-        </p>
-      </section>
+        <section className="card pad muted small">
+          <p>
+            {t('Requirements come from Transport Canada')}{' '}
+            <a href={STANDARD_URL} target="_blank" rel="noreferrer">
+              {t('CAR Standard 421')}
+            </a>{' '}
+            {t('(text current to')}{' '}{STANDARD_CURRENT}{t(', checked against Transport Canada’s page every night). This app is a study and planning aid, not an official record: your certified personal log and Transport Canada decide what counts. Check anything that matters with your flight training unit.')}
+          </p>
+          <p>
+            <a href={PRIVACY_URL}>{t('Privacy and terms')}</a> · <LanguageSwitch />
+          </p>
+        </section>
+      </div>
     </div>
   );
 }

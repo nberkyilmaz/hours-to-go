@@ -110,7 +110,7 @@ describe('the French table', () => {
   });
 
   it('doesn’t leave English behind, apart from what reads the same', () => {
-    const SAME = new Set(['Hours to Go', 'Sections', 'Solo', 'Date', 'Message', 'FTD', 'Id', 'Type', 'Total', 'Page', 'h', 'Co', 'App', 'Inst', '1 page', '{n} pages']);
+    const SAME = new Set(['Hours to Go', 'Sections', 'Solo', 'Date', 'Message', 'FTD', 'Id', 'Type', 'Total', 'Page', 'h', 'Co', 'App', 'Inst', 'Note', '1 page', '{n} pages']);
     expect(Object.entries(FR).filter(([en, fr]) => en === fr && !SAME.has(en)).map(([en]) => en)).toEqual([]);
   });
 

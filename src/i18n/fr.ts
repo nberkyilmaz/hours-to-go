@@ -550,6 +550,7 @@ const RAW: Record<string, string> = {
   ' (not met)': ' (non satisfaite)',
   'Your medical': 'Votre certificat médical',
   'Our reading. Ask your school.': 'Notre interprétation. Renseignez-vous auprès de votre école.',
+  Note: 'Note',
   'You can write the {exam}.': 'Vous pouvez passer l’examen {exam}.',
   'Can you write the {exam} yet? Not yet: 1 thing left.': 'Pouvez-vous déjà passer l’examen {exam}? Pas encore : il reste 1 élément.',
   'Can you write the {exam} yet? Not yet: {n} things left.': 'Pouvez-vous déjà passer l’examen {exam}? Pas encore : il reste {n} éléments.',
