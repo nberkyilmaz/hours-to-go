@@ -177,7 +177,7 @@ export function AuthForm({ lb, tab: givenTab, onTabChange }: AuthFormProps) {
           }}
         >
           <button type="button" role="tab" aria-selected={tab === 'signup'} tabIndex={tab === 'signup' ? 0 : -1} className={tab === 'signup' ? 'is-on' : ''} onClick={() => setTab('signup')}>
-            {t('Create profile')}
+            {t('New profile')}
           </button>
           <button type="button" role="tab" aria-selected={tab === 'signin'} tabIndex={tab === 'signin' ? 0 : -1} className={tab === 'signin' ? 'is-on' : ''} onClick={() => setTab('signin')}>
             {t('Sign in')}

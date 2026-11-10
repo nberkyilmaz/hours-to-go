@@ -51,6 +51,8 @@ const RAW: Record<string, string> = {
   'Start the clock': 'Démarrer le chrono',
   'Flight clock': 'Chrono de vol',
   'From the clock': 'Selon le chrono',
+  'That’s {h} h {m} min.': 'Soit {h} h {m} min.',
+  'That’s {m} minutes.': 'Soit {m} minutes.',
   'With an instructor beside you.': 'Avec un instructeur à vos côtés.',
   'Alone in the aircraft.': 'Seul à bord.',
   'You’re in command, with passengers.': 'Vous êtes commandant de bord, avec des passagers.',
@@ -61,6 +63,7 @@ const RAW: Record<string, string> = {
   'Log a flight': 'Inscrire un vol',
   'Saved on this device only': 'Enregistré sur cet appareil seulement',
   'Create profile': 'Créer un profil',
+  'New profile': 'Nouveau profil',
   Dismiss: 'Fermer',
 
   // ---- Spreadsheets ----
@@ -375,6 +378,7 @@ const RAW: Record<string, string> = {
   'Every {goal} requirement met': 'Toutes les exigences de ma {goal} sont satisfaites',
   'On the way to my {goal}': 'En route vers ma {goal}',
   'My first solo': 'Mon premier solo',
+  'Share my first solo': 'Partager mon premier solo',
   'Halfway to my {goal}': 'À mi-chemin de ma {goal}',
 
   // ---- Importing a spreadsheet ----

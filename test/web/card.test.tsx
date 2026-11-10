@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { emptyLogbook, rememberWelcomed, loadGuestLogbook, saveGuestLogbook } from '../../src/model/store';
 import { drawCard, shareCard, wrapped, type CardFacts } from '../../src/ui/card';
+import { dateText } from '../../src/model/entry';
 import { line, profile } from './fixtures';
 
 const facts: CardFacts = { headline: '58% of the way to my PPL', detail: '26.1 of 45.0 h', percent: 58 };
@@ -108,6 +109,21 @@ describe('on the screen', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Share my progress' }));
     await waitFor(() => expect(share).toHaveBeenCalled());
     expect(drawn).toContain('On the way to my PPL');
+  });
+
+  it('keeps the first solo’s card to hand after its sheet has closed', async () => {
+    canShare();
+    seed([line('2026-10-01', { seDayDual: 12 }), line('2026-10-09', { seDayPic: 1 }, { solo: true }), line('2026-10-05', { seDayPic: 0.8 }, { solo: true })]);
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Share my first solo' }));
+    await waitFor(() => expect(share).toHaveBeenCalled());
+    expect(drawn).toContain('My first solo');
+    expect(drawn).toContain(dateText('2026-10-05'));
+    cleanup();
+    seed([line('2026-10-01', { seDayDual: 12 })]);
+    render(<App />);
+    await screen.findByRole('button', { name: 'Share my progress' });
+    expect(screen.queryByRole('button', { name: 'Share my first solo' })).toBeNull();
   });
 
   it('isn’t offered with nothing to show yet', async () => {

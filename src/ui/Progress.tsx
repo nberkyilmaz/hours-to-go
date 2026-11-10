@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { dateText, formatHours, formatHoursUp, today, type Entry } from '../model/entry';
+import { dateText, derive, formatHours, formatHoursUp, today, type Entry } from '../model/entry';
 import type { GoalId, MilestoneRecord, Profile } from '../model/profile';
 import { isSnoozed, snooze, type Logbook } from '../model/store';
 import { evaluateGoal, flatten, type ExamResult, type GateResult, type GoalResult, type ReqResult, type SectionResult } from '../rules/evaluate';
@@ -194,22 +194,38 @@ function factsOf(r: GoalResult, progress: GoalProgress): CardFacts | null {
   };
 }
 
-function ShareProgress({ result, progress }: { result: GoalResult; progress: GoalProgress }) {
+/** The day of the first solo in the log. Paper totals have no day of their own. */
+function firstSoloDate(entries: readonly Entry[]): string | null {
+  let first: string | null = null;
+  for (const e of entries) if (!e.forward && derive(e).solo > 0 && (first === null || e.date < first)) first = e.date;
+  return first;
+}
+
+function ShareProgress({ result, progress, entries }: { result: GoalResult; progress: GoalProgress; entries: readonly Entry[] }) {
   const [failed, setFailed] = useState(false);
   const facts = factsOf(result, progress);
-  if (!facts) return null;
+  // The first solo's card stays to hand after its sheet has closed (D68).
+  const solo = result.goal.id === 'ppl' ? firstSoloDate(entries) : null;
+  const cards: { label: string; card: CardFacts }[] = [
+    ...(facts ? [{ label: t('Share my progress'), card: facts }] : []),
+    ...(solo ? [{ label: t('Share my first solo'), card: { headline: t('My first solo'), detail: dateText(solo), percent: null } }] : []),
+  ];
+  if (cards.length === 0) return null;
   return (
     <p className="share-progress">
-      <button
-        type="button"
-        className="link"
-        onClick={() => {
-          setFailed(false);
-          shareCard(facts).catch(() => setFailed(true));
-        }}
-      >
-        {t('Share my progress')}
-      </button>
+      {cards.map(({ label, card }) => (
+        <button
+          key={label}
+          type="button"
+          className="link"
+          onClick={() => {
+            setFailed(false);
+            shareCard(card).catch(() => setFailed(true));
+          }}
+        >
+          {label}
+        </button>
+      ))}
       {failed && (
         <span className="field-error" role="alert">
           {' '}
@@ -384,7 +400,7 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
         </div>
 
         <div className="goal-foot">
-          <ShareProgress result={r} progress={progress} />
+          <ShareProgress result={r} progress={progress} entries={entries} />
           <p className="eyebrow goal-source">
             {t('Transport Canada ·')}{' '}
             <a href={STANDARD_URL} target="_blank" rel="noreferrer">

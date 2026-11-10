@@ -1062,6 +1062,14 @@ and they used to be 1,100 px down in a fold.
 - **A guest's "Saved on this device only" goes below 1180 px.** In French it pushed Create profile off a 1024 px screen,
   an iPad on its side. The banner on Progress says the same.
 
+### D68. What was left over
+- **The welcome's first tab says New profile.** The heading, the tab and the button under it all said Create profile.
+- **A time shown as h:mm says what it means.** Editing keeps a time that isn't a whole tenth as h:mm rather than round
+  it (D7), and under a box labelled in hours, "0:20" was a puzzle. It now says "That's 20 minutes."
+- **The first solo's card can be shared again**, beside Share my progress on the PPL, dated the day of the first solo in
+  the log. It used to be offered once, in the sheet after logging it. Halfway isn't: the log would have to be replayed
+  flight by flight to find its day.
+
 ## Process
 
 ### D22. Check the UI in a real browser, at phone size, before calling it done
