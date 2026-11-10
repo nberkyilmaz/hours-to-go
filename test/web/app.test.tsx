@@ -388,7 +388,7 @@ describe('an emailed link that confirms an address', () => {
     expect(await screen.findByRole('heading', { name: 'Your email is confirmed' })).toBeTruthy();
     expect(screen.getByText(/is confirmed. If you ever forget your password/)).toBeTruthy();
     expect(window.location.hash).toBe('');
-    expect(vi.mocked(fetch)).toHaveBeenCalledWith('/api/auth/confirm', expect.objectContaining({ body: JSON.stringify({ token: 'tok-1' }) }));
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith('/api/auth/confirm', expect.objectContaining({ body: JSON.stringify({ token: 'tok-1', lang: 'en' }) }));
     fireEvent.click(screen.getByRole('button', { name: 'Open Hours to Go' }));
     expect(screen.getByRole('heading', { name: 'Create your free profile' })).toBeTruthy();
   });

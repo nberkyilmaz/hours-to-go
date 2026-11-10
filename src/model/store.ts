@@ -158,6 +158,12 @@ export function mergeLogbooks(base: Logbook, incoming: Logbook): Logbook {
 
 const MEDICALS: readonly Medical[] = ['none', 'cat4', 'cat3', 'cat1'];
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
+/** On the calendar: the shape alone lets 2026-13-45 through, and the date sums throw on it. */
+function isDate(s: string): boolean {
+  if (!DATE.test(s)) return false;
+  const time = Date.parse(`${s}T00:00:00Z`);
+  return !Number.isNaN(time) && new Date(time).toISOString().slice(0, 10) === s;
+}
 /** Far above any career, so a typo or a hostile file can't overflow a total. */
 const MAX_MINUTES = 60 * 60_000;
 
@@ -242,7 +248,7 @@ export function parseEntry(raw: unknown): Entry | null {
   if (!isObject(raw)) return null;
   const x = 'role' in raw || 'kind' in raw ? fromFirstVersion(raw) : raw;
   const date = str(x.date);
-  if (!DATE.test(date)) return null;
+  if (!isDate(date)) return null;
   const entry = blankEntry(x.forward === true, date);
   entry.id = str(x.id, 64) || newId();
   entry.aircraft = str(x.aircraft);
@@ -263,22 +269,22 @@ export function parseProfile(x: unknown): Profile {
   const p = blankProfile();
   if (!isObject(x)) return p;
   p.medical = MEDICALS.find((m) => m === x.medical) ?? 'none';
-  if (p.medical !== 'none' && DATE.test(str(x.medicalUntil))) p.medicalUntil = str(x.medicalUntil);
+  if (p.medical !== 'none' && isDate(str(x.medicalUntil))) p.medicalUntil = str(x.medicalUntil);
   if (typeof x.focus === 'string' && isGoal(x.focus)) p.focus = x.focus;
   if (isObject(x.held)) {
     for (const [k, v] of Object.entries(x.held)) {
-      if (isGoal(k) && isObject(v)) p.held[k] = { date: DATE.test(str(v.date)) ? str(v.date) : '' };
+      if (isGoal(k) && isObject(v)) p.held[k] = { date: isDate(str(v.date)) ? str(v.date) : '' };
     }
   }
   if (isObject(x.trainingStart)) {
     for (const [k, v] of Object.entries(x.trainingStart)) {
-      if (isGoal(k) && DATE.test(str(v))) p.trainingStart[k] = str(v);
+      if (isGoal(k) && isDate(str(v))) p.trainingStart[k] = str(v);
     }
   }
   if (isObject(x.milestones)) {
     for (const [k, v] of Object.entries(x.milestones).slice(0, 200)) {
       if (!isObject(v) || k.length > 64) continue;
-      const rec: MilestoneRecord = { date: DATE.test(str(v.date)) ? str(v.date) : '' };
+      const rec: MilestoneRecord = { date: isDate(str(v.date)) ? str(v.date) : '' };
       if (typeof v.score === 'number' && Number.isFinite(v.score)) rec.score = Math.max(0, Math.min(100, v.score));
       p.milestones[k] = rec;
     }

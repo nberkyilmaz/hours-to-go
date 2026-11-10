@@ -993,6 +993,24 @@ It's drawn on a canvas in the browser and goes to the phone's share sheet, or do
 is uploaded, so the app has no part in where it ends up. The card says nothing the pilot didn't choose to show: no
 name, no aircraft, no registration, no airport.
 
+### D62. What a hostile request can do
+An independent review before the first students came with concrete attacks, each reproduced, and one confirmed on the
+live server.
+
+- **The address that says who's asking is Cloudflare's** (`CF-Connecting-IP`), which Cloudflare sets itself and refuses
+  from a client. `X-Forwarded-For` starts with whatever the client wrote, and Render passes it on, so every per-network
+  limit could be walked around. Without the header it's the connection's address: at worst everyone is one network and
+  the limits get tighter.
+- **Failed sign-ins are also counted per profile**, at 50 in 15 minutes from anywhere, in case the guesses come from many
+  networks. It's high because it can lock the pilot out too, and a password reset clears it.
+- **An address is checked for length before the pattern**, which slows badly on a very long string. A request body is
+  limited to 64 KB, except a whole logbook arriving at once.
+- **The throttles keep at most 10,000 keys**, so a flood of new ones can't use up the memory.
+- **A reset or a new password cancels a change of address still waiting.** Otherwise someone who knew the old password
+  could finish moving the profile after being thrown out. The old address gets an email whenever a profile moves.
+- **A date has to be on the calendar**, and one pilot's record that can't be worked out doesn't stop the others'
+  reminders.
+
 ## Process
 
 ### D22. Check the UI in a real browser, at phone size, before calling it done
