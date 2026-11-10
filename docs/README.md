@@ -14,7 +14,7 @@ is, what went wrong along the way, and what is still open.
 | [ux-audit.md](ux-audit.md) | An independent audit of the experience: measurements, 25 findings ranked by harm, and the order to fix them. |
 | [roadmap.md](roadmap.md) | The plan to going public, step by step; what waits until it has users; questions for the flight school; known limits. |
 
-## State at the last update (2026-11-04)
+## State at the last update (2026-11-10)
 
 - Everything in the root README works: logbook with paper-log columns, progress for nine
   Transport Canada licences and ratings, profiles (email and password) with a guest mode,
@@ -45,4 +45,10 @@ is, what went wrong along the way, and what is still open.
 - The plan to going public, agreed with the owner on 2026-10-29, is [roadmap.md](roadmap.md): the
   rest of the gaps, then every feature on the list, then a small test, then advertising. Nothing
   that costs money until it has users (D32).
+- Since 2026-11-04: the audit's batches (D45 to D50), then the feature list: log this flight again (D51), current
+  to fly (D52), reminder emails (D53), a spreadsheet in and out (D54), the logbook on paper (D55), a link for an
+  instructor (D56), French (D57), the what-if slider (D58), the flight clock (D59), the route (D60) and cards to
+  share (D61). Then an independent security review and a fresh audit of the experience (D62 to D68), and a pass on
+  the look (D69).
+- The root README shows each screen, in `screenshots/`; [runbook.md](runbook.md) says how to retake them.
 - The logbook-photo import was considered and dropped.

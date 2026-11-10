@@ -1078,6 +1078,15 @@ figure and its unit on a phone.
 **Checked.** One new test. Edge at 390, 1024 and 1440 px in both languages, light and dark, with axe and nothing wider
 than the screen; the welcome from 1099 to 1920 px, where its form takes clicks and typing.
 
+## Phase 51: the README's pictures (2026-11-10)
+
+The README had no pictures, and its opening still described the app before the audits and the feature list. It now
+opens with Progress on a computer (the dark one for a reader in dark mode), four phone screens, the wide logbook and
+the welcome, all with a made-up student's logbook, and a "What it does" list with the decision behind each part.
+`REMINDERS_KEY` joined the table of variables, the file map gained the newer rules, and recency left "Not modelled
+yet", since current to fly (D52) covers it, apart from the 12-month flight review. The runbook says how the pictures
+were taken.
+
 ## Where things stand
 
 - 472 tests pass (rules 38, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model

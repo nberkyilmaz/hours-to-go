@@ -2,22 +2,81 @@
 
 A pilot logbook that tells you what is left for each Transport Canada licence and rating.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/progress-dark.png">
+  <img src="docs/screenshots/progress.png" alt="Progress toward the Private Pilot Licence on a computer: 25.0 of 45.0 hours, at least $6,100 left to pay, the finish date, the next flight, and each requirement with its paragraph of Standard 421">
+</picture>
+
 Each logbook line has the same columns as a Canadian pilot's personal log: single- and
 multi-engine time by day and night (dual, PIC, co-pilot), cross-country day and night (dual, PIC),
 actual IMC, hood, FTD, IFR approaches, and day and night takeoffs and landings. Paper totals go in
 the same boxes, one line per aircraft type if you want totals by type. For every licence and
 rating the app shows each requirement, how much you have, how much is left, what is unlocked
 (writing the exam, booking the flight test), and the paragraph of the standard it comes from.
-It also prices what is left at your school's aeroplane, instructor and simulator rates, with
-the arithmetic shown ([docs/decisions.md](docs/decisions.md), D39), and says when you'll have it
-flown at the pace of your last 8 weeks (D40), and which flight would count toward the most of what
-is left (D43). It opens and logs with no signal, and saves when the connection comes back (D41).
 
-It runs in a browser on a computer or a phone, and can be added to a phone's home screen. It is
-published at <https://nberkyilmaz.com/hours-to-go/>; [docs/deploy.md](docs/deploy.md) says how.
-Without an account the logbook is saved in that browser only. With a free profile (email and
-password) it is saved on the server and is the same on every device. Anything logged before
-signing up moves into the new profile.
+It runs in a browser on a computer or a phone, in English or French, light or dark, and can be
+added to a phone's home screen. It is published at <https://nberkyilmaz.com/hours-to-go/>;
+[docs/deploy.md](docs/deploy.md) says how. Without an account the logbook is saved in that browser
+only. With a free profile (email and password) it is saved on the server and is the same on every
+device. Anything logged before signing up moves into the new profile.
+
+<p>
+  <img src="docs/screenshots/phone-progress.png" width="200" alt="Progress on a phone: the ring at 56%, 25.0 of 45.0 hours, the price, the finish date and the next flight">
+  <img src="docs/screenshots/phone-log.png" width="200" alt="Logging a flight on a phone: Dual, 1.3 hours, 4 landings and a remark">
+  <img src="docs/screenshots/phone-logbook.png" width="200" alt="The logbook on a phone: totals, search, and flights by month on two lines each">
+  <img src="docs/screenshots/phone-fr.png" width="200" alt="The requirements in French, in dark mode">
+</p>
+
+The pictures use a made-up student's logbook.
+
+## What it does
+
+The D-numbers point to the decisions in [docs/decisions.md](docs/decisions.md) that explain each part.
+
+**Progress**
+
+- How far along you are, by hours, toward the licence or rating you're working on (D47, D64).
+- What the least flying left costs at your school's aeroplane, instructor and simulator rates, with
+  the arithmetic shown. Sample rates stand in until you enter yours (D39).
+- When you'll have it flown at the pace of your last 8 weeks, what that pace costs a month, and a
+  slider for flying more or less (D40, D51, D58).
+- Your next flight: the one that would count toward the most of what is left, with "I flew this"
+  to log it. Your instructor decides what you fly (D43).
+- Every requirement with its bar and its paragraph of the standard, and a note wherever the app had
+  to interpret the text (D2, D3, D67).
+- What runs out stops counting: a written exam, a flight test, the medical (D44).
+- For a licensed pilot, whether they're current to fly under CAR 401.05: the last 5 years, recurrent
+  training, passengers by day and at night, and the instrument check and approaches (D52).
+
+**Logging**
+
+- A quick form: who was flying, the time and the landings, then night, cross-country or hood. The
+  paper columns are one tap away and stay the record (D46).
+- A flight clock that keeps running with the app closed or no signal (D59), and "Log this flight
+  again" for a lesson flown many times (D51).
+- Paper totals in one entry, with a few questions about what their columns can't show (D20).
+- The logbook by month, with search and filters, and the remarks in their own column on a wide
+  screen (D48, D69).
+
+<img src="docs/screenshots/logbook.png" alt="The logbook on a computer: totals, search and filters, then each flight with its route, remarks and times">
+
+**Keeping and sharing**
+
+- A spreadsheet in and out (D54), a full backup as a file, and the logbook printed in a paper log's
+  columns or saved as a PDF (D55).
+- A read-only link that shows an instructor your progress, but not your logbook lines (D56).
+- A picture to share for a first solo, halfway, the last requirement and a licence held. It is made
+  on the device and nothing is uploaded (D61).
+- Reminder emails before the medical, an exam or recurrent training runs out, once you turn them
+  on (D53).
+- It opens and logs with no signal, and saves when the connection comes back (D41).
+- Every night a check compares the parts of Standard 421 the app cites with Transport Canada's page,
+  and opens an issue if one has changed (D42).
+
+**A first visit** opens on a welcome that shows what the app does and recommends a free profile.
+Going on without one is a tap (D27, D49).
+
+<img src="docs/screenshots/welcome.png" alt="The welcome on a computer: the headline and an example on the left, the form to create a profile on the right">
 
 ## Licences and ratings covered
 
@@ -75,7 +134,8 @@ Each of these choices is also shown as a note next to the requirement in the app
   medical at the valid-to date you enter. A dated item stops counting the day after (D44).
 - Lines saved by the first version of the app (one role per line) are moved into these columns when read.
 - Not modelled yet: PIC under supervision (ATPL), helicopters and other categories, Group 2,
-  foreign and military credits, recency.
+  foreign and military credits, and the 12-month flight review that can stand in for the 5 years
+  of recency (CAR 401.05(1)(b)).
 
 This is a study and planning aid, not an official record. The certified personal log and
 Transport Canada decide what counts.
@@ -120,6 +180,7 @@ NODE_ENV=production DATABASE_URL=postgres://… PORT=8787 npm start
 | `MAIL_FROM` | `Hours to Go <no-reply@nberkyilmaz.com>` | The reset email's sender, on a domain verified in Resend. |
 | `APP_URL` | `http://localhost:5173/`, except in production | The page the emailed link opens: `https://nberkyilmaz.com/hours-to-go/` when published. |
 | `FEEDBACK_TO` | `owner@localhost`, except in production | Where "Send feedback" and error alerts go: `contact@nberkyilmaz.com`, from `render.yaml`. Without it, in production, sending feedback answers "isn't available yet" and failures are only logged. |
+| `REMINDERS_KEY` | none | The key a daily GitHub Actions run sends to `POST /api/reminders/run`. Without it, turning reminders on answers "aren't available yet" (D53). |
 
 And for building the page (`npm run build`):
 
@@ -143,9 +204,15 @@ on every push.
 
 - `src/rules/goals.ts`: every requirement, with its citation. This is the file to check against the standard.
 - `src/rules/evaluate.ts`: turns a logbook into have / need / unlocked for each goal.
+- `src/rules/`: also the hours on the ring (`progress.ts`), the price (`cost.ts`), the finish date (`pace.ts`),
+  the next flight (`next.ts`), current to fly (`currency.ts`), what reminders say (`reminders.ts`), and what an
+  instructor's link shows (`shared.ts`).
 - `src/model/entry.ts`: the logbook line and its columns (times in whole minutes so totals are exact),
   and the figures each line contributes (`derive`).
 - `src/model/store.ts`, `profile.ts`: the profile, file parsing, and merging a device's log into a profile.
+- `src/model/quick.ts`: the quick form, turned into the same columns. `csv.ts` and `printlog.ts`: the spreadsheet
+  and the printed log.
+- `src/i18n/`: the French, one entry per English phrase (D57).
 - `src/useLogbook.ts`, `src/model/sync.ts`: where the logbook lives. Signed in, changes show at once, are
   kept on the device, and go to the server in order; with no connection they wait (D41). As a guest,
   changes go to localStorage.
@@ -158,3 +225,4 @@ on every push.
 ## Not done yet
 
 - A native app-store app. The web app installs to the home screen instead.
+- Instructor accounts, and an instructor seeing logbook lines or signing them off (D56).
