@@ -441,31 +441,32 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
       <div className="quick-numbers">
         <div className={`field${errors.time ? ' has-error' : ''}`}>
           <label htmlFor="q-time">{t('Flight time, in hours')}</label>
-        <input
-          id="q-time"
-          className="quick-time"
-          inputMode="decimal"
-          placeholder={decimal('1.3')}
-          autoComplete="off"
-          value={quick.time}
-          onChange={(e) => changeQuick({ time: e.target.value })}
-          aria-invalid={errors.time ? true : undefined}
-        />
-        {clockTime && <p className="hint">{t('From the clock')}</p>}
-        {timeError}
+          <input
+            id="q-time"
+            className="quick-time"
+            inputMode="decimal"
+            placeholder={decimal('1.3')}
+            autoComplete="off"
+            value={quick.time}
+            onChange={(e) => changeQuick({ time: e.target.value })}
+            aria-invalid={errors.time ? true : undefined}
+          />
+          {clockTime && <p className="hint">{t('From the clock')}</p>}
+          <MinutesHint text={quick.time} />
+          {timeError}
         </div>
-      <div className="quick-landings">
-        <span id="q-landings">{t('Landings')}</span>
-        <div className="stepper" role="group" aria-labelledby="q-landings">
-          <button type="button" aria-label={t('One fewer landing')} disabled={quick.landings === 0} onClick={() => changeQuick({ landings: quick.landings - 1 })}>
-            −
-          </button>
-          <output aria-live="polite">{quick.landings}</output>
-          <button type="button" aria-label={t('One more landing')} onClick={() => changeQuick({ landings: quick.landings + 1 })}>
-            +
-          </button>
+        <div className="quick-landings">
+          <span id="q-landings">{t('Landings')}</span>
+          <div className="stepper" role="group" aria-labelledby="q-landings">
+            <button type="button" aria-label={t('One fewer landing')} disabled={quick.landings === 0} onClick={() => changeQuick({ landings: quick.landings - 1 })}>
+              −
+            </button>
+            <output aria-live="polite">{quick.landings}</output>
+            <button type="button" aria-label={t('One more landing')} onClick={() => changeQuick({ landings: quick.landings + 1 })}>
+              +
+            </button>
+          </div>
         </div>
-      </div>
       </div>
       <fieldset className="quick-group">
         <legend>{t('Also')}</legend>
@@ -509,6 +510,7 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
             onChange={(e) => changeQuick({ hoodTime: e.target.value })}
             aria-invalid={errors.hood ? true : undefined}
           />
+          <MinutesHint text={quick.hoodTime} />
           {errors.hood && <p className="field-error">{errors.hood}</p>}
         </div>
       )}
@@ -899,6 +901,18 @@ function ColumnInputs({
       )}
     </fieldset>
   );
+}
+
+/**
+ * What an h:mm time means, under a box labelled in hours. Editing keeps a time that isn't a whole tenth as h:mm rather
+ * than round it, and "0:20" read as hours is a puzzle.
+ */
+function MinutesHint({ text }: { text: string }) {
+  const hm = /^(\d+):([0-5]\d)$/.exec(text.trim());
+  if (!hm) return null;
+  const h = Number(hm[1]);
+  const m = Number(hm[2]);
+  return <p className="hint">{h ? t('That’s {h} h {m} min.', { h, m }) : t('That’s {m} minutes.', { m })}</p>;
 }
 
 function Field({ id, label, error, children }: { id: string; label: string; error?: string | undefined; children: ReactNode }) {

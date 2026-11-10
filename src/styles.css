@@ -2388,6 +2388,10 @@ button.log-row:hover {
 }
 
 .share-progress {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 20px;
   margin: 8px 0 0;
 }
 

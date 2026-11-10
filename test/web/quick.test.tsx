@@ -173,6 +173,19 @@ describe('logging a flight', () => {
     expect((screen.getByLabelText('Single-engine night Dual') as HTMLInputElement).value).toBe('1.0');
   });
 
+  it('says what an hours-and-minutes time means, under a box labelled in hours', async () => {
+    seed(line('2026-10-01', { seDayDual: 1.25, hood: 20 / 60 }));
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: /^Logbook/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Edit/ }));
+    expect((screen.getByLabelText('Flight time, in hours') as HTMLInputElement).value).toBe('1:15');
+    expect(screen.getByText('That’s 1 h 15 min.')).toBeTruthy();
+    expect((screen.getByLabelText('Time under the hood, in hours') as HTMLInputElement).value).toBe('0:20');
+    expect(screen.getByText('That’s 20 minutes.')).toBeTruthy();
+    time('1.3');
+    expect(screen.queryByText('That’s 1 h 15 min.')).toBeNull();
+  });
+
   it('deletes at once, and offers the flight back', async () => {
     seed(usualFlight());
     render(<App />);

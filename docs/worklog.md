@@ -1059,13 +1059,20 @@ The words beside it now go below 1180 px.
 screen. Before #34 merged, 13 wrong passwords claiming different networks all got through on the live server; after
 it, the 11th is refused.
 
+## Phase 49: what was left over (2026-11-09)
+
+The welcome's first tab says New profile, an h:mm time in the quick form says what it means, and the first solo's card
+can be shared again from Progress (D68).
+
+**Checked.** Two tests. Edge at phone width in both languages, with axe.
+
 ## Where things stand
 
-- 469 tests pass (rules 38, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
+- 471 tests pass (rules 38, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
   21, offline changes 5, server API 42, the standard's watcher 8, first visit, guest, cost to go,
   finish date, next flight, expiry, password reset, confirm links and feedback 28, the form and
-  notices 12, the quick form 16, Progress 12, the logbook 8, first run and trust 18, signed in 6,
-  offline on the screen 9, log again and the cost a month 6, current to fly 19, reminders 21, the spreadsheet 21, the paper log 13, the instructor link 20, French 27, the what-if slider 12, the flight clock 17, the route 10, cards to share 15, the server's defences 14), and the API tests per
+  notices 12, the quick form 17, Progress 12, the logbook 8, first run and trust 18, signed in 6,
+  offline on the screen 9, log again and the cost a month 6, current to fly 19, reminders 21, the spreadsheet 21, the paper log 13, the instructor link 20, French 27, the what-if slider 12, the flight clock 17, the route 10, cards to share 16, the server's defences 14), and the API tests per
   database also run against a Postgres server through `pg` in CI.
 - Typecheck clean on both configs; `npm audit` clean.
 - Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.
