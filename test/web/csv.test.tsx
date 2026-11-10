@@ -106,6 +106,21 @@ describe('reading it back', () => {
     });
   });
 
+  describe('with an Id column', () => {
+    const numbered = (rows: string[]) => `Id,${HEAD}\n${rows.join('\n')}\n`;
+
+    it('doesn’t take a spreadsheet’s own row numbers for the same flights', () => {
+      const first = read(numbered(['1,2026-10-01,1,Circuit', '2,2026-10-02,1,Circuit']));
+      const second = read(numbered(['1,2026-11-01,2,Navigation', '2,2026-11-02,2,Navigation']));
+      expect(summarize(second, first.entries, '2026-11-08')).toMatchObject({ already: 0 });
+    });
+
+    it('keeps the id this app gave a line, so an export comes back as the same flights', () => {
+      const id = '11111111-2222-4333-8444-555555555555';
+      expect(read(numbered([`${id},2026-10-01,1,Circuit`])).entries[0]!.id).toBe(id);
+    });
+  });
+
   it('sums up what would be added', () => {
     const s = summarize(read(`${HEAD}\n2026-10-05,1.5,\n2026-09-01,9,\n2026-10-01,1,\n`), [], '2026-11-08');
     expect(s).toMatchObject({ already: 0, minutes: 690, first: '2026-09-01', last: '2026-10-05', doubts: 1 });

@@ -38,7 +38,7 @@ is, what went wrong along the way, and what is still open.
   page, and opens an issue if one has changed (D42).
 - Nightly backups in the private repository `hours-to-go-backups`, once it has its `DATABASE_URL`
   secret ([deploy.md](deploy.md), step 8).
-- `npm run typecheck` is clean and `npm test` passes 439 tests in 29 files, and `npm audit` finds nothing.
+- `npm run typecheck` is clean and `npm test` passes 454 tests in 29 files, and `npm audit` finds nothing.
 - Source at <https://github.com/nberkyilmaz/hours-to-go> (public, branch `main`).
 - Live at <https://nberkyilmaz.com/hours-to-go/> (page on GitHub Pages, API on Render at
   `hours-to-go-api.nberkyilmaz.com`, Postgres on Neon).

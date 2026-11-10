@@ -101,7 +101,7 @@ interface Toast {
 const TOAST_MS = 8000;
 
 /** After a flight is saved or deleted: what it did, and the way back. */
-function Toast({ toast, onUndo, onProgress, onDone }: { toast: Toast; onUndo: () => void; onProgress: () => void; onDone: () => void }) {
+function Toast({ toast, onUndo, onProgress, onDone }: { toast: Toast; onUndo: () => void; onProgress: (() => void) | null; onDone: () => void }) {
   useEffect(() => {
     const timer = setTimeout(onDone, TOAST_MS);
     return () => clearTimeout(timer);
@@ -115,7 +115,7 @@ function Toast({ toast, onUndo, onProgress, onDone }: { toast: Toast; onUndo: ()
             {t('Share')}
           </button>
         )}
-        {toast.progress && !toast.card && (
+        {toast.progress && !toast.card && onProgress && (
           <button type="button" className="link" onClick={onProgress}>
             {t('See progress')}
           </button>
@@ -246,6 +246,22 @@ export function App() {
     if (ok && draft?.clockTime) stopClock();
     if (ok && isNew) {
       const d = derive(entry);
+      if (entry.forward) {
+        // Flown long ago, so there's nothing to celebrate today; what it did shows on Progress.
+        setToast({
+          text: (
+            <>
+              <strong>{formatHours(d.total || entry.ftd)}{' '}{t('h added from your paper logbook.')}</strong>
+              {moment && !moment.complete && ` ${t('{goal}: {now} h to go.', { goal: moment.short, now: formatHoursUp(moment.now) })}`}
+              {moment?.complete && ` ${t('Every {goal} requirement is met.', { goal: moment.short })}`}
+            </>
+          ),
+          undo: () => void lb.removeEntry(entry.id),
+          progress: false,
+        });
+        setTab('progress');
+        return ok;
+      }
       const card = moment && momentCard(moment, goalById(lb.book.profile.focus).short);
       setToast({
         card: card ?? undefined,
@@ -441,7 +457,8 @@ export function App() {
               setTab('log');
               startEntry('forward');
             }}
-            onFly={(line) => startEntry('flight', line)}
+            onFly={(line) => startEntry(line.ftd ? 'ftd' : 'flight', line)}
+            onProfile={() => setTab('profile')}
           />
         )}
         {tab === 'log' && (
@@ -458,10 +475,14 @@ export function App() {
         <Toast
           toast={toast}
           onDone={clearToast}
-          onProgress={() => {
-            setTab('progress');
-            clearToast();
-          }}
+          onProgress={
+            tab === 'progress'
+              ? null
+              : () => {
+                  setTab('progress');
+                  clearToast();
+                }
+          }
           onUndo={() => {
             toast.undo();
             clearToast();

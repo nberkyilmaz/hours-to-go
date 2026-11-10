@@ -82,6 +82,8 @@ const describe = (err: unknown) => (err instanceof ApiError ? err.message : t('S
 const unreachable = (err: unknown) => !(err instanceof ApiError) || err.status === 0 || err.status >= 500;
 /** How often changes still waiting are tried again; coming back online or to the app tries at once. */
 const RETRY_MS = 30_000;
+/** Back in the app within this long, another device is unlikely to have saved. */
+const FRESH_MS = 60_000;
 
 /**
  * The logbook, wherever it lives. As a guest, changes go to this browser. Signed in, each change
@@ -110,6 +112,9 @@ export function useLogbook(): LogbookState {
   // before the next change is sent.
   const stale = useRef(opening !== null);
   const flushing = useRef(false);
+  // Changes the server has taken, to tell whether a logbook being read is already behind.
+  const taken = useRef(0);
+  const lastRead = useRef(0);
   // Imports and sign-in moves go out one at a time and each reads the state the previous one left.
   const queue = useRef<Promise<unknown>>(Promise.resolve());
 
@@ -159,12 +164,13 @@ export function useLogbook(): LogbookState {
     setWelcomed(true);
   };
 
-  /** `waiting`: changes made on this device for this profile that the server doesn't have yet. */
-  const enterAccount = (account: Account, server: Logbook, waiting: Op[]) => {
+  /** `waiting`: changes made on this device for this profile that the server doesn't have yet. `behind`: `server` was read before a change the server has since taken. */
+  const enterAccount = (account: Account, server: Logbook, waiting: Op[], behind = false) => {
     rememberSignedIn(true);
     skipWelcome();
     setMode({ kind: 'account', ...account });
-    stale.current = false;
+    stale.current = behind;
+    lastRead.current = Date.now();
     keep({ account, server, ops: waiting });
     setGuest(loadGuestLogbook());
     void flush();
@@ -201,6 +207,7 @@ export function useLogbook(): LogbookState {
         if (stale.current) {
           const server = await api.logbook();
           stale.current = false;
+          lastRead.current = Date.now();
           setSync((s) => ({ ...s, offline: false }));
           fromServer(server);
           continue;
@@ -221,6 +228,7 @@ export function useLogbook(): LogbookState {
         }
         // Changes are only ever added at the end, so the ones sent are still at the start. The
         // server's copy may have been fetched again meanwhile, so the change goes on the newest.
+        taken.current += sending.length;
         const now = copyRef.current;
         if (!now || now.account.email !== copy.account.email) break;
         const server = saved ? { ...now.server, profile: saved } : applyOps(now.server, sending);
@@ -262,11 +270,12 @@ export function useLogbook(): LogbookState {
     (async () => {
       try {
         const { user } = await api.me();
+        const seen = taken.current;
         const server = await api.logbook();
         // The session is this device's profile, even if its address changed elsewhere.
         const copy = copyRef.current;
         if (copy && copy.account.email !== user.email) clearCopy(copy.account.email);
-        if (live) enterAccount(user, server, copy?.ops ?? []);
+        if (live) enterAccount(user, server, copy?.ops ?? [], taken.current !== seen);
       } catch (err) {
         if (!live) return;
         // 401 is "not signed in"; anything else means the server is out of reach.
@@ -293,13 +302,18 @@ export function useLogbook(): LogbookState {
       if (document.visibilityState === 'hidden' || modeRef.current.kind !== 'account') return;
       if (copyRef.current?.ops.length || stale.current) void flush();
     };
+    // Back in the app: another device may have saved since, and nothing else would show it.
+    const returned = () => {
+      if (document.visibilityState === 'visible' && Date.now() - lastRead.current > FRESH_MS) stale.current = true;
+      retry();
+    };
     const timer = window.setInterval(retry, RETRY_MS);
     window.addEventListener('online', retry);
-    document.addEventListener('visibilitychange', retry);
+    document.addEventListener('visibilitychange', returned);
     return () => {
       window.clearInterval(timer);
       window.removeEventListener('online', retry);
-      document.removeEventListener('visibilitychange', retry);
+      document.removeEventListener('visibilitychange', returned);
     };
     // Set up once; the retry reads refs.
   }, []);
@@ -356,7 +370,10 @@ export function useLogbook(): LogbookState {
       return Promise.resolve(true as const);
     }
     const changes = profileChanges(before, after);
-    return changes.length > 0 ? change({ kind: 'profile', changes }) : Promise.resolve(true as const);
+    if (changes.length === 0) return Promise.resolve(true as const);
+    // The profile is saved whole, so it goes on top of the newest one, not this device's last look.
+    stale.current = true;
+    return change({ kind: 'profile', changes });
   };
 
   const importLogbook = (incoming: Logbook) =>

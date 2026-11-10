@@ -243,7 +243,7 @@ export function readCsv(text: string): CsvRead | string {
       return;
     }
     const given = get('id');
-    if (/^[\w-]{1,64}$/.test(given) && !usedIds.has(given)) e.id = given;
+    if (OUR_ID.test(given) && !usedIds.has(given)) e.id = given;
     else {
       // The same id from the same line, so importing a file twice doesn't double it. Two identical lines stay two.
       const base = `csv-${hashOf(row.filter((_, n) => n !== column.get('id')).join('\u0001'))}`;
@@ -256,6 +256,9 @@ export function readCsv(text: string): CsvRead | string {
   });
   return { entries, problems, unused };
 }
+
+/** One this app made, in an export. A column of 1, 2, 3 in someone's own spreadsheet says nothing about which flight it is. */
+const OUR_ID = /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|csv-[0-9a-z]+(-\d+)?|[0-9a-z]{6,}-[0-9a-z]{6,})$/i;
 
 export interface CsvSummary {
   fresh: Entry[];

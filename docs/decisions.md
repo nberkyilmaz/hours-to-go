@@ -1011,6 +1011,17 @@ live server.
 - **A date has to be on the calendar**, and one pilot's record that can't be worked out doesn't stop the others'
   reminders.
 
+### D63. Fixes from the same review
+- **Coming back to the app reads the server again**, if it's been over a minute, and a profile change reads it first. A
+  device left open used to send its old copy of the profile over what another device had saved.
+- **A flight the quick form can't fully show opens in the paper columns.** Flown again or suggested, it used to open
+  blank with its other columns still filled in, and they were saved unseen, so a multi-engine flight counted twice.
+- **The toast's hours are the ring's hours.** They were two sums, and could differ by a lot.
+- **Paper totals aren't a flight.** Adding them says what was added and goes to Progress, with no first solo to
+  celebrate, and they sit under their own heading in the Logbook rather than in the month they're dated.
+- **Near the end, the price says what's left** rather than a month's flying that costs more than that.
+- **A spreadsheet's own Id column counts only if this app made it.** 1, 2, 3 in two files aren't the same flights.
+
 ## Process
 
 ### D22. Check the UI in a real browser, at phone size, before calling it done

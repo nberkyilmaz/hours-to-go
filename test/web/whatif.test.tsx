@@ -47,7 +47,7 @@ describe('the slider', () => {
   it('starts at the pilot’s own pace, the same as the finish date above it', async () => {
     const { box, slider } = await open(steady());
     expect(slider.value).toBe('3');
-    expect(box.textContent).toContain('3 h a week');
+    expect(box.textContent).toContain('3.0 h a week');
     expect(box.textContent).toContain('About the same as your pace.');
   });
 
@@ -83,8 +83,21 @@ describe('the slider', () => {
     const price = () => Number(/about \$([\d,]+) a month/.exec(box.textContent!)![1]!.replace(',', ''));
     set(slider, 2);
     const slow = price();
-    set(slider, 8);
+    set(slider, 3.5);
     expect(price()).toBeGreaterThan(slow);
+  });
+
+  it('says what’s left to finish, when a month would cost more than that', async () => {
+    const { box, slider } = await open(steady());
+    set(slider, 15);
+    expect(box.textContent).toMatch(/about \$[\d,]+ to finish/);
+    expect(box.textContent).not.toContain('a month');
+  });
+
+  it('shows the pilot’s own pace until it’s moved, whatever the slider stops on', async () => {
+    const { box, slider } = await open(Array.from({ length: 20 }, (_, i) => line(addDays(today(), -Math.round(3.5 * i) - 1), { seDayDual: 1.1 }, { id: `f${i}` })));
+    expect(box.textContent).toContain('2.2 h a week');
+    expect(slider.getAttribute('aria-valuetext')).toBe('2.2 h a week');
   });
 
   it('is there for a new student too, with no pace to compare', async () => {

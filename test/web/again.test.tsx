@@ -1,7 +1,8 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
-import { today } from '../../src/model/entry';
+import { derive, today } from '../../src/model/entry';
+import { SAMPLE_RATES, blankProfile } from '../../src/model/profile';
 import { emptyLogbook, loadGuestLogbook, rememberWelcomed, saveGuestLogbook } from '../../src/model/store';
 import { line } from './fixtures';
 
@@ -42,6 +43,19 @@ describe('logging a flight again', () => {
     expect(now?.id).not.toBe(was?.id);
   });
 
+  it('opens in the paper columns when the quick form can’t show all of it, so nothing is saved unseen', async () => {
+    seed(line('2026-09-01', { meDayDual: 1.5 }, where));
+    render(<App />);
+    await openFirst();
+    fireEvent.click(screen.getByRole('button', { name: 'Log this flight again' }));
+    await screen.findByRole('heading', { name: 'Log a flight' });
+    expect(screen.queryByLabelText('Flight time, in hours')).toBeNull();
+    expect((screen.getByLabelText('Multi-engine day Dual') as HTMLInputElement).value).toBe('1.5');
+    save();
+    await closed();
+    expect(loadGuestLogbook().entries[1]).toMatchObject({ meDayDual: 90, seDayDual: 0 });
+  });
+
   it('isn’t offered on paper totals', async () => {
     seed(line('2026-09-01', { seDayDual: 40 }, { forward: true }));
     render(<App />);
@@ -64,6 +78,23 @@ describe('I flew this', () => {
     expect((screen.getByLabelText('Hood') as HTMLInputElement).checked).toBe(true);
     expect((screen.getByLabelText('Flight time, in hours') as HTMLInputElement).value).toBe('1.5');
     expect((screen.getByLabelText('To') as HTMLInputElement).value).toBe('');
+  });
+});
+
+describe('I flew this, on a simulator session', () => {
+  it('opens the simulator form, so it isn’t counted as time in the aircraft too', async () => {
+    const licensed = { ...blankProfile(), focus: 'vfrott' as const, held: { ppl: { date: '2025-01-01' } }, rates: { ...SAMPLE_RATES, sim: 135 } };
+    const flown = Array.from({ length: 30 }, (_, i) => line('2026-10-01', { seDayPic: 2 }, { ...where, id: `p${i}`, dayLandings: 1 }));
+    saveGuestLogbook({ ...emptyLogbook(), entries: flown, profile: licensed });
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: 'I flew this' }));
+    await screen.findByRole('dialog');
+    expect(screen.queryByLabelText('Flight time, in hours')).toBeNull();
+    save();
+    await closed();
+    const saved = loadGuestLogbook().entries.at(-1)!;
+    expect(saved.ftd).toBeGreaterThan(0);
+    expect(derive(saved).total).toBe(0);
   });
 });
 

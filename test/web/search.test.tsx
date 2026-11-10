@@ -39,6 +39,14 @@ describe('the logbook by month', () => {
     ]);
     expect(shortDate('2026-11-08')).toBe('Nov 8');
   });
+
+  it('keeps paper totals out of the month they happen to be dated', () => {
+    const paper = line('2026-11-08', { seDayDual: 20 }, { forward: true });
+    const months = byMonth([paper, flight, solo]);
+    expect(months.map((m) => m.label)).toEqual(['November 2026', 'October 2026', 'Brought forward']);
+    expect(months[0]!.minutes).toBe(78);
+    expect(months[2]!.minutes).toBe(1200);
+  });
 });
 
 describe('the Logbook screen', () => {

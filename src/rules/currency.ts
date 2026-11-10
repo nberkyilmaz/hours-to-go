@@ -33,14 +33,15 @@ const flights = (entries: readonly Entry[], today: string) =>
 
 /** Enough of something in the last 6 months, and the day that stops being true. */
 function recent(id: string, label: string, cite: string, lines: readonly Entry[], need: number, count: (e: Entry) => number, today: string): CurrencyItem {
-  const from = addMonths(today, -6);
   let total = 0;
   let until: string | null = null;
   for (const e of lines) {
-    if (e.date < from) break;
+    // Counted forward from the flight, the same way as the date it runs out: back from today, they disagree at a month's end.
+    const lasts = addMonths(e.date, 6);
+    if (today > lasts) break;
     total += count(e);
     if (total >= need) {
-      until = addMonths(e.date, 6);
+      until = lasts;
       break;
     }
   }

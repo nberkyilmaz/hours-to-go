@@ -10,7 +10,7 @@ export function Route({ result }: { result: GoalResult }) {
   if (!legs) return null;
   const at = legs.findIndex((leg) => !leg.complete);
   const next = legs[at + 1];
-  const summary = legs.map((leg) => `${t(leg.title)}: ${leg.complete ? t('done') : t('{have} of {need}', { have: leg.done, need: leg.total })}`).join('. ');
+  const summary = legs.map((leg) => t('{label}: {value}', { label: t(leg.title), value: leg.complete ? t('done') : t('{have} of {need}', { have: leg.done, need: leg.total }) })).join('. ');
   return (
     <div className="route">
       <div className="route-line" role="img" aria-label={t('Your route to the {goal}. {legs}.', { goal: shortName(result.goal.short), legs: summary })}>

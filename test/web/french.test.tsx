@@ -46,7 +46,7 @@ describe('in French', () => {
   });
 
   describe('a spreadsheet', () => {
-    const flight = () => line('2026-10-01', { seDayPic: 1.5 }, { id: 'a1', solo: true, remarks: 'Vol local' });
+    const flight = () => line('2026-10-01', { seDayPic: 1.5 }, { id: '11111111-2222-4333-8444-555555555555', solo: true, remarks: 'Vol local' });
 
     it('is made for French Excel: semicolons, decimal commas, French headings', () => {
       const csv = toCsv([flight()]);

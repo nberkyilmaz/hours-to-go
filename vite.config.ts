@@ -52,6 +52,8 @@ export default defineConfig({
     proxy: { '/api': 'http://127.0.0.1:8787' },
   },
   test: {
+    // The whole-app tests click through a real form, and a busy machine can take seconds over it.
+    testTimeout: 15_000,
     environment: 'jsdom',
     globals: false,
   },

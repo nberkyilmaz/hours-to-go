@@ -1016,13 +1016,22 @@ limits and carry off a profile. Each has a test, and D62 has the reasons.
 **Checked.** Every attack the review reproduced now fails in a test. On the live server, before this, 13 wrong passwords
 claiming different networks were never blocked.
 
+## Phase 44: bugs a review found in the app (2026-11-09)
+
+Hours saved that the form never showed, a device left open undoing what another had saved, a flight that could vanish
+while the server woke, and paper totals congratulated as a first solo (D63). Also the French colon wherever a label and
+its value were joined in the code, a flight test that says Passed once it's ticked, and the what-if slider showing the
+pilot's own pace until it's moved.
+
+**Checked.** A test for each. Every signed-in flow in Edge in both languages, against a throwaway server.
+
 ## Where things stand
 
-- 439 tests pass (rules 37, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
+- 454 tests pass (rules 38, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
   21, offline changes 5, server API 42, the standard's watcher 8, first visit, guest, cost to go,
   finish date, next flight, expiry, password reset, confirm links and feedback 28, the form and
-  notices 12, the quick form 14, Progress 9, the logbook 7, first run and trust 10, signed in 6,
-  offline on the screen 5, log again and the cost a month 4, current to fly 17, reminders 21, the spreadsheet 19, the paper log 13, the instructor link 20, French 27, the what-if slider 10, the flight clock 16, the route 10, cards to share 13, the server's defences 14), and the API tests per
+  notices 12, the quick form 16, Progress 9, the logbook 8, first run and trust 10, signed in 6,
+  offline on the screen 9, log again and the cost a month 6, current to fly 18, reminders 21, the spreadsheet 21, the paper log 13, the instructor link 20, French 27, the what-if slider 12, the flight clock 16, the route 10, cards to share 13, the server's defences 14), and the API tests per
   database also run against a Postgres server through `pg` in CI.
 - Typecheck clean on both configs; `npm audit` clean.
 - Live at <https://nberkyilmaz.com/hours-to-go/>, API at `https://hours-to-go-api.nberkyilmaz.com`.

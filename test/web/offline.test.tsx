@@ -1,10 +1,10 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
-import type { Entry } from '../../src/model/entry';
+import { blankEntry, type Entry } from '../../src/model/entry';
 import { blankProfile, type Profile } from '../../src/model/profile';
-import { rememberSignedIn } from '../../src/model/store';
-import { loadCopy } from '../../src/model/sync';
+import { emptyLogbook, rememberSignedIn } from '../../src/model/store';
+import { loadCopy, saveCopy } from '../../src/model/sync';
 
 const reply = (status: number, body: unknown) => ({ ok: status < 400, status, json: async () => body });
 
@@ -68,6 +68,70 @@ const backOnline = () => {
     window.dispatchEvent(new Event('online'));
   });
 };
+
+describe('two devices', () => {
+  it('puts a profile change on top of what another device saved since, with no reload in between', async () => {
+    render(<App />);
+    await screen.findByRole('button', { name: 'Saved to your profile' });
+    server.profile = { ...server.profile, medical: 'cat3', milestones: { 'exam-ppaer': { date: '2026-11-01', score: 84 } } };
+    fireEvent.change(screen.getByLabelText('Working on'), { target: { value: 'cpl' } });
+    await waitFor(() => expect(server.profile.focus).toBe('cpl'));
+    expect(server.profile.medical).toBe('cat3');
+    expect(server.profile.milestones['exam-ppaer']).toEqual({ date: '2026-11-01', score: 84 });
+  });
+
+  it('shows what another device logged when the pilot comes back to the app', async () => {
+    render(<App />);
+    await screen.findByRole('button', { name: 'Saved to your profile' });
+    server.entries = [{ ...blankEntry(false, '2026-11-01'), id: 'elsewhere', seDayDual: 72 }];
+    const later = Date.now() + 61_000;
+    const clock = vi.spyOn(Date, 'now').mockImplementation(() => later);
+    try {
+      act(() => {
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+      await waitFor(() => expect(loadCopy()?.server.entries.map((e) => e.id)).toEqual(['elsewhere']));
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
+  it('doesn’t ask again if the pilot was only away for a moment', async () => {
+    render(<App />);
+    await screen.findByRole('button', { name: 'Saved to your profile' });
+    const reads = () => vi.mocked(fetch).mock.calls.filter(([url]) => url === '/api/logbook').length;
+    const before = reads();
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(reads()).toBe(before);
+  });
+
+  it('keeps a flight the server took while the first read was on its way back', async () => {
+    saveCopy({ account: { email: 'student@example.com', confirmed: true, pendingEmail: null, reminders: false }, server: emptyLogbook(), ops: [] });
+    let release = () => {};
+    const gate = new Promise<void>((r) => {
+      release = r;
+    });
+    const real = vi.mocked(fetch).getMockImplementation()!;
+    let first = true;
+    vi.mocked(fetch).mockImplementation(async (url: RequestInfo | URL, init?: RequestInit) => {
+      if (url !== '/api/logbook' || !first) return real(url, init);
+      first = false;
+      const before = await real(url, init);
+      await gate;
+      return before;
+    });
+    render(<App />);
+    await waitFor(() => expect(vi.mocked(fetch).mock.calls.some(([u]) => u === '/api/logbook')).toBe(true));
+    await logFlight('1.2');
+    await waitFor(() => expect(server.entries).toHaveLength(1));
+    release();
+    await waitFor(() => expect(loadCopy()?.server.entries).toHaveLength(1));
+    expect(screen.getByRole('list', { name: 'Logbook entries' }).querySelectorAll('.log-entry')).toHaveLength(1);
+  });
+});
 
 describe('signed in with no connection', () => {
   it('keeps a flight on this device, says so, and sends it when the connection comes back', async () => {

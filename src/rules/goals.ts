@@ -105,6 +105,8 @@ export interface Gate {
   needs: Req[] | 'knowledge-and-experience';
   /** The written exams this gate leads to; once they're passed the gate says so. */
   exams?: string[];
+  /** The flight test it leads to, the same way. */
+  test?: string;
 }
 
 export interface Goal {
@@ -396,7 +398,7 @@ const ppl: Goal = {
   ],
   gates: [
     writeGate('Write the PPAER', 'exam-ppaer'),
-    { label: 'Take the flight test', cite: '421.14(4)(a)', needs: [time('gate-ppl-test', '35 of the 45 h of flight training', 35, pplTraining, '421.14(4)(a)'), LETTER_TEST_PPL] },
+    { label: 'Take the flight test', cite: '421.14(4)(a)', test: 'test-ppl', needs: [time('gate-ppl-test', '35 of the 45 h of flight training', 35, pplTraining, '421.14(4)(a)'), LETTER_TEST_PPL] },
   ],
   cost: {
     // Schools' own estimates at the minimum put the hours past 17 dual and 12 solo with an
@@ -588,6 +590,7 @@ const cpl: Goal = {
     {
       label: 'Take the flight test',
       cite: '421.14(3)(b), (4)(c)',
+      test: 'test-cpl',
       needs: [
         time('gate-cpl-test', '150 h flight time (75% of 200 h)', 150, (c) => sum(c.all, 'total'), '421.14(4)(c)'),
         writtenExam('exam-cpaer', 'CPAER passed', '421.14(3)(b)', 60),

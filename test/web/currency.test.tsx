@@ -34,6 +34,13 @@ describe('currency', () => {
       expect(item(items([flight('2026-05-07', 5)]), 'passengers-day').current).toBe(false);
     });
 
+    it('agrees with its own end date at the end of a month', () => {
+      const lines = [flight('2026-02-28', 5)];
+      const on = (day: string) => item(currencyOf(lines, licensed(), day)!, 'passengers-day');
+      expect(on('2026-08-28')).toMatchObject({ current: true, until: '2026-08-28' });
+      expect(on('2026-08-31')).toMatchObject({ current: false, until: null, note: '0 of 5 in the last 6 months' });
+    });
+
     it('needs night landings for passengers at night', () => {
       const list = items([flight('2026-10-01', 9, 4)]);
       expect(item(list, 'passengers-day').current).toBe(true);
