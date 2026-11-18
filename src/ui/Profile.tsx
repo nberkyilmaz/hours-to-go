@@ -18,11 +18,7 @@ import { t } from '../i18n';
 
 export function ProfileView({ lb }: { lb: LogbookState }) {
   const { book, mode } = lb;
-  return (
-    <div className="profile-cols">
-      <h1 className="sr-only">{t('Profile')}</h1>
-      {/* Two columns on a wide screen (D67), each keeping its place while a form in the other grows. */}
-      <div className="stack">
+  const account = (
         <section className="card pad" aria-labelledby="account-title">
           <h2 id="account-title">{t('Your profile')}</h2>
           {mode.kind === 'account' ? (
@@ -36,7 +32,8 @@ export function ProfileView({ lb }: { lb: LogbookState }) {
             </>
           )}
         </section>
-
+  );
+  const pilot = (
         <section className="card pad" aria-labelledby="held-title">
           <h2 id="held-title">{t('Licences and ratings you hold')}</h2>
           <p className="muted">{t('Tick what you already have. Your PPL date matters: CPL training only counts from that day.')}</p>
@@ -75,8 +72,25 @@ export function ProfileView({ lb }: { lb: LogbookState }) {
             })}
           </ul>
           <MedicalFields label={t('Medical certificate')} profile={book.profile} updateProfile={lb.updateProfile} />
-          {book.profile.medical !== 'none' && <p className="hint">{t('“Valid to” is on your medical certificate. A Category 1 can last longer for private flying, so use the date for the flying you do.')}</p>}
         </section>
+  );
+  return (
+    <div className="profile-cols">
+      <h1 className="sr-only">{t('Profile')}</h1>
+      {/* Two columns on a wide screen (D67), each keeping its place while a form in the other grows. Signed in, what's
+          kept changing here is the pilot's own details, so they come first; a guest comes here to make a profile. */}
+      <div className="stack">
+        {mode.kind === 'account' ? (
+          <>
+            {pilot}
+            {account}
+          </>
+        ) : (
+          <>
+            {account}
+            {pilot}
+          </>
+        )}
       </div>
       <div className="stack">
         {mode.kind === 'account' && <ShareSection />}

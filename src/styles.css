@@ -1040,6 +1040,19 @@ button:focus-visible {
   white-space: nowrap;
 }
 
+/* What the dates mean, on lines of their own under the boxes. */
+.medical-says {
+  flex: 1 1 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+.medical-says li + li {
+  margin-top: 2px;
+}
+
 .next-counts {
   list-style: none;
   margin: 6px 0 0;
@@ -2379,6 +2392,12 @@ button.log-row:hover {
   min-width: 0;
 }
 
+/* Outranks the rule that makes every box full width, so a date sits beside its label rather than under it. */
+.inline-field input:not([type='checkbox']):not([type='radio']),
+.inline-field select {
+  width: auto;
+}
+
 /* "sur 45,0 h" stays together: alone on a line, the unit reads like a mistake. */
 .hero-figure small {
   white-space: nowrap;
@@ -2562,6 +2581,56 @@ button.log-row:hover {
 
 .currency .hint {
   margin-top: 10px;
+}
+
+.currency .medical-fields {
+  margin-top: 6px;
+}
+
+/* The lines copied from the paper log, for carrying passengers (D70). */
+.paper-landings {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.paper-landings > summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.paper-landings-list {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.paper-landings-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.paper-landings-add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 12px;
+  margin-top: 10px;
+}
+
+.paper-landings-add .field {
+  margin: 0;
+}
+
+.paper-landings-add input.narrow {
+  width: 5.5em;
 }
 
 /* ---- First run and trust --------------------------------------------- */

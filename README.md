@@ -44,9 +44,12 @@ The D-numbers point to the decisions in [docs/decisions.md](docs/decisions.md) t
   to log it. Your instructor decides what you fly (D43).
 - Every requirement with its bar and its paragraph of the standard, and a note wherever the app had
   to interpret the text (D2, D3, D67).
-- What runs out stops counting: a written exam, a flight test, the medical (D44).
-- For a licensed pilot, whether they're current to fly under CAR 401.05: the last 5 years, recurrent
-  training, passengers by day and at night, and the instrument check and approaches (D52).
+- What runs out stops counting: a written exam, a flight test, the medical (D44). The medical is entered the way the
+  certificate reads, category and exam date, and the app works out when it ends for commercial and for private flying
+  under CAR 404.04 (D70).
+- For a licensed pilot, whether they're current to fly under CAR 401.05: the last 5 years, the medical,
+  recurrent training, passengers by day and at night, and the instrument check and approaches (D52). Takeoffs and
+  landings inside paper totals count once their last few lines are copied in with their dates (D70).
 
 **Logging**
 
@@ -131,7 +134,8 @@ Each of these choices is also shown as a note next to the requirement in the app
 - **ATPL (c)**: 100 h of PIC cross-country beyond the first 100 h. The standard also accepts co-pilot
   cross-country, but the personal log has no column for it, so it isn't counted.
 - **What runs out**: a written exam after 24 months, a flight test after 12 where the standard says so, the
-  medical at the valid-to date you enter. A dated item stops counting the day after (D44).
+  medical at the end of its period from the exam date (CAR 404.04: counted from the first of the next month, taken as
+  the last day of the month before). A dated item stops counting the day after (D44, D70).
 - Lines saved by the first version of the app (one role per line) are moved into these columns when read.
 - Not modelled yet: PIC under supervision (ATPL), helicopters and other categories, Group 2,
   foreign and military credits, and the 12-month flight review that can stand in for the 5 years

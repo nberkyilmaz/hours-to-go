@@ -271,7 +271,9 @@ for good, so the app could say someone was ready when Transport Canada would say
 - **The medical counts to the "valid to" date the pilot enters.** How long one lasts depends on age,
   licence and the flying done (CAR 404.04), and it runs from the first of the next month, so working
   it out would mean asking for a birth date to guess what's printed on the certificate.
-  Changing the category clears the date: it's a different certificate.
+  Changing the category clears the date: it's a different certificate. *Replaced by D70: the
+  certificate prints the exam date, not an end date, so the app asks for that and an age band, and
+  works the end out.*
 
 Each counts through its last day. It shows "Counts until March 1, 2028", in amber within 60 days,
 and once past that it says when it ran out and stops being met, which reopens what depended on
@@ -1084,6 +1086,41 @@ A pass on how it looks, inside D21's glass cockpit rather than a new one.
 - **The wide logbook shows the remarks**, between the route and the figures, when any flight has some. The room was
   empty, and the remarks could be searched but not seen without opening each flight. A phone's two lines stay as they
   were.
+
+### D70. What the owner's own logbook showed
+On 2026-11-18 the owner put their real hours in (a PPL holder working on the CPL, with a Category 1) and found three
+things wrong and the app hard to find their way around.
+
+- **The medical is asked the way the certificate reads**: its category, the date of the exam and an age band (under 40,
+  40 to 59, 60 or older), and the app works out the end (`rules/medical.ts`). A Canadian certificate shows the exam
+  date, not an end date, so D44's "valid to" was a date the pilot had to work out. From CAR 404.04: it runs from the exam,
+  and the end is counted from the first of the next month (404.04(7)); 12 months for commercial privileges, 6 at 60 or
+  older (404.04(6.1), (6.2)); 60 months for private privileges under 40 and 24 from 40 (404.04(6)); and a commercial
+  pilot keeps private privileges to the end of the private period (404.04(6.3)), which is the "Category 1 turns into a
+  Category 3" pilots talk about. So a Category 1 shows two dates. The app takes the end as the last day of the month
+  before the count lands, since the regulation doesn't say whether that day is inside, and a day early is the safe side.
+  A requirement that accepts a Category 3 gets the private period, one that wants a Category 1 gets the commercial one.
+  An age band rather than a birth date keeps D44's reason for not asking one. A "valid to" date entered before stays in
+  use until an exam date replaces it. A reminder goes before each end.
+- **Takeoffs and landings for passengers can come from the paper logbook.** Paper totals can't show when a landing was,
+  so a licensed pilot who entered totals read "0 of 5" with no way to fix it. The Current to fly card now asks for the last
+  few lines of the paper log (date, day and night, multi-engine for a pilot with multi time) and counts them up to the
+  newest paper totals; after that day the flights are in the app. They add no time: they're inside the totals. The card
+  opens whenever something needs sorting out and the log has anything in it, paper totals included (this replaces D65's
+  "stays folded until a flight is logged"), stays open while it's answered, and asks for the medical when there's none.
+- **Recurrent training says where its date came from.** Ticking a flight test dated it today, and the card counted 24
+  months from that, with an empty "Last done" beside it. Now it says "Counted from your PPL flight test, November 18,
+  2026", and what's ticked in "A few things your hours can't show", which is about what was done before, starts with no
+  date and asks when.
+- **How much of the paper totals came after the PPL is asked on Progress.** It was only in the totals form, and only if
+  the PPL was ticked before the totals went in, so a pilot who did it the other way round was never asked, and the CPL
+  counted all of it. Now the question is at the top of the CPL, in "A few things your hours can't show": None and All
+  are answered there, and Some opens the totals at the boxes it needs. With that put off, it's asked in the box that
+  explains the training window.
+- **Finding the way.** Ticking a licence on the first screen asks what the pilot is working on now; it used to move on to
+  the next in the standard's order, the night rating, when most PPL holders are after the CPL. Signed in, the Profile tab
+  starts with the licences and the medical, which are what change; a guest still sees the form to make a profile first.
+  A date box beside its label is only as wide as a date.
 
 ## Process
 

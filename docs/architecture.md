@@ -50,6 +50,7 @@ hours-to-go/
 │   │   ├── route.ts            a goal as a flight plan, one leg for each part of the standard (D60)
 │   │   ├── reminders.ts        what's about to run out, and what hasn't been said yet (D53)
 │   │   ├── currency.ts         what a licensed pilot needs to have done recently (D52)
+│   │   ├── medical.ts          how long a medical lasts, for each kind of flying, from its exam date (CAR 404.04, D70)
 │   │   └── next.ts             which flight counts toward the most, by trying each against the rules (D43)
 │   └── ui/
 │       ├── Progress.tsx        goal detail, gates, requirement rows, milestone tick-offs, goal cards
@@ -140,6 +141,10 @@ requirement reads from these, never from raw columns.
 | Field | Meaning |
 | --- | --- |
 | `medical` | `none cat4 cat3 cat1` |
+| `medicalExam` | the date of the medical exam, as the certificate shows it; the end dates are worked out from it (D70) |
+| `medicalAge` | `under40 over40 over60`: the pilot's age on the exam day, which sets how long it lasts |
+| `medicalUntil` | a "valid to" date entered before D70; used only while `medicalExam` is empty |
+| `landings` | `{ date, day, night, multi }[]`, newest first, at most 30: takeoffs and landings inside the paper totals, dated, for carrying passengers (CAR 401.05(2)(b)); counted up to the newest paper totals |
 | `held` | goal id → `{ date }` (date may be blank) |
 | `milestones` | key → `{ date, score? }` (exams, ground school, special flights, flight tests) |
 | `trainingStart` | goal id → date, overriding where a goal's training window starts |
@@ -191,7 +196,7 @@ gates use the same conditions and add `passed` once their exams are passed.
    Each goal's `cost.plan` gets `left(id)`, what a requirement still needs, and whether the pilot
    uses a simulator (a simulator rate is set). A goal that isn't priced has `cost.unpriced`, the
    reason shown instead, and a null plan. A dated item with a limit (`maxAgeDays`, `validMonths`, or
-   the medical's `medicalUntil`) gets `until`, its last day, and `stale` once past it, which is not
+   the medical's end for the privileges asked, `medicalEnd`) gets `until`, its last day, and `stale` once past it, which is not
    met; `validUnless` lifts the limit once what it was for is held (D44). A goal with a quoted average (the PPL's 65 h) also gets
    `toAverage`: the flying past the plan to reach it, while short of it.
 

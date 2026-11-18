@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { emptyLogbook, loadGuestLogbook, rememberWelcomed, saveGuestLogbook } from '../../src/model/store';
+import { blankBreakdown } from '../../src/model/entry';
 import { line } from './fixtures';
 
 const reply = (status: number, body: unknown) => ({ ok: status < 400, status, json: async () => body });
@@ -38,6 +39,15 @@ describe('an empty logbook', () => {
     expect(loadGuestLogbook().profile.focus).toBe('night');
     expect(((await screen.findByLabelText('Working on')) as HTMLSelectElement).value).toBe('night');
   });
+
+  it('asks what the pilot is working on, since the next in line often isn’t it', async () => {
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: 'I already hold a licence' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Private Pilot Licence — Aeroplane' }));
+    fireEvent.change(screen.getByLabelText('Working on now'), { target: { value: 'cpl' } });
+    expect(loadGuestLogbook().profile.focus).toBe('cpl');
+    expect(((await screen.findByLabelText('Working on')) as HTMLSelectElement).value).toBe('cpl');
+  });
 });
 
 describe('getting set up', () => {
@@ -64,7 +74,6 @@ describe('getting set up', () => {
     render(<App />);
     const card = (await screen.findByText('Current to fly')).closest('details') as HTMLDetailsElement;
     expect(card.open).toBe(false);
-    expect(card.textContent).toContain('log a flight to check');
   });
 
   it('asks for the PPL date where a CPL needs it', async () => {
@@ -109,6 +118,53 @@ describe('getting set up', () => {
       render(<App />);
       await screen.findByLabelText('Working on');
       expect(screen.queryByRole('heading', { name: 'A few things your hours can’t show' })).toBeNull();
+    });
+
+    it('starts what’s ticked with no date, since it was done before today', async () => {
+      paper();
+      render(<App />);
+      const section = (await card()).closest('section') as HTMLElement;
+      fireEvent.click(within(section).getByLabelText('40 h private pilot ground school'));
+      await waitFor(() => expect(loadGuestLogbook().profile.milestones['ground-ppl']).toEqual({ date: '' }));
+      expect(within(section).getByText('When was it? The date decides how long it counts.')).toBeTruthy();
+    });
+
+    describe('with a PPL ticked after the totals went in', () => {
+      const cplStudent = (date = '2024-05-01') =>
+        saveGuestLogbook({
+          ...emptyLogbook(),
+          entries: [line('2026-10-01', { seDayDual: 60, seDayPic: 90 }, { forward: true, breakdown: { ...blankBreakdown(), solo: 'all' } })],
+          profile: { ...emptyLogbook().profile, held: { ppl: { date } }, focus: 'cpl' },
+        });
+
+      it('asks how much of them came after the PPL, and takes All or None there', async () => {
+        cplStudent();
+        render(<App />);
+        const section = (await card()).closest('section') as HTMLElement;
+        expect(within(section).getByText(/how much of it did you fly after your PPL was issued, May 1, 2024\?/)).toBeTruthy();
+        fireEvent.click(within(section).getByRole('button', { name: 'All of it' }));
+        await waitFor(() => expect(loadGuestLogbook().entries[0]!.breakdown).toMatchObject({ afterPpl: 'all', solo: 'all' }));
+        expect(screen.queryByText(/how much of it did you fly after your PPL/)).toBeNull();
+      });
+
+      it('opens the totals at the question for Some', async () => {
+        cplStudent();
+        render(<App />);
+        const section = (await card()).closest('section') as HTMLElement;
+        fireEvent.click(within(section).getByRole('button', { name: 'Some of it…' }));
+        const form = await screen.findByRole('dialog', { name: 'Totals from your paper logbook' });
+        const question = within(form).getByRole('group', { name: /How much of these totals did you fly after your PPL/ });
+        expect((within(question).getByRole('radio', { name: 'Some of it' }) as HTMLInputElement).checked).toBe(true);
+        expect(within(form).getByLabelText(/Dual instrument/)).toBeTruthy();
+      });
+
+      it('asks for the PPL’s date there too, when it has none', async () => {
+        cplStudent('');
+        render(<App />);
+        const section = (await card()).closest('section') as HTMLElement;
+        expect(within(section).getByLabelText('When did you get your PPL?')).toBeTruthy();
+        expect(screen.getAllByLabelText('When did you get your PPL?')).toHaveLength(1);
+      });
     });
 
     it('isn’t asked of a student logging flight by flight', async () => {

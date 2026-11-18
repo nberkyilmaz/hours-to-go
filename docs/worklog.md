@@ -1087,9 +1087,37 @@ the welcome, all with a made-up student's logbook, and a "What it does" list wit
 yet", since current to fly (D52) covers it, apart from the 12-month flight review. The runbook says how the pictures
 were taken.
 
+## Phase 52: what the owner's own logbook showed (2026-11-18)
+
+The owner entered their real hours, a PPL holder working on the CPL with a Category 1, and reported: the passengers
+rows said "0 of 5" though they fly passengers, and nothing asked; the medical asked for a "valid to" date, which a
+Canadian certificate doesn't print; nothing asked how much of the totals came after the PPL; and the app was hard to
+find their way around. All in D70.
+
+**Why each happened.** Current to fly counted only flights logged one by one, and stayed folded under "log a flight to
+check" on a log of paper totals. The after-PPL question appeared only in the totals form, and only when the PPL was
+ticked before the totals were saved; the owner did it the other way round, and the CPL counted every hour. The
+recurrent-training date was a flight test ticked on the catch-up card, which dated it today.
+
+**Built.** The medical by category, exam date and age band, with its ends worked out from CAR 404.04 (read from the
+Justice Laws text, current to 2026-10-29) and shown under it: a Category 1 has a commercial and a private date. Dated
+takeoffs and landings copied from the paper log, in the Current to fly card, which now opens and asks. The source of
+the recurrent-training date. The after-PPL question on Progress, with Some opening the totals form at its boxes. "Working
+on now" when a licence is ticked. Profile starts with the licences and medical once signed in. The totals' date box
+says it's the date of the last flight in them. Date boxes beside a label are a date wide.
+
+**Found on the way.** Opening the totals at the question with `scrollIntoView` scrolled the whole sheet and hid
+Cancel; only the form's body scrolls now. Adding the last landings line made the card "all good" and it snapped shut
+under the pilot's finger; it stays open until closed. Every inline date box was full width, because the rule that
+makes every input full width outranked `.inline-field`, so its label sat above it.
+
+**Checked.** New tests for the medical (`medical.test.ts`), the copied landings, the medical and the source of the date
+in current to fly, and the questions on Progress. Edge at 390 px and 1280 px, with the owner's situation seeded: totals
+first, then the PPL ticked, working on the CPL.
+
 ## Where things stand
 
-- 472 tests pass (rules 38, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
+- 499 tests pass (the medical 11, rules 38, cost to go 16, finish date 8, next flight 12, expiry 14, logbook model
   21, offline changes 5, server API 42, the standard's watcher 8, first visit, guest, cost to go,
   finish date, next flight, expiry, password reset, confirm links and feedback 28, the form and
   notices 12, the quick form 17, Progress 12, the logbook 9, first run and trust 18, signed in 6,

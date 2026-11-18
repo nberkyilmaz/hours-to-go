@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
-import { emptyLogbook, rememberSignedIn, rememberWelcomed, saveGuestLogbook } from '../../src/model/store';
+import { emptyLogbook, loadGuestLogbook, rememberSignedIn, rememberWelcomed, saveGuestLogbook } from '../../src/model/store';
 import { line } from './fixtures';
 
 // No server in these tests: every call answers "not signed in", so the app runs as a guest.
@@ -238,14 +238,19 @@ describe('the app as a guest', () => {
     expect(await screen.findByText('Your medical ran out on January 1, 2020. Renew it for this to count.')).toBeTruthy();
     expect(screen.getByText(/Dated January 1, 2020, more than 24 months ago, so it doesn’t count any more/)).toBeTruthy();
 
-    fireEvent.change(screen.getByLabelText('Valid to'), { target: { value: '2099-01-01' } });
-    expect(await screen.findByText('Counts until January 1, 2099.')).toBeTruthy();
+    // The old "valid to" date is shown for what it is, and the exam date replaces it: a Category 3 at 40 or older lasts
+    // 24 months, counted from the first of the next month (CAR 404.04).
+    expect(screen.getByText(/Valid to January 1, 2020, as you entered it before/)).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Your age that day'), { target: { value: 'over40' } });
+    fireEvent.change(screen.getByLabelText('Date of the exam'), { target: { value: '2026-11-03' } });
+    expect(await screen.findByText('Counts until November 30, 2028.')).toBeTruthy();
     expect(screen.queryByText(/Your medical ran out/)).toBeNull();
+    expect(loadGuestLogbook().profile).toMatchObject({ medicalExam: '2026-11-03', medicalAge: 'over40', medicalUntil: '' });
 
     // A different category is a different certificate, so its date goes.
     fireEvent.change(screen.getByLabelText('Your medical'), { target: { value: 'cat1' } });
-    expect(((await screen.findByLabelText('Valid to')) as HTMLInputElement).value).toBe('');
-    expect(screen.queryByText(/Counts until January 1, 2099/)).toBeNull();
+    expect(((await screen.findByLabelText('Date of the exam')) as HTMLInputElement).value).toBe('');
+    expect(screen.queryByText(/Counts until November 30, 2028/)).toBeNull();
   });
 
   it('says why a rating has no price', async () => {

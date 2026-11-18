@@ -123,6 +123,21 @@ its decision updated when it's built: F1 with D6 and D10, F5 with D18, F11 with 
 - **A what-if slider for pace**: "twice a week: done by February, about $X".
 - **Shareable milestone cards**: "First solo at 14.2 h".
 
+### From the owner's own logbook (2026-11-18)
+
+The owner's real hours turned up the fixes in D70. What else the same run showed, not built yet:
+
+- **Progress is long on a phone**: about 3,000 px for the CPL, with the plan (price, route, what-if, cost) before
+  the list of requirements. Two views in the goal card, Plan and Requirements, or a link to the list, would shorten it.
+- **One walk-through for a pilot with paper hours**: licences and their dates, what they're working on, the medical,
+  the totals, the questions, the last landings and the exams already passed, in that order. Today these are spread
+  over the first card, "A few things your hours can't show", Current to fly and Profile.
+- **Paper totals in two lines, up to the PPL and since**, offered in the totals form. The CPL then counts by date
+  and needs none of the nine boxes under "Some of it".
+- **The 12-month flight review** that can stand in for the 5 years (CAR 401.05(1)(b)).
+- **Days since the last flight**, on Progress for a licensed pilot.
+- **The + on a phone** sits over the bottom right of the page and can cover a box until the page is scrolled.
+
 ### 4. Going public
 
 1. **A small test first**: 10–15 classmates and students at the owner's school use it for 2–3
@@ -175,9 +190,9 @@ The logbook-photo import was dropped by the owner (decision D24); pilots type th
 - Paper totals can't show which landings were solo; the form asks only for night landings, because
   that is all the rules need.
 - Co-pilot cross-country isn't a column, so the ATPL's co-pilot alternative isn't counted.
-- Age isn't checked. A dated item with no date can't be checked. The app keeps one valid-to date for
-  the medical, though a Category 1 lasts longer for private flying (CAR 404.04), so the pilot enters
-  the date for the flying they do (D44).
+- Age isn't checked, apart from the medical's age band. A dated item with no date can't be checked.
+  The medical's 6 months for a pilot of 40 or older flying passengers for hire single-pilot (CAR
+  404.04(6.2)) is said, not applied, since the app doesn't know what flying is done (D70).
 - Resend's free plan sends 100 emails a day. Links to confirm an address are capped at 50 a day
   so reset links keep room; past that, a new profile's link waits for "Send a new link".
 - The limits on sign-ins, sign-ups, reset and confirm emails, and feedback are in memory, so they
