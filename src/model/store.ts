@@ -9,7 +9,7 @@ import {
   type Breakdown,
   type Entry,
 } from './entry';
-import { GOAL_IDS, blankProfile, type GoalId, type Medical, type MilestoneRecord, type Profile, type Rates } from './profile';
+import { GOAL_IDS, blankProfile, type GoalId, type Medical, type MedicalAge, type MilestoneRecord, type Profile, type Rates } from './profile';
 
 /**
  * Everything one pilot has logged. Signed in, it lives on the server; as a
@@ -129,7 +129,7 @@ export function rememberWelcomed(): void {
 export function hasContent(book: Logbook): boolean {
   const p = book.profile;
   return (
-    book.entries.length > 0 || Object.keys(p.held).length > 0 || Object.keys(p.milestones).length > 0 || p.medical !== 'none' || p.rates !== null
+    book.entries.length > 0 || Object.keys(p.held).length > 0 || Object.keys(p.milestones).length > 0 || p.medical !== 'none' || p.rates !== null || p.landings.length > 0
   );
 }
 
@@ -143,9 +143,14 @@ export function mergeLogbooks(base: Logbook, incoming: Logbook): Logbook {
   const entries = [...base.entries, ...incoming.entries.filter((e) => !ids.has(e.id))];
   const b = base.profile;
   const i = incoming.profile;
+  // The medical's fields describe one certificate, so they come from the same side.
+  const m = b.medical !== 'none' ? b : i;
   const profile: Profile = {
-    medical: b.medical !== 'none' ? b.medical : i.medical,
-    medicalUntil: b.medical !== 'none' ? b.medicalUntil : i.medicalUntil,
+    medical: m.medical,
+    medicalExam: m.medicalExam,
+    medicalAge: m.medicalAge,
+    medicalUntil: m.medicalUntil,
+    landings: b.landings.length > 0 ? b.landings : i.landings,
     held: { ...i.held, ...b.held },
     milestones: { ...i.milestones, ...b.milestones },
     trainingStart: { ...i.trainingStart, ...b.trainingStart },
@@ -157,6 +162,10 @@ export function mergeLogbooks(base: Logbook, incoming: Logbook): Logbook {
 }
 
 const MEDICALS: readonly Medical[] = ['none', 'cat4', 'cat3', 'cat1'];
+const MEDICAL_AGES: readonly MedicalAge[] = ['under40', 'over40', 'over60'];
+/** Lines of recent landings: enough for anyone's last six months of circuits, and no more. */
+export const MAX_LANDING_LINES = 30;
+const MAX_LANDINGS = 999;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 /** On the calendar: the shape alone lets 2026-13-45 through, and the date sums throw on it. */
 function isDate(s: string): boolean {
@@ -270,6 +279,16 @@ export function parseProfile(x: unknown): Profile {
   if (!isObject(x)) return p;
   p.medical = MEDICALS.find((m) => m === x.medical) ?? 'none';
   if (p.medical !== 'none' && isDate(str(x.medicalUntil))) p.medicalUntil = str(x.medicalUntil);
+  if (p.medical !== 'none' && isDate(str(x.medicalExam))) p.medicalExam = str(x.medicalExam);
+  p.medicalAge = MEDICAL_AGES.find((a) => a === x.medicalAge) ?? 'under40';
+  if (Array.isArray(x.landings)) {
+    p.landings = x.landings
+      .filter(isObject)
+      .map((l) => ({ date: str(l.date), day: Math.min(whole(l.day), MAX_LANDINGS), night: Math.min(whole(l.night), MAX_LANDINGS), multi: l.multi === true }))
+      .filter((l) => isDate(l.date) && l.day + l.night > 0)
+      .sort((a, b) => (a.date < b.date ? 1 : -1))
+      .slice(0, MAX_LANDING_LINES);
+  }
   if (typeof x.focus === 'string' && isGoal(x.focus)) p.focus = x.focus;
   if (isObject(x.held)) {
     for (const [k, v] of Object.entries(x.held)) {

@@ -245,7 +245,7 @@ export function App() {
   const lb = useLogbook();
   const [tab, setTab] = useState<Tab>('progress');
   // `clockTime` is the time from the flight clock, when that's where this line came from.
-  const [draft, setDraft] = useState<{ entry: Entry; isNew: boolean; layout: FormLayout; clockTime?: string } | null>(null);
+  const [draft, setDraft] = useState<{ entry: Entry; isNew: boolean; layout: FormLayout; clockTime?: string; askAfterPpl?: boolean } | null>(null);
   const [clock, setClock] = useState<number | null>(clockStart);
   const [hideGuestNudge, setHideGuestNudge] = useState(() => isSnoozed('guest-nudge'));
   const [hideStranded, setHideStranded] = useState(false);
@@ -550,6 +550,8 @@ export function App() {
             onFly={(line) => startEntry(line.ftd ? 'ftd' : 'flight', line)}
             onProfile={() => setTab('profile')}
             onStartClock={clock === null ? () => setClock(startClock()) : undefined}
+            onAnswer={(entry) => void lb.saveEntry(entry)}
+            onAnswerInForm={(entry) => setDraft({ entry, isNew: false, layout: 'forward', askAfterPpl: true })}
           />
         )}
         {tab === 'log' && (
@@ -610,6 +612,7 @@ export function App() {
           onDelete={draft.isNew ? undefined : () => deleteEntry(draft.entry)}
           onLogAgain={draft.isNew || draft.entry.forward ? undefined : () => logAgain(draft.entry)}
           clockTime={draft.clockTime}
+          askAfterPpl={draft.askAfterPpl}
           onStartClock={draft.isNew && draft.layout === 'flight' && clock === null ? () => setClock(startClock()) : undefined}
           onClose={closeDraft}
         />

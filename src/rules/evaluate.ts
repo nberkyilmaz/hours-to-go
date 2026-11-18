@@ -1,6 +1,7 @@
-import { addDays, addMonths, afterPplPart, today as todayDate, type Entry } from '../model/entry';
+import { addDays, addMonths, afterPplPart, dateText, today as todayDate, type Entry } from '../model/entry';
 import { SAMPLE_RATES, type MilestoneRecord, type Profile } from '../model/profile';
 import { examCheck, goalById, passed, type Ctx, type Gate, type Goal, type MilestoneReq, type Plan, type Req, type Section } from './goals';
+import { medicalEnd, privilegesFor } from './medical';
 import { t } from '../i18n';
 
 export interface ReqResult {
@@ -101,7 +102,7 @@ function scopedEntries(entries: readonly Entry[], goal: Goal, scope: ScopeInfo |
     const start = scope.start ?? '';
     const unanswered = entries.filter((e) => e.forward && e.date >= start && !e.breakdown?.afterPpl);
     const note = unanswered.length
-      ? t('Your paper totals up to {dates} don’t say how much was flown after your PPL, so all of it counts here. Edit that line in the Logbook to answer.', { dates: unanswered.map((e) => e.date).join(', ') })
+      ? t('Your paper totals up to {dates} don’t say how much was flown after your PPL, so all of it counts here until you answer.', { dates: unanswered.map((e) => dateText(e.date)).join('; ') })
       : null;
     return { entries: entries.map((e) => afterPplPart(e, start)).filter((e): e is Entry => e !== null), note };
   }
@@ -174,7 +175,8 @@ function evalReq(req: Req, c: Ctx, goal: Ctx = c): ReqResult {
     }
     case 'medical': {
       const right = req.anyOf.includes(c.profile.medical);
-      const until = right && c.profile.medicalUntil !== '' ? c.profile.medicalUntil : null;
+      // A Category 1 asked for as a Category 3 lasts the private period, not the commercial one (CAR 404.04(6.3)).
+      const until = right ? medicalEnd(c.profile, privilegesFor(req.anyOf)) : null;
       const stale = until !== null && c.today > until;
       return { ...base, until, stale, met: right && !stale };
     }

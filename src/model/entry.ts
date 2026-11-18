@@ -248,6 +248,18 @@ export function afterPplPart(e: Entry, pplDate: string): Entry | null {
   return part;
 }
 
+/**
+ * Paper totals with the after-PPL question answered. Totals saved before the questions existed meant their Solo tick
+ * box for all their PIC time, so that's kept as the solo answer.
+ */
+export function withAfterPpl(e: Entry, answer: Answer): Entry {
+  const b = e.breakdown ?? { ...blankBreakdown(), solo: e.solo ? 'all' : derive(e).pic > 0 ? 'none' : null };
+  return { ...e, solo: false, breakdown: { ...b, afterPpl: answer } };
+}
+
+/** Paper totals the CPL counts in full until the pilot says how much came after the PPL (D11). */
+export const asksAfterPpl = (e: Entry, pplDate: string) => e.forward && e.date >= pplDate && !e.breakdown?.afterPpl && derive(e).total + e.ftd > 0;
+
 export function derive(e: Entry): Derived {
   const hit = derivedCache.get(e);
   if (hit) return hit;

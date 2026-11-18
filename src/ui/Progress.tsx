@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { dateText, derive, formatHours, formatHoursUp, today, type Entry } from '../model/entry';
+import { asksAfterPpl, dateText, derive, formatHours, formatHoursUp, today, withAfterPpl, type Answer, type Entry } from '../model/entry';
 import type { GoalId, MilestoneRecord, Profile } from '../model/profile';
 import { isSnoozed, snooze, type Logbook } from '../model/store';
 import { evaluateGoal, flatten, type ExamResult, type GateResult, type GoalResult, type ReqResult, type SectionResult } from '../rules/evaluate';
@@ -28,9 +28,13 @@ interface Props {
   onFly: (line: Partial<Entry>) => void;
   onProfile: () => void;
   onStartClock?: (() => void) | undefined;
+  /** Saves a line changed here: an answer to a question about paper totals. */
+  onAnswer: (entry: Entry) => unknown;
+  /** Opens paper totals at their after-PPL question, for an answer that needs the boxes. */
+  onAnswerInForm: (entry: Entry) => void;
 }
 
-export function ProgressView({ book, updateProfile, onAddHours, onFly, onProfile, onStartClock }: Props) {
+export function ProgressView({ book, updateProfile, onAddHours, onFly, onProfile, onStartClock, onAnswer, onAnswerInForm }: Props) {
   const results = useMemo(
     () => GOALS.map((g) => {
       const now = evaluateGoal(g, book.entries, book.profile);
@@ -77,6 +81,8 @@ export function ProgressView({ book, updateProfile, onAddHours, onFly, onProfile
         onFly={onFly}
         onProfile={onProfile}
         onStartClock={onStartClock}
+        onAnswer={onAnswer}
+        onAnswerInForm={onAnswerInForm}
         picker={
           <div className="goal-pick">
             <label htmlFor="focus">{t('Working on')}</label>
@@ -112,6 +118,8 @@ interface DetailProps {
   onFly: (line: Partial<Entry>) => void;
   onProfile: () => void;
   onStartClock?: (() => void) | undefined;
+  onAnswer: (entry: Entry) => unknown;
+  onAnswerInForm: (entry: Entry) => void;
 }
 
 /**
@@ -155,6 +163,20 @@ function FirstStep({ profile, updateProfile, onAddHours, onDone }: { profile: Pr
             </label>
           ))}
           {profile.held.ppl && <PplDate profile={profile} updateProfile={updateProfile} />}
+          {/* Ticking a licence moves on to the next goal in the standard's order, which is often not the pilot's. */}
+          {Object.keys(profile.held).length > 0 && (
+            <label className="inline-field">
+              <span>{t('Working on now')}</span>
+              <select value={profile.focus} onChange={(e) => updateProfile((p) => ({ ...p, focus: e.target.value as GoalId }))}>
+                {GOALS.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {t(g.name)}
+                    {profile.held[g.id] ? t(' (held)') : ''}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           {/* The hours are still to come, so the way to add them stays. */}
           <button type="button" className="btn small" onClick={() => setLicensed(false)}>
             {t('Done')}
@@ -172,6 +194,37 @@ function PplDate({ profile, updateProfile }: { profile: Profile; updateProfile: 
       <span>{t('When did you get your PPL?')}</span>
       <input type="date" value={profile.held.ppl?.date ?? ''} onChange={(e) => updateProfile((p) => ({ ...p, held: { ...p.held, ppl: { date: e.target.value } } }))} />
     </label>
+  );
+}
+
+/**
+ * How much of a paper totals line came after the PPL, asked where the CPL needs it (D70). It used to be asked only in
+ * the totals form, and only if the PPL was ticked before the totals went in. None and All are answered here; Some opens
+ * the form at the boxes it needs.
+ */
+function AfterPplQuestion({ entry, pplDate, onAnswer, onAnswerInForm }: { entry: Entry; pplDate: string; onAnswer: (e: Entry) => unknown; onAnswerInForm: (e: Entry) => void }) {
+  const answer = (a: Answer) => onAnswer(withAfterPpl(entry, a));
+  const hours = formatHours(derive(entry).total || entry.ftd);
+  return (
+    <fieldset className="question after-ppl-ask">
+      <legend>
+        {pplDate
+          ? t('Your paper totals up to {date} ({hours} h): how much of it did you fly after your PPL was issued, {ppl}?', { date: dateText(entry.date), hours, ppl: dateText(pplDate) })
+          : t('Your paper totals up to {date} ({hours} h): how much of it did you fly after your PPL was issued?', { date: dateText(entry.date), hours })}
+      </legend>
+      <p className="hint">{t('The CPL’s 65 h of commercial training count only after the PPL. Until you answer, all of it counts.')}</p>
+      <div className="choices">
+        <button type="button" className="choice" onClick={() => answer('none')}>
+          {t('None of it')}
+        </button>
+        <button type="button" className="choice" onClick={() => answer('all')}>
+          {t('All of it')}
+        </button>
+        <button type="button" className="choice" onClick={() => onAnswerInForm(entry)}>
+          {t('Some of it…')}
+        </button>
+      </div>
+    </fieldset>
   );
 }
 
@@ -236,7 +289,7 @@ function ShareProgress({ result, progress, entries }: { result: GoalResult; prog
   );
 }
 
-function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries, picker, onFly, onProfile, onStartClock }: DetailProps) {
+function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries, picker, onFly, onProfile, onStartClock, onAnswer, onAnswerInForm }: DetailProps) {
   const { goal } = r;
   const holding = GOALS.filter((g) => g.id !== goal.id && profile.held[g.id] !== undefined);
   const cost = costOf(r, profile);
@@ -255,6 +308,12 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
           .flatMap((s) => s.results)
           .filter((x) => (x.req.kind === 'medical' || x.req.kind === 'milestone') && (!isDone(x) || pinned.has(x.req.id)))
       : [];
+  // CPL training counts from the PPL, so a PPL with no date, or totals that don't say what came after it, are asked first.
+  const pplDate = profile.held.ppl?.date;
+  const fromPpl = goal.scope?.from === 'ppl' && pplDate !== undefined && !showAll;
+  const afterPpl = fromPpl ? entries.filter((e) => asksAfterPpl(e, pplDate)) : [];
+  const pplUndated = fromPpl && pplDate === '';
+  const askAbove = !showAll && !caughtUp && entries.some((e) => e.forward) && (toCatch.length > 0 || afterPpl.length > 0 || pplUndated);
   const catching = new Set(toCatch.map((x) => x.req.id));
   const stays = (x: ReqResult) => !catching.has(x.req.id) && (showAll || !isDone(x) || pinned.has(x.req.id));
   const finished = showAll ? [] : flatten(r.sections.flatMap((s) => s.results)).filter((x) => x.req.kind !== 'info' && x.met && !pinned.has(x.req.id));
@@ -318,14 +377,20 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
             </div>
           )}
           <Finish result={r} pace={pace} logged={entries.length > 0} cost={cost} />
-          {toCatch.length > 0 && (
+          {askAbove && (
             <section className="catch-up" aria-labelledby="catch-up-title">
               <h2 id="catch-up-title">{t('A few things your hours can’t show')}</h2>
-              <ul className="reqs">
-                {toCatch.map((x) => (
-                  <ReqRow key={x.req.id} r={{ ...x, children: [] }} goalId={goal.id} profile={profile} updateProfile={updateProfile} stays={() => false} pin={pin} />
-                ))}
-              </ul>
+              {pplUndated && <PplDate profile={profile} updateProfile={updateProfile} />}
+              {afterPpl.map((e) => (
+                <AfterPplQuestion key={e.id} entry={e} pplDate={pplDate ?? ''} onAnswer={onAnswer} onAnswerInForm={onAnswerInForm} />
+              ))}
+              {toCatch.length > 0 && (
+                <ul className="reqs">
+                  {toCatch.map((x) => (
+                    <ReqRow key={x.req.id} r={{ ...x, children: [] }} goalId={goal.id} profile={profile} updateProfile={updateProfile} stays={() => false} pin={pin} past />
+                  ))}
+                </ul>
+              )}
               <button
                 type="button"
                 className="link"
@@ -365,7 +430,11 @@ function GoalDetail({ result: r, progress, profile, updateProfile, pace, entries
             </ul>
           )}
 
-          {r.scope && <ScopeControl result={r} profile={profile} updateProfile={updateProfile} />}
+          {r.scope && (
+            <ScopeControl result={r} profile={profile} updateProfile={updateProfile} askedAbove={askAbove}>
+              {!askAbove && afterPpl.map((e) => <AfterPplQuestion key={e.id} entry={e} pplDate={pplDate ?? ''} onAnswer={onAnswer} onAnswerInForm={onAnswerInForm} />)}
+            </ScopeControl>
+          )}
 
           {!r.held && !r.credited && <p className="left-count">{t('{done} of {total} requirements met', { done: r.done, total: r.total })}</p>}
           {(showAll ? r.sections : hoursFirst(r.sections)).map((s) => {
@@ -450,7 +519,7 @@ function Gate({ gate: g }: { gate: GateResult }) {
   );
 }
 
-function ScopeControl({ result: r, profile, updateProfile }: { result: GoalResult; profile: Profile; updateProfile: UpdateProfile }) {
+function ScopeControl({ result: r, profile, updateProfile, askedAbove, children }: { result: GoalResult; profile: Profile; updateProfile: UpdateProfile; askedAbove: boolean; children?: ReactNode }) {
   const id = r.goal.id;
   const override = profile.trainingStart[id] ?? '';
   const setStart = (date: string) =>
@@ -464,7 +533,9 @@ function ScopeControl({ result: r, profile, updateProfile }: { result: GoalResul
     <div className="scope">
       <p>{r.goal.scope && t(r.goal.scope.label)}</p>
       {r.scope?.message && <p className="warn-text">{r.scope.message}</p>}
-      {r.goal.scope?.from === 'ppl' && profile.held.ppl && !profile.held.ppl.date && <PplDate profile={profile} updateProfile={updateProfile} />}
+      {askedAbove && r.scope?.message && <p className="hint">{t('It’s asked above, under “A few things your hours can’t show”.')}</p>}
+      {r.goal.scope?.from === 'ppl' && profile.held.ppl && !profile.held.ppl.date && !askedAbove && <PplDate profile={profile} updateProfile={updateProfile} />}
+      {children}
       <label className="inline-field">
         <span>{t('Count training from')}</span>
         <input type="date" value={override || r.scope?.start || ''} onChange={(e) => setStart(e.target.value)} />
@@ -488,12 +559,14 @@ interface RowProps {
   pin: (id: string) => void;
   /** Already one level in: its own children are listed beside it, not under it. */
   nested?: boolean;
+  /** Asked about after paper totals: what's ticked was done before today, so it starts with no date (D70). */
+  past?: boolean;
 }
 
 /** Everything under a requirement, one level in however deep the standard goes. A child that's done takes its own children with it. */
 const below = (rs: readonly ReqResult[], stays: (r: ReqResult) => boolean): ReqResult[] => rs.filter(stays).flatMap((c) => [c, ...below(c.children, stays)]);
 
-function ReqRow({ r, goalId, profile, updateProfile, stays, pin, nested = false }: RowProps) {
+function ReqRow({ r, goalId, profile, updateProfile, stays, pin, nested = false, past = false }: RowProps) {
   const { req } = r;
   const fieldId = `${goalId}-${req.id}`;
   // Our readings stay in view (D3); the other notes are a tap away (D67).
@@ -504,7 +577,7 @@ function ReqRow({ r, goalId, profile, updateProfile, stays, pin, nested = false 
     <li className={`req${r.met ? ' is-met' : ''}`}>
       <div className="req-line">
         {req.kind === 'milestone' ? (
-          <MilestoneCheck r={r} fieldId={fieldId} updateProfile={updateProfile} pin={pin} />
+          <MilestoneCheck r={r} fieldId={fieldId} updateProfile={updateProfile} pin={pin} past={past} />
         ) : (
           <span className={`dot${r.met ? ' is-met' : ''}`} aria-hidden="true">
             {r.met && <CheckIcon />}
@@ -660,7 +733,7 @@ function setMilestone(updateProfile: UpdateProfile, key: string, next: Milestone
 }
 
 /** The status dot doubles as the checkbox for things the log can't show. */
-function MilestoneCheck({ r, fieldId, updateProfile, pin }: { r: ReqResult; fieldId: string; updateProfile: UpdateProfile; pin: (id: string) => void }) {
+function MilestoneCheck({ r, fieldId, updateProfile, pin, past }: { r: ReqResult; fieldId: string; updateProfile: UpdateProfile; pin: (id: string) => void; past: boolean }) {
   if (r.req.kind !== 'milestone') return null;
   const { key } = r.req;
   return (
@@ -672,7 +745,7 @@ function MilestoneCheck({ r, fieldId, updateProfile, pin }: { r: ReqResult; fiel
         disabled={r.credited !== null}
         onChange={(e) => {
           pin(r.req.id);
-          setMilestone(updateProfile, key, e.target.checked ? { date: today() } : null);
+          setMilestone(updateProfile, key, e.target.checked ? { date: past ? '' : today() } : null);
         }}
       />
       {r.met && <CheckIcon />}
@@ -711,6 +784,7 @@ function MilestoneControls({ r, updateProfile }: { r: ReqResult; updateProfile: 
       )}
       {r.scoreLow && <span className="warn-text">{t('Pass mark is')}{' '}{t('{n}%', { n: minScore! })}.</span>}
       {minScore !== undefined && rec.score === undefined && <span className="hint">{t('Enter your overall mark so the app can check it.')}</span>}
+      {!rec.date && <span className="hint">{t('When was it? The date decides how long it counts.')}</span>}
     </div>
   );
 }

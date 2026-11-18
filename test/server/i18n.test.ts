@@ -7,7 +7,8 @@ import { describe, expect, it } from 'vitest';
 import { t, translator } from '../../src/i18n';
 import { FR, GOAL_SHORT_FR } from '../../src/i18n/fr';
 import { AFTER_PPL_LABEL, COLUMN_LABEL, LOG_GROUPS } from '../../src/model/entry';
-import { MEDICAL_LABEL } from '../../src/model/profile';
+import { MEDICAL_AGE_LABEL, MEDICAL_LABEL } from '../../src/model/profile';
+import { PRIVILEGES_LABEL, medicalPeriods } from '../../src/rules/medical';
 import { LOG_FILTERS } from '../../src/model/search';
 import { GOALS } from '../../src/rules/goals';
 
@@ -73,6 +74,8 @@ function phrasesInData(): string[] {
   LOG_GROUPS.forEach((g) => add(g.title));
   Object.values(AFTER_PPL_LABEL).forEach(add);
   Object.values(MEDICAL_LABEL).forEach(add);
+  Object.values(MEDICAL_AGE_LABEL).forEach(add);
+  Object.values(PRIVILEGES_LABEL).forEach(add);
   LOG_FILTERS.forEach((f) => add(f.label));
   return [...found];
 }
@@ -93,6 +96,14 @@ describe('the French table', () => {
     expect(said.filter((k) => !(k in FR))).toEqual([]);
     for (const exam of ['PPAER', 'CPAER', 'AIRAF']) expect(`Used for the ${exam} you’ve passed.` in FR).toBe(true);
     for (const name of [...readFileSync(join(ROOT, 'src/rules/next.ts'), 'utf8').matchAll(/ name: '([^']+)'/g)].map((m) => m[1]!)) expect(name in FR).toBe(true);
+  });
+
+  it('names every medical reminder in French', () => {
+    const whats = (['cat1', 'cat3', 'cat4'] as const).flatMap((medical) =>
+      medicalPeriods({ medical, medicalExam: '2026-01-10', medicalAge: 'under40', medicalUntil: '' } as Parameters<typeof medicalPeriods>[0]).map((m) => m.what),
+    );
+    expect(whats.length).toBe(4);
+    expect(whats.filter((w) => !(w in FR))).toEqual([]);
   });
 
   it('names every goal in French', () => {

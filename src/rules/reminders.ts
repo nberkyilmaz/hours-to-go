@@ -7,6 +7,7 @@ import type { Profile } from '../model/profile';
 import { currencyOf } from './currency';
 import { evaluateGoal, flatten } from './evaluate';
 import { GOALS } from './goals';
+import { medicalPeriods } from './medical';
 
 export interface Due {
   key: string;
@@ -36,7 +37,8 @@ export function comingUp(entries: readonly Entry[], profile: Profile, today: str
     const daysLeft = daysBetween(today, until);
     if (daysLeft >= 0 && daysLeft <= Math.max(...steps)) found.set(key, { key, what, until, daysLeft, steps });
   };
-  if (profile.medical !== 'none' && profile.medicalUntil !== '') add('medical', 'Your medical certificate', profile.medicalUntil);
+  // A Category 1 has two ends: commercial privileges after 12 months, private ones years later (D70).
+  for (const m of medicalPeriods(profile)) add(m.key, m.what, m.until);
   // Every goal, because a date is only there if the pilot entered it, and a key is only reminded of once.
   for (const goal of GOALS) {
     for (const r of flatten(evaluateGoal(goal, entries, profile, today).sections.flatMap((s) => s.results))) {

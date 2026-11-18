@@ -66,6 +66,61 @@ describe('currency', () => {
     it('can’t see landings in paper totals', () => {
       expect(item(items([totals('2026-10-01', { seDayPic: 100 }, { solo: 'all' }, { dayLandings: 50 })]), 'passengers-day').current).toBe(false);
     });
+
+    describe('lines copied from the paper logbook', () => {
+      const paper = totals('2026-10-20', { seDayPic: 100, seNightPic: 5 }, { solo: 'all' }, { dayLandings: 300, nightLandings: 20 });
+      const copied = (landings: Profile['landings'], change: Partial<Profile> = {}) => licensed({ landings, ...change });
+
+      it('count, with their dates', () => {
+        const p = copied([
+          { date: '2026-10-20', day: 3, night: 2, multi: false },
+          { date: '2026-09-02', day: 2, night: 3, multi: false },
+        ]);
+        const list = items([paper], p);
+        // By day, night landings count too: the first line has 5.
+        expect(item(list, 'passengers-day')).toMatchObject({ current: true, until: '2027-04-20', landings: true });
+        expect(item(list, 'passengers-night')).toMatchObject({ current: true, until: '2027-03-02' });
+      });
+
+      it('count only up to the paper totals, since after them the flights are in the app', () => {
+        const p = copied([{ date: '2026-11-01', day: 9, night: 0, multi: false }]);
+        expect(item(items([paper], p), 'passengers-day')).toMatchObject({ current: false, note: '0 of 5 in the last 6 months' });
+        expect(item(items([], p), 'passengers-day')).toMatchObject({ current: false, landings: false });
+      });
+
+      it('add up with flights logged one by one', () => {
+        const p = copied([{ date: '2026-10-10', day: 3, night: 0, multi: false }]);
+        expect(item(items([paper, flight('2026-11-01', 2)], p), 'passengers-day')).toMatchObject({ current: true, until: '2027-04-10' });
+      });
+
+      it('keep a multi-engine line apart', () => {
+        const p = copied([{ date: '2026-10-10', day: 6, night: 0, multi: true }]);
+        const list = items([paper], p);
+        expect(item(list, 'passengers-day-multi').current).toBe(true);
+        expect(item(list, 'passengers-day').current).toBe(false);
+      });
+    });
+  });
+
+  describe('the medical', () => {
+    it('asks for it when it isn’t there', () => {
+      expect(item(items([]), 'medical')).toMatchObject({ current: false, medical: true, note: 'Add your medical: its category and the date of the exam.' });
+    });
+
+    it('holds for private flying with a PPL, and adds commercial flying with a CPL', () => {
+      const ppl = licensed({ medical: 'cat1', medicalExam: '2025-10-15' });
+      expect(items([], ppl).filter((i) => i.medical).map((i) => [i.id, i.current, i.until])).toEqual([['medical', true, '2030-10-31']]);
+      const cpl = licensed({ medical: 'cat1', medicalExam: '2025-10-15', held: { ppl: { date: '2024-01-15' }, cpl: { date: '2025-06-01' } } });
+      expect(items([], cpl).filter((i) => i.medical).map((i) => [i.id, i.current, i.until])).toEqual([
+        ['medical-commercial', false, '2026-10-31'],
+        ['medical', true, '2030-10-31'],
+      ]);
+    });
+
+    it('says a Category 3 doesn’t give commercial privileges', () => {
+      const cpl = licensed({ medical: 'cat3', medicalExam: '2025-10-15', held: { ppl: { date: '2024-01-15' }, cpl: { date: '2025-06-01' } } });
+      expect(item(items([], cpl), 'medical-commercial')).toMatchObject({ current: false, until: null, note: 'Commercial privileges need a Category 1 medical.' });
+    });
   });
 
   it('holds for 5 years from the last flight as PIC or co-pilot, paper totals included', () => {
@@ -77,12 +132,17 @@ describe('currency', () => {
 
   describe('recurrent training', () => {
     it('holds for 24 months, and a licence issued counts', () => {
-      expect(item(items([]), 'recurrent')).toMatchObject({ current: true, until: '2028-01-15' });
+      expect(item(items([]), 'recurrent')).toMatchObject({ current: true, until: '2028-01-15', from: 'Counted from your PPL, issued January 15, 2026.' });
+    });
+
+    it('says when a flight test is where the date came from', () => {
+      const p = licensed({ milestones: { 'test-ppl': { date: '2026-11-08' } } });
+      expect(item(items([], p), 'recurrent')).toMatchObject({ until: '2028-11-08', from: 'Counted from your PPL flight test, November 8, 2026.' });
     });
 
     it('takes the date the pilot enters, the latest of them', () => {
       const p = licensed({ held: { ppl: { date: '2020-01-01' } }, milestones: { 'recurrent-training': { date: '2026-03-01' } } });
-      expect(item(items([], p), 'recurrent')).toMatchObject({ current: true, until: '2028-03-01' });
+      expect(item(items([], p), 'recurrent')).toMatchObject({ current: true, until: '2028-03-01', from: null });
     });
 
     it('asks when there is no date to go on', () => {
@@ -140,5 +200,32 @@ describe('the card', () => {
     expect(card.textContent).toContain('to sort out');
     fireEvent.change(within(card).getAllByLabelText('Last done')[0]!, { target: { value: '2026-09-01' } });
     expect(loadGuestLogbook().profile.milestones['recurrent-training']).toEqual({ date: '2026-09-01' });
+  });
+
+  it('opens on paper totals alone, and takes the last lines of the paper logbook', async () => {
+    seed({ held: { ppl: { date: '2025-01-15' } }, medical: 'cat3', medicalExam: '2025-01-10' }, [line('2026-10-20', { seDayPic: 100 }, { forward: true, dayLandings: 300 })]);
+    render(<App />);
+    const card = (await screen.findByText('Current to fly')).closest('details') as HTMLDetailsElement;
+    expect(card.open).toBe(true);
+    expect(card.textContent).not.toContain('log a flight to check');
+    fireEvent.change(within(card).getByLabelText('Date'), { target: { value: '2026-11-01' } });
+    fireEvent.change(within(card).getByLabelText('By day'), { target: { value: '5' } });
+    fireEvent.click(within(card).getByRole('button', { name: 'Add this line' }));
+    expect(within(card).getByRole('alert').textContent).toContain('after your paper totals, which go up to October 20, 2026');
+    fireEvent.change(within(card).getByLabelText('Date'), { target: { value: '2026-10-20' } });
+    fireEvent.click(within(card).getByRole('button', { name: 'Add this line' }));
+    expect(loadGuestLogbook().profile.landings).toEqual([{ date: '2026-10-20', day: 5, night: 0, multi: false }]);
+    expect(await within(card).findByText(/Takeoffs and landings from your paper logbook \(1\)/)).toBeTruthy();
+    fireEvent.click(within(card).getByRole('button', { name: 'Remove the line of October 20, 2026' }));
+    expect(loadGuestLogbook().profile.landings).toEqual([]);
+  });
+
+  it('asks for the medical when there’s none', async () => {
+    seed({ held: { ppl: { date: '2025-01-15' } } }, [line('2026-10-20', { seDayPic: 1 })]);
+    render(<App />);
+    const card = (await screen.findByText('Current to fly')).closest('details') as HTMLDetailsElement;
+    fireEvent.change(within(card).getByLabelText('Your medical'), { target: { value: 'cat1' } });
+    fireEvent.change(await within(card).findByLabelText('Date of the exam'), { target: { value: '2026-01-10' } });
+    expect(loadGuestLogbook().profile).toMatchObject({ medical: 'cat1', medicalExam: '2026-01-10' });
   });
 });

@@ -9,6 +9,7 @@ import {
   TIME_COLUMNS,
   asksSoloNightLandings,
   blankBreakdown,
+  dateText,
   derive,
   doubtsAbout,
   durationText,
@@ -54,6 +55,8 @@ interface Props {
   clockTime?: string | undefined;
   /** Only for a new flight with no clock running: starts one instead. */
   onStartClock?: (() => void) | undefined;
+  /** Opened from Progress to say how much of these totals came after the PPL: starts at that question, on Some (D70). */
+  askAfterPpl?: boolean | undefined;
 }
 
 type ColumnText = Record<Column, string>;
@@ -93,7 +96,7 @@ const TITLE: Record<FormLayout, { add: string; edit: string; discard: string }> 
 /** Reads a box; null when it isn't a number of the right kind. */
 const readCount = (s: string) => (s.trim() === '' ? 0 : /^\d+$/.test(s.trim()) ? Number(s.trim()) : null);
 
-export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave, onClose, onDelete, onLogAgain, clockTime, onStartClock }: Props) {
+export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave, onClose, onDelete, onLogAgain, clockTime, onStartClock, askAfterPpl: openAtAfterPpl = false }: Props) {
   const legacy = initial.forward && !initial.breakdown;
   const b0 = initial.breakdown ?? blankBreakdown();
   const [entry, setEntry] = useState<Entry>(initial);
@@ -117,7 +120,7 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
     soloXc: durationText(b0.soloXc),
   });
   const [soloLandings, setSoloLandings] = useState(() => countText(initial.soloNightLandings));
-  const [afterAnswer, setAfterAnswer] = useState<Answer | null>(b0.afterPpl);
+  const [afterAnswer, setAfterAnswer] = useState<Answer | null>(b0.afterPpl ?? (openAtAfterPpl ? 'some' : null));
   const [afterText, setAfterText] = useState<AfterText>(() => {
     const t = {} as AfterText;
     for (const f of AFTER_PPL_FIELDS) t[f] = f === 'soloNightLandings' ? countText(b0.after[f]) : durationText(b0.after[f]);
@@ -181,6 +184,15 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
       opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       if (typeof d.showModal === 'function') d.showModal();
       else d.setAttribute('open', '');
+    }
+    // Asked for from Progress: straight to the question, which is at the foot of a long form.
+    const question = openAtAfterPpl ? d.querySelector<HTMLElement>('#sec-after-ppl') : null;
+    if (question) {
+      // Only the form's body scrolls: scrollIntoView would move the whole sheet, Cancel with it.
+      const b = body.current;
+      if (b) b.scrollTop += question.getBoundingClientRect().top - b.getBoundingClientRect().top - 8;
+      d.querySelector<HTMLElement>('#f-after-dual')?.focus({ preventScroll: true });
+      return;
     }
     // The quick form starts at the time, the one thing that's always needed.
     (d.querySelector<HTMLElement>('#q-time') ?? sheet.current)?.focus();
@@ -362,7 +374,7 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
   const whereFields = (
     <>
       <div className="grid-2">
-        <Field id="f-date" label={forward ? t('Up to (date)') : t('Date')} error={errors.date}>
+        <Field id="f-date" label={forward ? t('Date of the last flight in these totals') : t('Date')} error={errors.date}>
           <input
             id="f-date"
             type="date"
@@ -664,8 +676,9 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
 
               {askAfterPpl && (
                 <Question
+                  id="sec-after-ppl"
                   name="after-ppl"
-                  legend={pplDate ? t('How much of these totals did you fly after your PPL was issued ({date})?', { date: pplDate }) : t('How much of these totals did you fly after your PPL was issued?')}
+                  legend={pplDate ? t('How much of these totals did you fly after your PPL was issued ({date})?', { date: dateText(pplDate) }) : t('How much of these totals did you fly after your PPL was issued?')}
                   value={afterAnswer}
                   onChange={setAfterAnswer}
                   labels={{ none: t('None of it'), all: t('All of it'), some: t('Some of it') }}
@@ -777,6 +790,7 @@ export function EntryForm({ initial, isNew, layout, suggestions, pplDate, onSave
 }
 
 function Question({
+  id,
   name,
   legend,
   value,
@@ -787,6 +801,7 @@ function Question({
   hint,
   children,
 }: {
+  id?: string;
   name: string;
   legend: string;
   value: Answer | null;
@@ -798,7 +813,7 @@ function Question({
   children?: ReactNode;
 }) {
   return (
-    <fieldset className={`question${error ? ' has-error' : ''}`}>
+    <fieldset id={id} className={`question${error ? ' has-error' : ''}`}>
       <legend>{legend}</legend>
       {hint && <p className="hint">{hint}</p>}
       <div className="choices">
